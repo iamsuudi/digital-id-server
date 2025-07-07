@@ -1,0 +1,46 @@
+# Binaries
+/my-gin-app
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Build and cache
+*.test
+*.out
+*.log
+*.tmp
+
+# Go cache and modules
+/go.sum
+/vendor/
+/dist/
+/bin/
+/pkg/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Env and config
+.env
+.env.local
+.air.toml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Coverage
+coverage.*
+*.coverprofile
+
+# Air binary output (if any)
+/tmp/
+
+# Docker
+*.pid
+docker-compose.override.yml
