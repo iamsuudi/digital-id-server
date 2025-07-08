@@ -27,6 +27,7 @@
 
 # Env and config
 .env
+.env.mk
 .env.local
 .air.toml
 
