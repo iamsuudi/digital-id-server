@@ -9,4 +9,5 @@ func RegisterRoutes(rg *gin.RouterGroup, h *Handler) {
 
 	r.POST("/", h.RegisterResident)
 	r.GET("/:id", h.GetResident)
+	r.GET("/", h.GetAll)
 }

@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/iamsuudi/digital-id-server/database/sqlc"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -71,4 +72,16 @@ func (h *Handler) GetResident(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, resident)
+}
+
+func (h *Handler) GetAll(c *gin.Context) {
+	residents, err := h.service.GetAll(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch residents"})
+		return
+	}
+	if residents == nil {
+		residents = []sqlc.GetAllResidentsRow{}
+	}
+	c.JSON(http.StatusOK, residents)
 }

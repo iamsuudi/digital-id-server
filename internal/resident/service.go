@@ -123,3 +123,7 @@ func (s *Service) RegisterResident(ctx context.Context, input RegisterResidentIn
 func (s *Service) GetResident(ctx context.Context, id int32) (sqlc.GetResidentFullRow, error) {
 	return s.q.GetResidentFull(ctx, id)
 }
+
+func (s *Service) GetAll(ctx context.Context) ([]sqlc.GetAllResidentsRow, error) {
+	return s.q.GetAllResidents(ctx)
+}
