@@ -7,15 +7,16 @@ import (
 	"github.com/iamsuudi/digital-id-server/database"
 	"github.com/iamsuudi/digital-id-server/database/sqlc"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Service struct {
-	q  *sqlc.Queries
-	db sqlc.DBTX // interface allowing transaction
+	db *pgxpool.Pool
+	q *sqlc.Queries
 }
 
-func NewService(q *sqlc.Queries, db sqlc.DBTX) *Service {
-	return &Service{q: q, db: db}
+func NewService(dbQueries *pgxpool.Pool, q *sqlc.Queries) *Service {
+	return &Service{q: q}
 }
 
 func (s *Service) RegisterResident(ctx context.Context, input RegisterResidentInput, faceURL, docURL string) error {

@@ -2,12 +2,18 @@ package resident
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/iamsuudi/digital-id-server/database/sqlc"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func RegisterRoutes(rg *gin.RouterGroup, h *Handler) {
-	r := rg.Group("/residents")
+func RegisterRoutes(rg *gin.RouterGroup, dbConn *pgxpool.Pool, dbQueries *sqlc.Queries) {
+	service := NewService(dbConn, dbQueries)
+	handler := NewHandler(service)
 
-	r.POST("/", h.RegisterResident)
-	r.GET("/:id", h.GetResident)
-	r.GET("/", h.GetAll)
+	residentGroup := rg.Group("/residents")
+	{
+		residentGroup.POST("/register", handler.RegisterResident)
+		residentGroup.GET("/:id", handler.GetResident)
+		residentGroup.GET("/", handler.GetAll)
+	}
 }

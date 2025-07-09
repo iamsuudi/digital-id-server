@@ -10,18 +10,20 @@ import (
 
 func main() {
 	cfg := config.Load()
-	conn := database.Connect(cfg.DB)
-	defer conn.Close()
+	dbConn := database.Connect(cfg.DB)
+	defer dbConn.Close()
 
 	r := gin.Default()
+
+	// Top-level API group
 	api := r.Group("/api")
 
-	dbQueries := sqlc.New(conn)
+	// Version 1 group
+	v1 := api.Group("/v1")
 
-	// Setup resident routes, injecting residentService
-	residentService := resident.NewService(dbQueries, conn)
-	residentHandler := resident.NewHandler(residentService)
-	resident.RegisterRoutes(api, residentHandler)
+	dbQueries := sqlc.New(dbConn)
+
+	resident.RegisterRoutes(v1, dbConn, dbQueries)
 
 	r.Run(":8080")
 }

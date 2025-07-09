@@ -5,12 +5,12 @@ import (
 	"log"
 	"os"
 
-	db "github.com/iamsuudi/digital-id-server/database"
+	"github.com/iamsuudi/digital-id-server/database"
 	"github.com/joho/godotenv"
 )
 
 type Config struct {
-	DB db.DBConfig
+	DB database.DBConfig
 }
 
 func Load() Config {
@@ -27,7 +27,7 @@ func Load() Config {
 	fmt.Println("🔧 Environment variables loaded successfully")
 
 	return Config{
-		DB: db.DBConfig{
+		DB: database.DBConfig{
 			User:     os.Getenv("DB_USER"),
 			Password: os.Getenv("DB_PASSWORD"),
 			Host:     os.Getenv("DB_HOST"),

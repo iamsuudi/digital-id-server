@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
-	sqlc "github.com/iamsuudi/digital-id-server/database/sqlc"
+	"github.com/iamsuudi/digital-id-server/database/sqlc"
 )
 
 // WithTx starts a db transaction and runs fn with a new Queries instance
