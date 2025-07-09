@@ -4,9 +4,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/iamsuudi/digital-id-server/db"
-	"github.com/iamsuudi/digital-id-server/internal/config"
 	"github.com/joho/godotenv"
+	"github.com/iamsuudi/digital-id-server/shared/config"
+	db "github.com/iamsuudi/digital-id-server/database"
 )
 
 func main() {

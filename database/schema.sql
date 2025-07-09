@@ -18,23 +18,23 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: DocumentStatus; Type: TYPE; Schema: public; Owner: postgres
+-- Name: document_status; Type: TYPE; Schema: public; Owner: postgres
 --
 
-CREATE TYPE public."DocumentStatus" AS ENUM (
+CREATE TYPE public.document_status AS ENUM (
     'PENDING',
     'APPROVED',
     'REJECTED'
 );
 
 
-ALTER TYPE public."DocumentStatus" OWNER TO postgres;
+ALTER TYPE public.document_status OWNER TO postgres;
 
 --
--- Name: DocumentType; Type: TYPE; Schema: public; Owner: postgres
+-- Name: document_type; Type: TYPE; Schema: public; Owner: postgres
 --
 
-CREATE TYPE public."DocumentType" AS ENUM (
+CREATE TYPE public.document_type AS ENUM (
     'ID',
     'PASSPORT',
     'DRIVING_LICENSE',
@@ -42,26 +42,26 @@ CREATE TYPE public."DocumentType" AS ENUM (
 );
 
 
-ALTER TYPE public."DocumentType" OWNER TO postgres;
+ALTER TYPE public.document_type OWNER TO postgres;
 
 --
--- Name: Gender; Type: TYPE; Schema: public; Owner: postgres
+-- Name: gender; Type: TYPE; Schema: public; Owner: postgres
 --
 
-CREATE TYPE public."Gender" AS ENUM (
+CREATE TYPE public.gender AS ENUM (
     'MALE',
     'FEMALE',
     'OTHER'
 );
 
 
-ALTER TYPE public."Gender" OWNER TO postgres;
+ALTER TYPE public.gender OWNER TO postgres;
 
 --
--- Name: MaritalStatus; Type: TYPE; Schema: public; Owner: postgres
+-- Name: marital_status; Type: TYPE; Schema: public; Owner: postgres
 --
 
-CREATE TYPE public."MaritalStatus" AS ENUM (
+CREATE TYPE public.marital_status AS ENUM (
     'SINGLE',
     'MARRIED',
     'DIVORCED',
@@ -69,39 +69,39 @@ CREATE TYPE public."MaritalStatus" AS ENUM (
 );
 
 
-ALTER TYPE public."MaritalStatus" OWNER TO postgres;
+ALTER TYPE public.marital_status OWNER TO postgres;
 
 --
--- Name: PaymentMethod; Type: TYPE; Schema: public; Owner: postgres
+-- Name: payment_method; Type: TYPE; Schema: public; Owner: postgres
 --
 
-CREATE TYPE public."PaymentMethod" AS ENUM (
+CREATE TYPE public.payment_method AS ENUM (
     'CASH',
     'MOBILE_MONEY',
     'BANK_TRANSFER'
 );
 
 
-ALTER TYPE public."PaymentMethod" OWNER TO postgres;
+ALTER TYPE public.payment_method OWNER TO postgres;
 
 --
--- Name: PaymentStatus; Type: TYPE; Schema: public; Owner: postgres
+-- Name: payment_status; Type: TYPE; Schema: public; Owner: postgres
 --
 
-CREATE TYPE public."PaymentStatus" AS ENUM (
+CREATE TYPE public.payment_status AS ENUM (
     'PENDING',
     'APPROVED',
     'REJECTED'
 );
 
 
-ALTER TYPE public."PaymentStatus" OWNER TO postgres;
+ALTER TYPE public.payment_status OWNER TO postgres;
 
 --
--- Name: Religion; Type: TYPE; Schema: public; Owner: postgres
+-- Name: religion; Type: TYPE; Schema: public; Owner: postgres
 --
 
-CREATE TYPE public."Religion" AS ENUM (
+CREATE TYPE public.religion AS ENUM (
     'CHRISTIAN',
     'MUSLIM',
     'HINDU',
@@ -111,7 +111,7 @@ CREATE TYPE public."Religion" AS ENUM (
 );
 
 
-ALTER TYPE public."Religion" OWNER TO postgres;
+ALTER TYPE public.religion OWNER TO postgres;
 
 SET default_tablespace = '';
 
@@ -123,22 +123,22 @@ SET default_table_access_method = heap;
 
 CREATE TABLE public.address (
     id integer NOT NULL,
-    "houseNumber" text NOT NULL,
+    house_number text NOT NULL,
     district text NOT NULL,
-    "cityId" integer NOT NULL,
-    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    "deletedAt" timestamp(3) without time zone,
-    "searchVector" tsvector GENERATED ALWAYS AS (to_tsvector('english'::regconfig, (("houseNumber" || ' '::text) || district))) STORED
+    city_id integer NOT NULL,
+    created_at timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    deleted_at timestamp(3) without time zone,
+    search_vector tsvector GENERATED ALWAYS AS (to_tsvector('english'::regconfig, ((house_number || ' '::text) || district))) STORED
 );
 
 
 ALTER TABLE public.address OWNER TO postgres;
 
 --
--- Name: address_cityId_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: address_city_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE public."address_cityId_seq"
+CREATE SEQUENCE public.address_city_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -147,13 +147,13 @@ CREATE SEQUENCE public."address_cityId_seq"
     CACHE 1;
 
 
-ALTER SEQUENCE public."address_cityId_seq" OWNER TO postgres;
+ALTER SEQUENCE public.address_city_id_seq OWNER TO postgres;
 
 --
--- Name: address_cityId_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: address_city_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
-ALTER SEQUENCE public."address_cityId_seq" OWNED BY public.address."cityId";
+ALTER SEQUENCE public.address_city_id_seq OWNED BY public.address.city_id;
 
 
 --
@@ -184,13 +184,13 @@ ALTER SEQUENCE public.address_id_seq OWNED BY public.address.id;
 
 CREATE TABLE public.biometric (
     id integer NOT NULL,
-    "residentId" integer NOT NULL,
+    resident_id integer NOT NULL,
     fingerprint bytea,
-    "bloodType" text NOT NULL,
+    blood_type text NOT NULL,
     face text NOT NULL,
-    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    "deletedAt" timestamp(3) without time zone,
-    "searchVector" tsvector GENERATED ALWAYS AS (to_tsvector('english'::regconfig, "bloodType")) STORED
+    created_at timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    deleted_at timestamp(3) without time zone,
+    search_vector tsvector GENERATED ALWAYS AS (to_tsvector('english'::regconfig, blood_type)) STORED
 );
 
 
@@ -219,10 +219,10 @@ ALTER SEQUENCE public.biometric_id_seq OWNED BY public.biometric.id;
 
 
 --
--- Name: biometric_residentId_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: biometric_resident_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE public."biometric_residentId_seq"
+CREATE SEQUENCE public.biometric_resident_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -231,13 +231,13 @@ CREATE SEQUENCE public."biometric_residentId_seq"
     CACHE 1;
 
 
-ALTER SEQUENCE public."biometric_residentId_seq" OWNER TO postgres;
+ALTER SEQUENCE public.biometric_resident_id_seq OWNER TO postgres;
 
 --
--- Name: biometric_residentId_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: biometric_resident_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
-ALTER SEQUENCE public."biometric_residentId_seq" OWNED BY public.biometric."residentId";
+ALTER SEQUENCE public.biometric_resident_id_seq OWNED BY public.biometric.resident_id;
 
 
 --
@@ -247,10 +247,10 @@ ALTER SEQUENCE public."biometric_residentId_seq" OWNED BY public.biometric."resi
 CREATE TABLE public.city (
     id integer NOT NULL,
     name text NOT NULL,
-    "regionId" integer NOT NULL,
-    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    "deletedAt" timestamp(3) without time zone,
-    "searchVector" tsvector GENERATED ALWAYS AS (to_tsvector('english'::regconfig, name)) STORED
+    region_id integer NOT NULL,
+    created_at timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    deleted_at timestamp(3) without time zone,
+    search_vector tsvector GENERATED ALWAYS AS (to_tsvector('english'::regconfig, name)) STORED
 );
 
 
@@ -279,10 +279,10 @@ ALTER SEQUENCE public.city_id_seq OWNED BY public.city.id;
 
 
 --
--- Name: city_regionId_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: city_region_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE public."city_regionId_seq"
+CREATE SEQUENCE public.city_region_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -291,13 +291,13 @@ CREATE SEQUENCE public."city_regionId_seq"
     CACHE 1;
 
 
-ALTER SEQUENCE public."city_regionId_seq" OWNER TO postgres;
+ALTER SEQUENCE public.city_region_id_seq OWNER TO postgres;
 
 --
--- Name: city_regionId_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: city_region_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
-ALTER SEQUENCE public."city_regionId_seq" OWNED BY public.city."regionId";
+ALTER SEQUENCE public.city_region_id_seq OWNED BY public.city.region_id;
 
 
 --
@@ -306,14 +306,14 @@ ALTER SEQUENCE public."city_regionId_seq" OWNED BY public.city."regionId";
 
 CREATE TABLE public.document (
     id integer NOT NULL,
-    type public."DocumentType" NOT NULL,
-    "residentId" integer NOT NULL,
+    type public.document_type NOT NULL,
+    resident_id integer NOT NULL,
     url text NOT NULL,
-    status public."DocumentStatus" NOT NULL,
+    status public.document_status NOT NULL,
     number text NOT NULL,
-    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    "deletedAt" timestamp(3) without time zone,
-    "searchVector" tsvector GENERATED ALWAYS AS (to_tsvector('english'::regconfig, number)) STORED
+    created_at timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    deleted_at timestamp(3) without time zone,
+    search_vector tsvector GENERATED ALWAYS AS (to_tsvector('english'::regconfig, number)) STORED
 );
 
 
@@ -342,10 +342,10 @@ ALTER SEQUENCE public.document_id_seq OWNED BY public.document.id;
 
 
 --
--- Name: document_residentId_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: document_resident_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE public."document_residentId_seq"
+CREATE SEQUENCE public.document_resident_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -354,13 +354,13 @@ CREATE SEQUENCE public."document_residentId_seq"
     CACHE 1;
 
 
-ALTER SEQUENCE public."document_residentId_seq" OWNER TO postgres;
+ALTER SEQUENCE public.document_resident_id_seq OWNER TO postgres;
 
 --
--- Name: document_residentId_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: document_resident_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
-ALTER SEQUENCE public."document_residentId_seq" OWNED BY public.document."residentId";
+ALTER SEQUENCE public.document_resident_id_seq OWNED BY public.document.resident_id;
 
 
 --
@@ -369,13 +369,13 @@ ALTER SEQUENCE public."document_residentId_seq" OWNED BY public.document."reside
 
 CREATE TABLE public.emergency (
     id integer NOT NULL,
-    "residentId" integer NOT NULL,
+    resident_id integer NOT NULL,
     name text NOT NULL,
     relation text NOT NULL,
     phone character varying(20) NOT NULL,
-    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    "deletedAt" timestamp(3) without time zone,
-    "searchVector" tsvector GENERATED ALWAYS AS (to_tsvector('english'::regconfig, ((name || ' '::text) || relation))) STORED
+    created_at timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    deleted_at timestamp(3) without time zone,
+    search_vector tsvector GENERATED ALWAYS AS (to_tsvector('english'::regconfig, ((name || ' '::text) || relation))) STORED
 );
 
 
@@ -404,10 +404,10 @@ ALTER SEQUENCE public.emergency_id_seq OWNED BY public.emergency.id;
 
 
 --
--- Name: emergency_residentId_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: emergency_resident_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE public."emergency_residentId_seq"
+CREATE SEQUENCE public.emergency_resident_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -416,13 +416,13 @@ CREATE SEQUENCE public."emergency_residentId_seq"
     CACHE 1;
 
 
-ALTER SEQUENCE public."emergency_residentId_seq" OWNER TO postgres;
+ALTER SEQUENCE public.emergency_resident_id_seq OWNER TO postgres;
 
 --
--- Name: emergency_residentId_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: emergency_resident_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
-ALTER SEQUENCE public."emergency_residentId_seq" OWNED BY public.emergency."residentId";
+ALTER SEQUENCE public.emergency_resident_id_seq OWNED BY public.emergency.resident_id;
 
 
 --
@@ -431,14 +431,14 @@ ALTER SEQUENCE public."emergency_residentId_seq" OWNED BY public.emergency."resi
 
 CREATE TABLE public.employment (
     id integer NOT NULL,
-    "residentId" integer NOT NULL,
+    resident_id integer NOT NULL,
     status text NOT NULL,
     occupation text,
-    "employerName" text,
-    "workAddress" text,
-    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    "deletedAt" timestamp(3) without time zone,
-    "searchVector" tsvector GENERATED ALWAYS AS (to_tsvector('english'::regconfig, ((((((status || ' '::text) || COALESCE(occupation, ''::text)) || ' '::text) || COALESCE("employerName", ''::text)) || ' '::text) || COALESCE("workAddress", ''::text)))) STORED
+    employer_name text,
+    work_address text,
+    created_at timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    deleted_at timestamp(3) without time zone,
+    search_vector tsvector GENERATED ALWAYS AS (to_tsvector('english'::regconfig, ((((((status || ' '::text) || COALESCE(occupation, ''::text)) || ' '::text) || COALESCE(employer_name, ''::text)) || ' '::text) || COALESCE(work_address, ''::text)))) STORED
 );
 
 
@@ -467,10 +467,10 @@ ALTER SEQUENCE public.employment_id_seq OWNED BY public.employment.id;
 
 
 --
--- Name: employment_residentId_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: employment_resident_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE public."employment_residentId_seq"
+CREATE SEQUENCE public.employment_resident_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -479,13 +479,13 @@ CREATE SEQUENCE public."employment_residentId_seq"
     CACHE 1;
 
 
-ALTER SEQUENCE public."employment_residentId_seq" OWNER TO postgres;
+ALTER SEQUENCE public.employment_resident_id_seq OWNER TO postgres;
 
 --
--- Name: employment_residentId_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: employment_resident_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
-ALTER SEQUENCE public."employment_residentId_seq" OWNED BY public.employment."residentId";
+ALTER SEQUENCE public.employment_resident_id_seq OWNED BY public.employment.resident_id;
 
 
 --
@@ -494,14 +494,14 @@ ALTER SEQUENCE public."employment_residentId_seq" OWNED BY public.employment."re
 
 CREATE TABLE public.idcard (
     id integer NOT NULL,
-    "residentId" integer NOT NULL,
+    resident_id integer NOT NULL,
     number text NOT NULL,
-    "issueDate" timestamp(3) without time zone NOT NULL,
-    "expiryDate" timestamp(3) without time zone NOT NULL,
-    "issuePlace" text NOT NULL,
-    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    "deletedAt" timestamp(3) without time zone,
-    "searchVector" tsvector GENERATED ALWAYS AS (to_tsvector('english'::regconfig, ((number || ' '::text) || "issuePlace"))) STORED
+    issue_date timestamp(3) without time zone NOT NULL,
+    expiry_date timestamp(3) without time zone NOT NULL,
+    issue_place text NOT NULL,
+    created_at timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    deleted_at timestamp(3) without time zone,
+    search_vector tsvector GENERATED ALWAYS AS (to_tsvector('english'::regconfig, ((number || ' '::text) || issue_place))) STORED
 );
 
 
@@ -530,10 +530,10 @@ ALTER SEQUENCE public.idcard_id_seq OWNED BY public.idcard.id;
 
 
 --
--- Name: idcard_residentId_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: idcard_resident_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE public."idcard_residentId_seq"
+CREATE SEQUENCE public.idcard_resident_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -542,13 +542,13 @@ CREATE SEQUENCE public."idcard_residentId_seq"
     CACHE 1;
 
 
-ALTER SEQUENCE public."idcard_residentId_seq" OWNER TO postgres;
+ALTER SEQUENCE public.idcard_resident_id_seq OWNER TO postgres;
 
 --
--- Name: idcard_residentId_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: idcard_resident_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
-ALTER SEQUENCE public."idcard_residentId_seq" OWNED BY public.idcard."residentId";
+ALTER SEQUENCE public.idcard_resident_id_seq OWNED BY public.idcard.resident_id;
 
 
 --
@@ -557,15 +557,15 @@ ALTER SEQUENCE public."idcard_residentId_seq" OWNED BY public.idcard."residentId
 
 CREATE TABLE public.payment (
     id integer NOT NULL,
-    "residentId" integer NOT NULL,
+    resident_id integer NOT NULL,
     amount double precision NOT NULL,
     description text NOT NULL,
-    status public."PaymentStatus" NOT NULL,
+    status public.payment_status NOT NULL,
     reference text NOT NULL,
-    method public."PaymentMethod" NOT NULL,
-    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    "deletedAt" timestamp(3) without time zone,
-    "searchVector" tsvector GENERATED ALWAYS AS (to_tsvector('english'::regconfig, ((description || ' '::text) || reference))) STORED,
+    method public.payment_method NOT NULL,
+    created_at timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    deleted_at timestamp(3) without time zone,
+    search_vector tsvector GENERATED ALWAYS AS (to_tsvector('english'::regconfig, ((description || ' '::text) || reference))) STORED,
     CONSTRAINT payment_amount_check CHECK ((amount >= (0)::double precision))
 );
 
@@ -595,10 +595,10 @@ ALTER SEQUENCE public.payment_id_seq OWNED BY public.payment.id;
 
 
 --
--- Name: payment_residentId_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: payment_resident_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE public."payment_residentId_seq"
+CREATE SEQUENCE public.payment_resident_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -607,13 +607,13 @@ CREATE SEQUENCE public."payment_residentId_seq"
     CACHE 1;
 
 
-ALTER SEQUENCE public."payment_residentId_seq" OWNER TO postgres;
+ALTER SEQUENCE public.payment_resident_id_seq OWNER TO postgres;
 
 --
--- Name: payment_residentId_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: payment_resident_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
-ALTER SEQUENCE public."payment_residentId_seq" OWNED BY public.payment."residentId";
+ALTER SEQUENCE public.payment_resident_id_seq OWNED BY public.payment.resident_id;
 
 
 --
@@ -623,9 +623,9 @@ ALTER SEQUENCE public."payment_residentId_seq" OWNED BY public.payment."resident
 CREATE TABLE public.region (
     id integer NOT NULL,
     name text NOT NULL,
-    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    "deletedAt" timestamp(3) without time zone,
-    "searchVector" tsvector GENERATED ALWAYS AS (to_tsvector('english'::regconfig, name)) STORED
+    created_at timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    deleted_at timestamp(3) without time zone,
+    search_vector tsvector GENERATED ALWAYS AS (to_tsvector('english'::regconfig, name)) STORED
 );
 
 
@@ -660,32 +660,33 @@ ALTER SEQUENCE public.region_id_seq OWNED BY public.region.id;
 CREATE TABLE public.resident (
     id integer NOT NULL,
     email text NOT NULL,
-    "firstName" text NOT NULL,
-    "secondName" text NOT NULL,
-    "lastName" text NOT NULL,
-    "birthDate" timestamp(3) without time zone NOT NULL,
-    gender public."Gender" NOT NULL,
+    first_name text NOT NULL,
+    second_name text NOT NULL,
+    last_name text NOT NULL,
+    birth_date timestamp(3) without time zone NOT NULL,
+    gender public.gender NOT NULL,
     phone character varying(20) NOT NULL,
-    "maritalStatus" public."MaritalStatus" NOT NULL,
-    religion public."Religion" NOT NULL,
+    marital_status public.marital_status NOT NULL,
+    religion public.religion NOT NULL,
     ethnicity text,
-    "disabilityStatus" text,
-    "educationLevel" text,
-    "languagesSpoken" text NOT NULL,
-    "addressId" integer NOT NULL,
-    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    "deletedAt" timestamp(3) without time zone,
-    "searchVector" tsvector GENERATED ALWAYS AS (to_tsvector('english'::regconfig, (((("firstName" || ' '::text) || "secondName") || ' '::text) || "lastName"))) STORED
+    disability_status text,
+    education_level text,
+    languages_spoken text NOT NULL,
+    address_id integer NOT NULL,
+    created_at timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    deleted_at timestamp(3) without time zone,
+    search_vector tsvector GENERATED ALWAYS AS (to_tsvector('english'::regconfig, ((((first_name || ' '::text) || second_name) || ' '::text) || last_name))) STORED,
+    CONSTRAINT resident_email_check CHECK ((email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'::text))
 );
 
 
 ALTER TABLE public.resident OWNER TO postgres;
 
 --
--- Name: resident_addressId_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: resident_address_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE public."resident_addressId_seq"
+CREATE SEQUENCE public.resident_address_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -694,13 +695,13 @@ CREATE SEQUENCE public."resident_addressId_seq"
     CACHE 1;
 
 
-ALTER SEQUENCE public."resident_addressId_seq" OWNER TO postgres;
+ALTER SEQUENCE public.resident_address_id_seq OWNER TO postgres;
 
 --
--- Name: resident_addressId_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: resident_address_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
-ALTER SEQUENCE public."resident_addressId_seq" OWNED BY public.resident."addressId";
+ALTER SEQUENCE public.resident_address_id_seq OWNED BY public.resident.address_id;
 
 
 --
@@ -745,10 +746,10 @@ ALTER TABLE ONLY public.address ALTER COLUMN id SET DEFAULT nextval('public.addr
 
 
 --
--- Name: address cityId; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: address city_id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.address ALTER COLUMN "cityId" SET DEFAULT nextval('public."address_cityId_seq"'::regclass);
+ALTER TABLE ONLY public.address ALTER COLUMN city_id SET DEFAULT nextval('public.address_city_id_seq'::regclass);
 
 
 --
@@ -759,10 +760,10 @@ ALTER TABLE ONLY public.biometric ALTER COLUMN id SET DEFAULT nextval('public.bi
 
 
 --
--- Name: biometric residentId; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: biometric resident_id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.biometric ALTER COLUMN "residentId" SET DEFAULT nextval('public."biometric_residentId_seq"'::regclass);
+ALTER TABLE ONLY public.biometric ALTER COLUMN resident_id SET DEFAULT nextval('public.biometric_resident_id_seq'::regclass);
 
 
 --
@@ -773,10 +774,10 @@ ALTER TABLE ONLY public.city ALTER COLUMN id SET DEFAULT nextval('public.city_id
 
 
 --
--- Name: city regionId; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: city region_id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.city ALTER COLUMN "regionId" SET DEFAULT nextval('public."city_regionId_seq"'::regclass);
+ALTER TABLE ONLY public.city ALTER COLUMN region_id SET DEFAULT nextval('public.city_region_id_seq'::regclass);
 
 
 --
@@ -787,10 +788,10 @@ ALTER TABLE ONLY public.document ALTER COLUMN id SET DEFAULT nextval('public.doc
 
 
 --
--- Name: document residentId; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: document resident_id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.document ALTER COLUMN "residentId" SET DEFAULT nextval('public."document_residentId_seq"'::regclass);
+ALTER TABLE ONLY public.document ALTER COLUMN resident_id SET DEFAULT nextval('public.document_resident_id_seq'::regclass);
 
 
 --
@@ -801,10 +802,10 @@ ALTER TABLE ONLY public.emergency ALTER COLUMN id SET DEFAULT nextval('public.em
 
 
 --
--- Name: emergency residentId; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: emergency resident_id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.emergency ALTER COLUMN "residentId" SET DEFAULT nextval('public."emergency_residentId_seq"'::regclass);
+ALTER TABLE ONLY public.emergency ALTER COLUMN resident_id SET DEFAULT nextval('public.emergency_resident_id_seq'::regclass);
 
 
 --
@@ -815,10 +816,10 @@ ALTER TABLE ONLY public.employment ALTER COLUMN id SET DEFAULT nextval('public.e
 
 
 --
--- Name: employment residentId; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: employment resident_id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.employment ALTER COLUMN "residentId" SET DEFAULT nextval('public."employment_residentId_seq"'::regclass);
+ALTER TABLE ONLY public.employment ALTER COLUMN resident_id SET DEFAULT nextval('public.employment_resident_id_seq'::regclass);
 
 
 --
@@ -829,10 +830,10 @@ ALTER TABLE ONLY public.idcard ALTER COLUMN id SET DEFAULT nextval('public.idcar
 
 
 --
--- Name: idcard residentId; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: idcard resident_id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.idcard ALTER COLUMN "residentId" SET DEFAULT nextval('public."idcard_residentId_seq"'::regclass);
+ALTER TABLE ONLY public.idcard ALTER COLUMN resident_id SET DEFAULT nextval('public.idcard_resident_id_seq'::regclass);
 
 
 --
@@ -843,10 +844,10 @@ ALTER TABLE ONLY public.payment ALTER COLUMN id SET DEFAULT nextval('public.paym
 
 
 --
--- Name: payment residentId; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: payment resident_id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.payment ALTER COLUMN "residentId" SET DEFAULT nextval('public."payment_residentId_seq"'::regclass);
+ALTER TABLE ONLY public.payment ALTER COLUMN resident_id SET DEFAULT nextval('public.payment_resident_id_seq'::regclass);
 
 
 --
@@ -864,18 +865,18 @@ ALTER TABLE ONLY public.resident ALTER COLUMN id SET DEFAULT nextval('public.res
 
 
 --
--- Name: resident addressId; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: resident address_id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.resident ALTER COLUMN "addressId" SET DEFAULT nextval('public."resident_addressId_seq"'::regclass);
+ALTER TABLE ONLY public.resident ALTER COLUMN address_id SET DEFAULT nextval('public.resident_address_id_seq'::regclass);
 
 
 --
--- Name: address address_houseNumber_district_cityId_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: address address_house_number_district_city_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.address
-    ADD CONSTRAINT "address_houseNumber_district_cityId_key" UNIQUE ("houseNumber", district, "cityId");
+    ADD CONSTRAINT address_house_number_district_city_id_key UNIQUE (house_number, district, city_id);
 
 
 --
@@ -895,19 +896,19 @@ ALTER TABLE ONLY public.biometric
 
 
 --
--- Name: biometric biometric_residentId_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: biometric biometric_resident_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.biometric
-    ADD CONSTRAINT "biometric_residentId_key" UNIQUE ("residentId");
+    ADD CONSTRAINT biometric_resident_id_key UNIQUE (resident_id);
 
 
 --
--- Name: city city_name_regionId_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: city city_name_region_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.city
-    ADD CONSTRAINT "city_name_regionId_key" UNIQUE (name, "regionId");
+    ADD CONSTRAINT city_name_region_id_key UNIQUE (name, region_id);
 
 
 --
@@ -927,11 +928,11 @@ ALTER TABLE ONLY public.document
 
 
 --
--- Name: document document_residentId_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: document document_resident_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.document
-    ADD CONSTRAINT "document_residentId_key" UNIQUE ("residentId");
+    ADD CONSTRAINT document_resident_id_key UNIQUE (resident_id);
 
 
 --
@@ -943,11 +944,11 @@ ALTER TABLE ONLY public.emergency
 
 
 --
--- Name: emergency emergency_residentId_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: emergency emergency_resident_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.emergency
-    ADD CONSTRAINT "emergency_residentId_key" UNIQUE ("residentId");
+    ADD CONSTRAINT emergency_resident_id_key UNIQUE (resident_id);
 
 
 --
@@ -959,11 +960,11 @@ ALTER TABLE ONLY public.employment
 
 
 --
--- Name: employment employment_residentId_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: employment employment_resident_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.employment
-    ADD CONSTRAINT "employment_residentId_key" UNIQUE ("residentId");
+    ADD CONSTRAINT employment_resident_id_key UNIQUE (resident_id);
 
 
 --
@@ -983,11 +984,11 @@ ALTER TABLE ONLY public.idcard
 
 
 --
--- Name: idcard idcard_residentId_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: idcard idcard_resident_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.idcard
-    ADD CONSTRAINT "idcard_residentId_key" UNIQUE ("residentId");
+    ADD CONSTRAINT idcard_resident_id_key UNIQUE (resident_id);
 
 
 --
@@ -999,11 +1000,11 @@ ALTER TABLE ONLY public.payment
 
 
 --
--- Name: payment payment_residentId_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: payment payment_resident_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.payment
-    ADD CONSTRAINT "payment_residentId_key" UNIQUE ("residentId");
+    ADD CONSTRAINT payment_resident_id_key UNIQUE (resident_id);
 
 
 --
@@ -1050,142 +1051,142 @@ ALTER TABLE ONLY public.schema_migrations
 -- Name: address_search_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX address_search_idx ON public.address USING gin ("searchVector");
+CREATE INDEX address_search_idx ON public.address USING gin (search_vector);
 
 
 --
 -- Name: biometric_search_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX biometric_search_idx ON public.biometric USING gin ("searchVector");
+CREATE INDEX biometric_search_idx ON public.biometric USING gin (search_vector);
 
 
 --
 -- Name: city_search_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX city_search_idx ON public.city USING gin ("searchVector");
+CREATE INDEX city_search_idx ON public.city USING gin (search_vector);
 
 
 --
 -- Name: document_search_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX document_search_idx ON public.document USING gin ("searchVector");
+CREATE INDEX document_search_idx ON public.document USING gin (search_vector);
 
 
 --
 -- Name: emergency_search_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX emergency_search_idx ON public.emergency USING gin ("searchVector");
+CREATE INDEX emergency_search_idx ON public.emergency USING gin (search_vector);
 
 
 --
 -- Name: employment_search_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX employment_search_idx ON public.employment USING gin ("searchVector");
+CREATE INDEX employment_search_idx ON public.employment USING gin (search_vector);
 
 
 --
 -- Name: idcard_search_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX idcard_search_idx ON public.idcard USING gin ("searchVector");
+CREATE INDEX idcard_search_idx ON public.idcard USING gin (search_vector);
 
 
 --
 -- Name: payment_search_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX payment_search_idx ON public.payment USING gin ("searchVector");
+CREATE INDEX payment_search_idx ON public.payment USING gin (search_vector);
 
 
 --
 -- Name: region_search_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX region_search_idx ON public.region USING gin ("searchVector");
+CREATE INDEX region_search_idx ON public.region USING gin (search_vector);
 
 
 --
 -- Name: resident_search_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX resident_search_idx ON public.resident USING gin ("searchVector");
+CREATE INDEX resident_search_idx ON public.resident USING gin (search_vector);
 
 
 --
--- Name: address address_cityId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: address address_city_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.address
-    ADD CONSTRAINT "address_cityId_fkey" FOREIGN KEY ("cityId") REFERENCES public.city(id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT address_city_id_fkey FOREIGN KEY (city_id) REFERENCES public.city(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
--- Name: biometric biometric_residentId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: biometric biometric_resident_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.biometric
-    ADD CONSTRAINT "biometric_residentId_fkey" FOREIGN KEY ("residentId") REFERENCES public.resident(id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT biometric_resident_id_fkey FOREIGN KEY (resident_id) REFERENCES public.resident(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
--- Name: city city_regionId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: city city_region_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.city
-    ADD CONSTRAINT "city_regionId_fkey" FOREIGN KEY ("regionId") REFERENCES public.region(id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT city_region_id_fkey FOREIGN KEY (region_id) REFERENCES public.region(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
--- Name: document document_residentId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: document document_resident_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.document
-    ADD CONSTRAINT "document_residentId_fkey" FOREIGN KEY ("residentId") REFERENCES public.resident(id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT document_resident_id_fkey FOREIGN KEY (resident_id) REFERENCES public.resident(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
--- Name: emergency emergency_residentId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: emergency emergency_resident_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.emergency
-    ADD CONSTRAINT "emergency_residentId_fkey" FOREIGN KEY ("residentId") REFERENCES public.resident(id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT emergency_resident_id_fkey FOREIGN KEY (resident_id) REFERENCES public.resident(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
--- Name: employment employment_residentId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: employment employment_resident_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.employment
-    ADD CONSTRAINT "employment_residentId_fkey" FOREIGN KEY ("residentId") REFERENCES public.resident(id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT employment_resident_id_fkey FOREIGN KEY (resident_id) REFERENCES public.resident(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
--- Name: idcard idcard_residentId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: idcard idcard_resident_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.idcard
-    ADD CONSTRAINT "idcard_residentId_fkey" FOREIGN KEY ("residentId") REFERENCES public.resident(id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT idcard_resident_id_fkey FOREIGN KEY (resident_id) REFERENCES public.resident(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
--- Name: payment payment_residentId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: payment payment_resident_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.payment
-    ADD CONSTRAINT "payment_residentId_fkey" FOREIGN KEY ("residentId") REFERENCES public.resident(id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT payment_resident_id_fkey FOREIGN KEY (resident_id) REFERENCES public.resident(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
--- Name: resident resident_addressId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: resident resident_address_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.resident
-    ADD CONSTRAINT "resident_addressId_fkey" FOREIGN KEY ("addressId") REFERENCES public.address(id) ON UPDATE CASCADE ON DELETE SET NULL;
+    ADD CONSTRAINT resident_address_id_fkey FOREIGN KEY (address_id) REFERENCES public.address(id) ON UPDATE CASCADE ON DELETE SET NULL;
 
 
 --

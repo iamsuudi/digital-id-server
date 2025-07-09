@@ -4,8 +4,8 @@ import (
 	"context"
 	"log"
 
-	"github.com/iamsuudi/digital-id-server/db"
-	"github.com/iamsuudi/digital-id-server/internal/config"
+	db "github.com/iamsuudi/digital-id-server/database"
+	"github.com/iamsuudi/digital-id-server/shared/config"
 	"github.com/iamsuudi/digital-id-server/internal/seeder"
 	"github.com/joho/godotenv"
 )

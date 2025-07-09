@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/iamsuudi/digital-id-server/db"
+	db "github.com/iamsuudi/digital-id-server/database"
 	"github.com/joho/godotenv"
 )
 
