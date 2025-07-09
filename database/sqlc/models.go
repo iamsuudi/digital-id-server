@@ -407,6 +407,14 @@ type Payment struct {
 	SearchVector interface{}
 }
 
+type RefreshToken struct {
+	ID        int32
+	UserID    pgtype.Int4
+	Token     string
+	ExpiresAt pgtype.Timestamp
+	CreatedAt pgtype.Timestamp
+}
+
 type Region struct {
 	ID           int32
 	Name         string
@@ -439,4 +447,17 @@ type Resident struct {
 type SchemaMigration struct {
 	Version int64
 	Dirty   bool
+}
+
+type User struct {
+	ID         int32
+	FirstName  string
+	SecondName string
+	LastName   string
+	Email      string
+	Phone      string
+	Password   string
+	Role       string
+	CreatedAt  pgtype.Timestamp
+	DeletedAt  pgtype.Timestamp
 }

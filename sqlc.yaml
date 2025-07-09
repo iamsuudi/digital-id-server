@@ -4,6 +4,7 @@ sql:
       queries:
           - "database/queries"
           - "database/queries/resident"
+          - "database/queries/auth"
       schema: "database/schema.sql"
       gen:
           go:
