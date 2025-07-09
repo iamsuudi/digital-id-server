@@ -8,4 +8,5 @@ func RegisterRoutes(rg *gin.RouterGroup, h *Handler) {
 	r := rg.Group("/residents")
 
 	r.POST("/", h.RegisterResident)
+	r.GET("/:id", h.GetResident)
 }
