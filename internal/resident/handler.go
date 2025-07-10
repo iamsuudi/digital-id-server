@@ -4,10 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/iamsuudi/digital-id-server/database/sqlc"
+	"github.com/google/uuid"
+	"github.com/iamsuudi/digital-id-server/internal/repository"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -55,13 +55,13 @@ func (h *Handler) RegisterResident(c *gin.Context) {
 
 func (h *Handler) GetResident(c *gin.Context) {
 	idParam := c.Param("id")
-	id, err := strconv.Atoi(idParam)
+	id, err := uuid.Parse(idParam)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid resident ID"})
 		return
 	}
 
-	resident, err := h.service.GetResident(c.Request.Context(), int32(id))
+	resident, err := h.service.GetResident(c.Request.Context(), id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Resident not found"})
@@ -81,7 +81,7 @@ func (h *Handler) GetAll(c *gin.Context) {
 		return
 	}
 	if residents == nil {
-		residents = []sqlc.GetAllResidentsRow{}
+		residents = []repository.GetAllResidentsRow{}
 	}
 	c.JSON(http.StatusOK, residents)
 }

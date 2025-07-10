@@ -51,3 +51,6 @@ clear_db_data:
 
 seed_db:
 	go run cmd/seed/main.go
+
+run_server:
+	go run cmd/server/main.go

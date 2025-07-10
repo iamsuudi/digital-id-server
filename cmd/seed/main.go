@@ -15,8 +15,8 @@ import (
 func main() {
 	_ = godotenv.Load(".env")
 
-	cfg := config.Load()
-	dbConn := database.Connect(cfg.DB)
+	config.Load()
+	dbConn := database.Connect()
 	defer dbConn.Close()
 
 	ctx := context.Background()
@@ -86,13 +86,13 @@ func main() {
 		LastName:   "User",
 		Email:      "admin@example.com",
 		Phone:      "+1234567890",
-		Password:   string(hashedPassword),
+		PasswordHash:   string(hashedPassword),
 		Role:       "SUPERADMIN",
 	})
 	if err != nil {
 		log.Fatalf("Failed to seed user: %v", err)
 	}
 
-	log.Printf("✅ Database seeded successfully. Sample IDs:\n Region=%s, \nCity=%s, \nAddress=%s, \nResident=%s, \nUser=%s",
+	log.Printf("✅ Database seeded successfully. \nSample IDs: \nRegion=%s, \nCity=%s, \nAddress=%s, \nResident=%s, \nUser=%s",
 		regionID, cityID, addressID, residentID, userID)
 }

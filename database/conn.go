@@ -6,42 +6,12 @@ import (
 	"log"
 	"time"
 
+	"github.com/iamsuudi/digital-id-server/shared/config"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type DBConfig struct {
-	User     string
-	Password string
-	Host     string
-	Port     string
-	Name     string
-}
-
-// validateEnv checks that required env vars are present
-func validateEnv(cfg DBConfig) {
-	missing := []string{}
-	if cfg.User == "" {
-		missing = append(missing, "DB_USER")
-	}
-	/* if cfg.Password == "" {
-		missing = append(missing, "DB_PASSWORD")
-	} */
-	if cfg.Host == "" {
-		missing = append(missing, "DB_HOST")
-	}
-	if cfg.Port == "" {
-		missing = append(missing, "DB_PORT")
-	}
-	if cfg.Name == "" {
-		missing = append(missing, "DB_NAME")
-	}
-	if len(missing) > 0 {
-		log.Fatalf("\n❌ Missing required DB environment variables: %v", missing)
-	}
-}
-
-func Connect(cfg DBConfig) *pgxpool.Pool {
-	validateEnv(cfg)
+func Connect() *pgxpool.Pool {
+	cfg := config.GetDatabaseConfig()
 	
 	dsn := fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s?sslmode=disable",

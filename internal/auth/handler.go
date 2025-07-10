@@ -7,8 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Handler dependencies
-
 type Handler struct {
 	Service *Service
 }
@@ -36,7 +34,7 @@ func (h *Handler) Login(c *gin.Context) {
 	}
 
 	// Generate access token (JWT)
-	accessToken, err := GenerateJWT(int64(user.ID), user.Role)
+	accessToken, err := GenerateJWT(user.ID, user.Role)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate access token"})
 		return
@@ -46,19 +44,18 @@ func (h *Handler) Login(c *gin.Context) {
 	refreshToken := GenerateRandomToken(64)
 	refreshExpires := time.Now().Add(7 * 24 * time.Hour) // 7 days
 
-	err = h.Service.StoreRefreshToken(c.Request.Context(), int64(user.ID), refreshToken, refreshExpires)
+	err = h.Service.StoreRefreshToken(c.Request.Context(), user.ID, refreshToken, refreshExpires)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to store refresh token"})
 		return
 	}
 
 	// Set both cookies
-	c.SetCookie("jwt", accessToken, 3600*24, "", "", true, true)             // 1 day
+	c.SetCookie("jwt", accessToken, 3600*24, "", "", true, true)              // 1 day
 	c.SetCookie("refresh_token", refreshToken, 3600*24*7, "", "", true, true) // 7 days
 
 	c.JSON(http.StatusOK, gin.H{"message": "Logged in successfully"})
 }
-
 
 // Logout handler
 func (h *Handler) Logout(c *gin.Context) {
