@@ -31,4 +31,23 @@ reset_db:
 clear_migrations:
 	rm database/migrations/*.sql
 
+view_queries:
+	@echo "Current queries:"
+	@find database/queries -type f -name "*.sql" -exec sh -c 'echo "\n--- {} ---"; cat {}' \;
 
+list_query_names:
+	@echo "Query names:"
+	@find database/queries -type f -name "*.sql" -exec grep -E '^-- name:' {} \; | sed 's/-- name: //'
+
+# Validate migration and query files
+validate:
+	@echo "Validating migration files..."
+	@find database/migrations -type f -name "*.sql" -exec sqlc vet -f sqlc.yaml {} \;
+	@echo "Validating query files..."
+	@find database/queries -type f -name "*.sql" -exec sqlc vet -f sqlc.yaml {} \;
+
+clear_db_data:
+	psql -U $(DB_USER) -h $(DB_HOST) -p $(DB_PORT) -d $(DB_NAME) -f database/scripts/clear_data.sql
+
+seed_db:
+	go run cmd/seed/main.go
