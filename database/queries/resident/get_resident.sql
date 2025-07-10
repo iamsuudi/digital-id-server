@@ -27,3 +27,10 @@ LEFT JOIN document d ON r.id = d.resident_id
 LEFT JOIN employment e ON r.id = e.resident_id
 LEFT JOIN emergency em ON r.id = em.resident_id
 WHERE r.id = $1 AND r.deleted_at IS NULL;
+
+-- name: SearchResidentsByName :many
+SELECT id, first_name, second_name, last_name, search_vector
+FROM resident
+WHERE search_vector @@ to_tsquery('english', $1)
+AND deleted_at IS NULL
+ORDER BY ts_rank(search_vector, to_tsquery('english', $1)) DESC;
