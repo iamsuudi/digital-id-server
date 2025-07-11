@@ -29,7 +29,7 @@
 .env
 .env.mk
 .env.local
-.air.toml
+# .air.toml
 
 # OS files
 .DS_Store
