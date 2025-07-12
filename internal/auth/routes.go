@@ -10,6 +10,7 @@ func RegisterRoutes(rg *gin.RouterGroup, dbConn *pgxpool.Pool, dbQueries *reposi
 	service := NewService(dbConn, dbQueries)
 	handler := NewHandler(service)
 
+	rg.GET("/me", AuthMiddleware(), handler.Me)
 	authGroup := rg.Group("/auth")
 	{
 		authGroup.POST("/login", handler.Login)
