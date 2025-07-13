@@ -2,14 +2,15 @@ package auth
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/iamsuudi/digital-id-server/database/sqlc"
+	"github.com/iamsuudi/digital-id-server/internal/repository"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func RegisterRoutes(rg *gin.RouterGroup, dbConn *pgxpool.Pool, dbQueries *sqlc.Queries) {
+func RegisterRoutes(rg *gin.RouterGroup, dbConn *pgxpool.Pool, dbQueries *repository.Queries) {
 	service := NewService(dbConn, dbQueries)
 	handler := NewHandler(service)
 
+	rg.GET("/me", AuthMiddleware(), handler.Me)
 	authGroup := rg.Group("/auth")
 	{
 		authGroup.POST("/login", handler.Login)

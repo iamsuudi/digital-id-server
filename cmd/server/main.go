@@ -3,15 +3,15 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/iamsuudi/digital-id-server/database"
-	"github.com/iamsuudi/digital-id-server/database/sqlc"
 	"github.com/iamsuudi/digital-id-server/internal/auth"
+	"github.com/iamsuudi/digital-id-server/internal/repository"
 	"github.com/iamsuudi/digital-id-server/internal/resident"
 	"github.com/iamsuudi/digital-id-server/shared/config"
 )
 
 func main() {
-	cfg := config.Load()
-	dbConn := database.Connect(cfg.DB)
+	config.Load()
+	dbConn := database.Connect()
 	defer dbConn.Close()
 
 	r := gin.Default()
@@ -22,7 +22,7 @@ func main() {
 	// Version 1 group
 	v1 := api.Group("/v1")
 
-	dbQueries := sqlc.New(dbConn)
+	dbQueries := repository.New(dbConn)
 
 	auth.RegisterRoutes(v1, dbConn, dbQueries)
 	resident.RegisterRoutes(v1, dbConn, dbQueries)

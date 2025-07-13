@@ -5,9 +5,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
-
-// Handler dependencies
 
 type Handler struct {
 	Service *Service
@@ -35,39 +34,40 @@ func (h *Handler) Login(c *gin.Context) {
 		return
 	}
 
-	// Generate access token (JWT)
-	accessToken, err := GenerateJWT(int64(user.ID), user.Role)
+	accessToken, err := GenerateJWT(user.ID, user.Role)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate access token"})
 		return
 	}
 
-	// Generate refresh token
 	refreshToken := GenerateRandomToken(64)
-	refreshExpires := time.Now().Add(7 * 24 * time.Hour) // 7 days
+	refreshExpires := time.Now().Add(7 * 24 * time.Hour)
 
-	err = h.Service.StoreRefreshToken(c.Request.Context(), int64(user.ID), refreshToken, refreshExpires)
-	if err != nil {
+	if err := h.Service.StoreRefreshToken(c.Request.Context(), user.ID, refreshToken, refreshExpires); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to store refresh token"})
 		return
 	}
 
-	// Set both cookies
-	c.SetCookie("jwt", accessToken, 3600*24, "", "", true, true)             // 1 day
-	c.SetCookie("refresh_token", refreshToken, 3600*24*7, "", "", true, true) // 7 days
+	// Set access token (JWT)
+	c.SetCookie("jwt", accessToken, 86400, "/", "", true, true) // 1 day
+	// Set refresh token securely
+	c.SetCookie("refresh_token", refreshToken, 604800, "/", "", true, true) // 7 days
 
 	c.JSON(http.StatusOK, gin.H{"message": "Logged in successfully"})
 }
 
-
-// Logout handler
 func (h *Handler) Logout(c *gin.Context) {
-	c.SetCookie("jwt", "", -1, "", "", true, true)
+	rt, _ := c.Cookie("refresh_token")
+	if rt != "" {
+		_ = h.Service.DeleteRefreshToken(c.Request.Context(), rt) // Optional cleanup
+	}
+
+	c.SetCookie("jwt", "", -1, "/", "", true, true)
+	c.SetCookie("refresh_token", "", -1, "/", "", true, true)
+
 	c.JSON(http.StatusOK, gin.H{"message": "Logged out"})
 }
 
-// RegisterUser allows anyone to register with a role for now.
-// Later, only superadmins/managers will be allowed to assign certain roles.
 func (h *Handler) RegisterUser(c *gin.Context) {
 	var input RegisterInput
 	if err := c.ShouldBind(&input); err != nil {
@@ -75,7 +75,6 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 		return
 	}
 
-	// Call the service to register
 	err := h.Service.RegisterUser(c.Request.Context(), input)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -85,7 +84,6 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "User registered successfully"})
 }
 
-// handler.go
 func (h *Handler) RefreshToken(c *gin.Context) {
 	rt, err := c.Cookie("refresh_token")
 	if err != nil || rt == "" {
@@ -95,10 +93,35 @@ func (h *Handler) RefreshToken(c *gin.Context) {
 
 	newToken, err := h.Service.RefreshAccessToken(c.Request.Context(), rt)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid refresh token"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "Invalid or expired refresh token"})
 		return
 	}
 
-	c.SetCookie("jwt", newToken, 3600*24, "", "", true, true)
+	c.SetCookie("jwt", newToken, 86400, "/", "", true, true) // 1 day
+
 	c.JSON(http.StatusOK, gin.H{"message": "Token refreshed"})
+}
+
+func (h *Handler) Me(c *gin.Context) {
+	userIDRaw, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	userID, ok := userIDRaw.(uuid.UUID)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID in context"})
+		return
+	}
+
+	user, err := h.Service.GetUserByID(c.Request.Context(), userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "User not found"})
+		return
+	}
+
+	// Exclude password hash
+	user.PasswordHash = ""
+	c.JSON(http.StatusOK, user)
 }

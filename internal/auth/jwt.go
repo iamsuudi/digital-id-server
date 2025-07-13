@@ -4,29 +4,20 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"errors"
-	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+	"github.com/iamsuudi/digital-id-server/shared/config"
 )
 
-var jwtKey []byte
-
-func init() {
-	secret := os.Getenv("JWT_SECRET")
-	if secret == "" {
-		panic("JWT_SECRET environment variable is not set")
-	}
-	jwtKey = []byte(secret)
-}
-
 type Claims struct {
-	UserID int64  `json:"user_id"`
-	Role   string `json:"user_role"`
+	UserID uuid.UUID `json:"user_id"`
+	Role   string    `json:"user_role"`
 	jwt.RegisteredClaims
 }
 
-func GenerateJWT(userID int64, role string) (string, error) {
+func GenerateJWT(userID uuid.UUID, role string) (string, error) {
 	claims := Claims{
 		UserID: userID,
 		Role:   role,
@@ -36,13 +27,16 @@ func GenerateJWT(userID int64, role string) (string, error) {
 		},
 	}
 
+	jwtSecret := config.GetJwtSecret()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtKey)
+	return token.SignedString([]byte(jwtSecret))
 }
 
 func ParseJWT(tokenStr string) (*Claims, error) {
+	jwtSecret := config.GetJwtSecret()
+
 	token, err := jwt.ParseWithClaims(tokenStr, &Claims{}, func(token *jwt.Token) (any, error) {
-		return jwtKey, nil
+		return []byte(jwtSecret), nil
 	})
 
 	if err != nil {

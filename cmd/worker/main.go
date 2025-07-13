@@ -12,8 +12,8 @@ import (
 func main() {
 	_ = godotenv.Load(".env")
 
-	cfg := config.Load()
-	conn := db.Connect(cfg.DB)
+	config.Load()
+	conn := db.Connect()
 	defer conn.Close()
 
 	log.Println("🛠 Starting worker...")

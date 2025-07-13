@@ -447,14 +447,14 @@ type Resident struct {
 }
 
 type Users struct {
-	ID         uuid.UUID  `db:"id" json:"id"`
-	FirstName  string     `db:"first_name" json:"first_name"`
-	SecondName string     `db:"second_name" json:"second_name"`
-	LastName   string     `db:"last_name" json:"last_name"`
-	Email      string     `db:"email" json:"email"`
-	Phone      string     `db:"phone" json:"phone"`
-	Password   string     `db:"password" json:"password"`
-	Role       string     `db:"role" json:"role"`
-	CreatedAt  time.Time  `db:"created_at" json:"created_at"`
-	DeletedAt  *time.Time `db:"deleted_at" json:"deleted_at"`
+	ID           uuid.UUID  `db:"id" json:"id"`
+	FirstName    string     `db:"first_name" json:"first_name"`
+	SecondName   string     `db:"second_name" json:"second_name"`
+	LastName     string     `db:"last_name" json:"last_name"`
+	Email        string     `db:"email" json:"email"`
+	Phone        string     `db:"phone" json:"phone"`
+	PasswordHash string     `db:"password_hash" json:"password_hash"`
+	Role         string     `db:"role" json:"role"`
+	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
+	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
 }

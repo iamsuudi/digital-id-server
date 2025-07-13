@@ -1,6 +1,10 @@
 package resident
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type RegisterResidentInput struct {
 	Email             string
@@ -30,5 +34,5 @@ type RegisterResidentInput struct {
 	EmergencyPhone    string
 	HouseNumber       string
 	District          string
-	CityID            int32
+	CityID            uuid.UUID
 }

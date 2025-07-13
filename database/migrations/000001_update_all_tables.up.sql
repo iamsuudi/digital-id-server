@@ -187,7 +187,7 @@ CREATE TABLE users (
         email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'
     ),
     phone TEXT NOT NULL CHECK (phone ~ '^\+?[1-9]\d{1,14}$'),
-    PASSWORD TEXT NOT NULL,
+    password_hash TEXT NOT NULL,
     role TEXT NOT NULL CHECK (
         role IN (
             'SUPERADMIN',

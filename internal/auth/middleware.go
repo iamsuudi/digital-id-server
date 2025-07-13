@@ -7,6 +7,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const (
+	ContextUserIDKey   = "user_id"
+	ContextUserRoleKey = "user_role"
+)
+
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token, err := c.Cookie("jwt")
@@ -16,15 +21,13 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		claims, err := ParseJWT(token)
-		if err != nil {
+		if err != nil || claims == nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized: invalid or expired token"})
 			return
 		}
 
-		// Store in context for downstream handlers
-		c.Set("user_id", claims.UserID)
-		c.Set("user_role", claims.Role)
-
+		c.Set(ContextUserIDKey, claims.UserID)
+		c.Set(ContextUserRoleKey, claims.Role)
 		c.Next()
 	}
 }

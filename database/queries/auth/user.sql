@@ -1,7 +1,7 @@
 -- name: CreateUser :one
 INSERT INTO users (
   first_name, second_name, last_name,
-  email, phone, password, role
+  email, phone, password_hash, role
 ) VALUES (
   $1, $2, $3, $4, $5, $6, $7
 )
