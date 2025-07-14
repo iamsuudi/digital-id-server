@@ -13,7 +13,7 @@ func main() {
 	config.Load()
 	dbConn := database.Connect()
 	defer dbConn.Close()
-
+	gin.DisableConsoleColor()
 	r := gin.Default()
 
 	// Top-level API group

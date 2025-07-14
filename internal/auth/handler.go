@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -23,7 +24,8 @@ func (h *Handler) Login(c *gin.Context) {
 	}
 
 	var input LoginInput
-	if err := c.ShouldBind(&input); err != nil {
+	if err := c.ShouldBindJSON(&input); err != nil {
+		fmt.Println(err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -53,7 +55,7 @@ func (h *Handler) Login(c *gin.Context) {
 	// Set refresh token securely
 	c.SetCookie("refresh_token", refreshToken, 604800, "/", "", true, true) // 7 days
 
-	c.JSON(http.StatusOK, gin.H{"message": "Logged in successfully"})
+	c.JSON(http.StatusOK, user)
 }
 
 func (h *Handler) Logout(c *gin.Context) {
