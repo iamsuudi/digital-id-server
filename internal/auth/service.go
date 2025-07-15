@@ -10,6 +10,7 @@ import (
 	"github.com/iamsuudi/digital-id-server/internal/repository"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
+	"github.com/iamsuudi/digital-id-server/shared/types"
 )
 
 type Service struct {
@@ -36,7 +37,7 @@ func (s *Service) Authenticate(ctx context.Context, email, password string) (*re
 }
 
 // RegisterUser creates a new user account with hashed password.
-func (s *Service) RegisterUser(ctx context.Context, input RegisterInput) error {
+func (s *Service) RegisterUser(ctx context.Context, input types.UserRegisterInput) error {
 	_, err := s.q.GetUserByEmail(ctx, input.Email)
 	if err == nil {
 		return fmt.Errorf("email %s already in use", input.Email)

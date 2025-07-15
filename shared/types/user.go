@@ -1,6 +1,6 @@
-package auth
+package types
 
-type RegisterInput struct {
+type UserRegisterInput struct {
 	FirstName  string `form:"first_name" binding:"required"`
 	SecondName string `form:"second_name" binding:"required"`
 	LastName   string `form:"last_name" binding:"required"`

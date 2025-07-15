@@ -20,7 +20,7 @@ type Querier interface {
 	CreateKebele(ctx context.Context, arg CreateKebeleParams) (Kebele, error)
 	CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) (uuid.UUID, error)
 	CreateResident(ctx context.Context, arg CreateResidentParams) (uuid.UUID, error)
-	CreateUser(ctx context.Context, arg CreateUserParams) (uuid.UUID, error)
+	CreateUser(ctx context.Context, arg CreateUserParams) (Actor, error)
 	DeleteRefreshToken(ctx context.Context, token string) error
 	DeleteRefreshTokensByUser(ctx context.Context, userID uuid.UUID) error
 	GetAddress(ctx context.Context, arg GetAddressParams) (Address, error)

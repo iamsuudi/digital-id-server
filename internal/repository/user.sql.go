@@ -18,7 +18,7 @@ INSERT INTO actor (
 ) VALUES (
   $1, $2, $3, $4, $5, $6, $7
 )
-RETURNING id
+RETURNING id, first_name, second_name, last_name, email, phone, password_hash, role, created_at, deleted_at
 `
 
 type CreateUserParams struct {
@@ -31,7 +31,7 @@ type CreateUserParams struct {
 	Role         string `db:"role" json:"role"`
 }
 
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (uuid.UUID, error) {
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (Actor, error) {
 	row := q.db.QueryRow(ctx, createUser,
 		arg.FirstName,
 		arg.SecondName,
@@ -41,9 +41,20 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (uuid.UU
 		arg.PasswordHash,
 		arg.Role,
 	)
-	var id uuid.UUID
-	err := row.Scan(&id)
-	return id, err
+	var i Actor
+	err := row.Scan(
+		&i.ID,
+		&i.FirstName,
+		&i.SecondName,
+		&i.LastName,
+		&i.Email,
+		&i.Phone,
+		&i.PasswordHash,
+		&i.Role,
+		&i.CreatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one

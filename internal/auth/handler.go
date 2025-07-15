@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/iamsuudi/digital-id-server/shared/types"
 )
 
 type Handler struct {
@@ -71,7 +72,7 @@ func (h *Handler) Logout(c *gin.Context) {
 }
 
 func (h *Handler) RegisterUser(c *gin.Context) {
-	var input RegisterInput
+	var input types.UserRegisterInput
 	if err := c.ShouldBind(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

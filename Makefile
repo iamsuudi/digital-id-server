@@ -50,7 +50,7 @@ clear_db_data:
 	psql -U $(DB_USER) -h $(DB_HOST) -p $(DB_PORT) -d $(DB_NAME) -f database/scripts/clear_data.sql
 
 seed_db:
-	go run cmd/seed/main.go
+	go run ./cmd/seed/
 
 run_server:
 	go run cmd/server/main.go
