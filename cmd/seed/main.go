@@ -26,32 +26,31 @@ func main() {
 
 	log.Println("🌱 Seeding data...")
 
-	// Seed regions
-	region, err := queries.CreateRegion(ctx, repository.CreateRegionParams{
-		Name:      "Sample Region",
+	// Seed cities
+	city, err := queries.CreateCity(ctx, repository.CreateCityParams{
+		Name:      "Sample City",
 		CreatedAt: time.Now(),
 	})
 	if err != nil {
 		log.Fatalf("Failed to seed region: %v", err)
 	}
-	regionID := region.ID
 
-	// Seed cities
-	city, err := queries.CreateCity(ctx, repository.CreateCityParams{
-		Name:      "Sample City",
-		RegionID:  regionID,
+	// Seed regions
+	kebele, err := queries.CreateKebele(ctx, repository.CreateKebeleParams{
+		Name:      "Sample Region",
+		CityID:    city.ID,
 		CreatedAt: time.Now(),
 	})
+
 	if err != nil {
 		log.Fatalf("Failed to seed city: %v", err)
 	}
-	cityID := city.ID
 
 	// Seed addresses
 	addressID, err := queries.CreateAddress(ctx, repository.CreateAddressParams{
 		HouseNumber: "123",
-		District:    "Downtown",
-		CityID:      cityID,
+		KebeleID:    kebele.ID,
+		CityID:      city.ID,
 	})
 	if err != nil {
 		log.Fatalf("Failed to seed address: %v", err)
@@ -81,18 +80,18 @@ func main() {
 		log.Fatalf("Failed to hash password: %v", err)
 	}
 	userID, err := queries.CreateUser(ctx, repository.CreateUserParams{
-		FirstName:  "Admin",
-		SecondName: "Super",
-		LastName:   "User",
-		Email:      "admin@example.com",
-		Phone:      "+1234567890",
-		PasswordHash:   string(hashedPassword),
-		Role:       "SUPERADMIN",
+		FirstName:    "Admin",
+		SecondName:   "Super",
+		LastName:     "User",
+		Email:        "admin@example.com",
+		Phone:        "+1234567890",
+		PasswordHash: string(hashedPassword),
+		Role:         "SUPERADMIN",
 	})
 	if err != nil {
 		log.Fatalf("Failed to seed user: %v", err)
 	}
 
 	log.Printf("✅ Database seeded successfully. \nSample IDs: \nRegion=%s, \nCity=%s, \nAddress=%s, \nResident=%s, \nUser=%s",
-		regionID, cityID, addressID, residentID, userID)
+		kebele.ID, city.ID, addressID, residentID, userID)
 }

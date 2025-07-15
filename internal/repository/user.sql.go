@@ -12,7 +12,7 @@ import (
 )
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (
+INSERT INTO actor (
   first_name, second_name, last_name,
   email, phone, password_hash, role
 ) VALUES (
@@ -47,14 +47,14 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (uuid.UU
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, first_name, second_name, last_name, email, phone, password_hash, role, created_at, deleted_at FROM users
+SELECT id, first_name, second_name, last_name, email, phone, password_hash, role, created_at, deleted_at FROM actor
 WHERE email = $1 AND deleted_at IS NULL
 LIMIT 1
 `
 
-func (q *Queries) GetUserByEmail(ctx context.Context, email string) (Users, error) {
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (Actor, error) {
 	row := q.db.QueryRow(ctx, getUserByEmail, email)
-	var i Users
+	var i Actor
 	err := row.Scan(
 		&i.ID,
 		&i.FirstName,
@@ -71,13 +71,13 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (Users, erro
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, first_name, second_name, last_name, email, phone, password_hash, role, created_at, deleted_at FROM users
+SELECT id, first_name, second_name, last_name, email, phone, password_hash, role, created_at, deleted_at FROM actor
 WHERE id = $1 AND deleted_at IS NULL
 `
 
-func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (Users, error) {
+func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (Actor, error) {
 	row := q.db.QueryRow(ctx, getUserByID, id)
-	var i Users
+	var i Actor
 	err := row.Scan(
 		&i.ID,
 		&i.FirstName,
@@ -94,7 +94,7 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (Users, error) 
 }
 
 const softDeleteUser = `-- name: SoftDeleteUser :exec
-UPDATE users
+UPDATE actor
 SET deleted_at = NOW()
 WHERE id = $1
 `

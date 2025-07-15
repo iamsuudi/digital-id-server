@@ -13,30 +13,24 @@ import (
 )
 
 const createCity = `-- name: CreateCity :one
-INSERT INTO city (id, name, region_id, created_at)
-VALUES ($1, $2, $3, $4)
-RETURNING id, name, region_id, created_at, deleted_at, search_vector
+INSERT INTO city (id, name, created_at)
+VALUES ($1, $2, $3)
+RETURNING id, name, admin_id, created_at, deleted_at, search_vector
 `
 
 type CreateCityParams struct {
 	ID        uuid.UUID `db:"id" json:"id"`
 	Name      string    `db:"name" json:"name"`
-	RegionID  uuid.UUID `db:"region_id" json:"region_id"`
 	CreatedAt time.Time `db:"created_at" json:"created_at"`
 }
 
 func (q *Queries) CreateCity(ctx context.Context, arg CreateCityParams) (City, error) {
-	row := q.db.QueryRow(ctx, createCity,
-		arg.ID,
-		arg.Name,
-		arg.RegionID,
-		arg.CreatedAt,
-	)
+	row := q.db.QueryRow(ctx, createCity, arg.ID, arg.Name, arg.CreatedAt)
 	var i City
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
-		&i.RegionID,
+		&i.AdminID,
 		&i.CreatedAt,
 		&i.DeletedAt,
 		&i.SearchVector,
@@ -44,24 +38,33 @@ func (q *Queries) CreateCity(ctx context.Context, arg CreateCityParams) (City, e
 	return i, err
 }
 
-const createRegion = `-- name: CreateRegion :one
-INSERT INTO region (id, name, created_at)
-VALUES ($1, $2, $3)
-RETURNING id, name, created_at, deleted_at, search_vector
+const createKebele = `-- name: CreateKebele :one
+INSERT INTO kebele (id, name, city_id, created_at)
+VALUES ($1, $2, $3, $4)
+RETURNING id, name, subcity_id, executive_id, city_id, created_at, deleted_at, search_vector
 `
 
-type CreateRegionParams struct {
+type CreateKebeleParams struct {
 	ID        uuid.UUID `db:"id" json:"id"`
 	Name      string    `db:"name" json:"name"`
+	CityID    uuid.UUID `db:"city_id" json:"city_id"`
 	CreatedAt time.Time `db:"created_at" json:"created_at"`
 }
 
-func (q *Queries) CreateRegion(ctx context.Context, arg CreateRegionParams) (Region, error) {
-	row := q.db.QueryRow(ctx, createRegion, arg.ID, arg.Name, arg.CreatedAt)
-	var i Region
+func (q *Queries) CreateKebele(ctx context.Context, arg CreateKebeleParams) (Kebele, error) {
+	row := q.db.QueryRow(ctx, createKebele,
+		arg.ID,
+		arg.Name,
+		arg.CityID,
+		arg.CreatedAt,
+	)
+	var i Kebele
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
+		&i.SubcityID,
+		&i.ExecutiveID,
+		&i.CityID,
 		&i.CreatedAt,
 		&i.DeletedAt,
 		&i.SearchVector,

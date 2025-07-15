@@ -1,5 +1,5 @@
 -- name: CreateUser :one
-INSERT INTO users (
+INSERT INTO actor (
   first_name, second_name, last_name,
   email, phone, password_hash, role
 ) VALUES (
@@ -8,15 +8,15 @@ INSERT INTO users (
 RETURNING id;
 
 -- name: GetUserByEmail :one
-SELECT * FROM users
+SELECT * FROM actor
 WHERE email = $1 AND deleted_at IS NULL
 LIMIT 1;
 
 -- name: GetUserByID :one
-SELECT * FROM users
+SELECT * FROM actor
 WHERE id = $1 AND deleted_at IS NULL;
 
 -- name: SoftDeleteUser :exec
-UPDATE users
+UPDATE actor
 SET deleted_at = NOW()
 WHERE id = $1;

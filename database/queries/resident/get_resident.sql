@@ -2,9 +2,8 @@
 SELECT
   r.*,
   a.house_number,
-  a.district,
   c.name AS city_name,
-  rg.name AS region_name,
+  k.name AS kebele_name,
   b.blood_type,
   b.face,
   d.type AS document_type,
@@ -21,7 +20,7 @@ SELECT
 FROM resident r
 LEFT JOIN address a ON r.address_id = a.id
 LEFT JOIN city c ON a.city_id = c.id
-LEFT JOIN region rg ON c.region_id = rg.id
+LEFT JOIN kebele k ON a.kebele_id = k.id
 LEFT JOIN biometric b ON r.id = b.resident_id
 LEFT JOIN document d ON r.id = d.resident_id
 LEFT JOIN employment e ON r.id = e.resident_id

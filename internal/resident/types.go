@@ -33,6 +33,6 @@ type RegisterResidentInput struct {
 	EmergencyRelation string
 	EmergencyPhone    string
 	HouseNumber       string
-	District          string
+	KebeleID          uuid.UUID
 	CityID            uuid.UUID
 }

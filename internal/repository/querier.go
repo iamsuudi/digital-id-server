@@ -17,8 +17,8 @@ type Querier interface {
 	CreateDocument(ctx context.Context, arg CreateDocumentParams) error
 	CreateEmergency(ctx context.Context, arg CreateEmergencyParams) error
 	CreateEmployment(ctx context.Context, arg CreateEmploymentParams) error
+	CreateKebele(ctx context.Context, arg CreateKebeleParams) (Kebele, error)
 	CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) (uuid.UUID, error)
-	CreateRegion(ctx context.Context, arg CreateRegionParams) (Region, error)
 	CreateResident(ctx context.Context, arg CreateResidentParams) (uuid.UUID, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (uuid.UUID, error)
 	DeleteRefreshToken(ctx context.Context, token string) error
@@ -27,8 +27,8 @@ type Querier interface {
 	GetAllResidents(ctx context.Context) ([]GetAllResidentsRow, error)
 	GetRefreshToken(ctx context.Context, token string) (RefreshTokens, error)
 	GetResidentFull(ctx context.Context, id uuid.UUID) (GetResidentFullRow, error)
-	GetUserByEmail(ctx context.Context, email string) (Users, error)
-	GetUserByID(ctx context.Context, id uuid.UUID) (Users, error)
+	GetUserByEmail(ctx context.Context, email string) (Actor, error)
+	GetUserByID(ctx context.Context, id uuid.UUID) (Actor, error)
 	SearchResidentsByName(ctx context.Context, toTsquery string) ([]SearchResidentsByNameRow, error)
 	SoftDeleteUser(ctx context.Context, id uuid.UUID) error
 	UpdateResidentAddress(ctx context.Context, arg UpdateResidentAddressParams) error
