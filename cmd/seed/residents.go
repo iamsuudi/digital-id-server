@@ -10,19 +10,15 @@ import (
 
 func seedResidents(ctx context.Context, queries *repository.Queries) {
 	// Seed cities
-	city, err := queries.CreateCity(ctx, repository.CreateCityParams{
-		Name:      "Sample City",
-		CreatedAt: time.Now(),
-	})
+	city, err := queries.CreateCity(ctx, "Sample City")
 	if err != nil {
 		log.Fatalf("Failed to seed region: %v", err)
 	}
 
 	// Seed kebeles
 	kebele, err := queries.CreateKebele(ctx, repository.CreateKebeleParams{
-		Name:      "Sample Region",
-		CityID:    city.ID,
-		CreatedAt: time.Now(),
+		Name:   "Sample Region",
+		CityID: city.ID,
 	})
 	if err != nil {
 		log.Fatalf("Failed to seed city: %v", err)

@@ -1,5 +1,14 @@
 package main
 
+import (
+	"context"
+	"fmt"
+	"log"
+	"time"
+
+	"github.com/iamsuudi/digital-id-server/internal/repository"
+)
+
 // Kebele is the smallest administrative unit.
 type Kebele struct {
 	Name string
@@ -101,4 +110,20 @@ var Data = []City{
 			{Name: "Gimbi Ketema-02", Kebeles: []Kebele{{Name: "03"}, {Name: "04"}}},
 		},
 	},
+}
+
+func seedLocations(ctx context.Context, queries *repository.Queries) {
+	start := time.Now()
+	
+	for _, c := range Data {
+		_, err := queries.CreateCity(ctx, c.Name)
+		if err != nil {
+			log.Fatalf("Failed to create city: %v", c.Name)
+		}
+		// log.Printf("✅ City created: %s.", city.Name)
+	}
+	
+	elapsed := time.Since(start)
+
+	fmt.Printf("\n✅ %d cities seeded successfully. Took %s\n", len(Data), elapsed)
 }
