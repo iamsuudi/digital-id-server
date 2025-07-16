@@ -102,12 +102,19 @@ const listCities = `-- name: ListCities :many
 SELECT c.id, c.name, c.admin_id, c.created_at, c.deleted_at, c.search_vector,
 a.first_name,
 a.second_name,
-a.last_name
+a.last_name,
+COUNT(*) OVER() as count
 FROM city c
 LEFT JOIN actor a ON a.id = c.admin_id
 WHERE c.deleted_at IS NULL
-ORDER BY c.name ASC
+ORDER BY c.created_at DESC
+LIMIT $1 OFFSET $2
 `
+
+type ListCitiesParams struct {
+	Limit  int32 `db:"limit" json:"limit"`
+	Offset int32 `db:"offset" json:"offset"`
+}
 
 type ListCitiesRow struct {
 	ID           uuid.UUID  `db:"id" json:"id"`
@@ -119,10 +126,11 @@ type ListCitiesRow struct {
 	FirstName    *string    `db:"first_name" json:"first_name"`
 	SecondName   *string    `db:"second_name" json:"second_name"`
 	LastName     *string    `db:"last_name" json:"last_name"`
+	Count        int64      `db:"count" json:"count"`
 }
 
-func (q *Queries) ListCities(ctx context.Context) ([]ListCitiesRow, error) {
-	rows, err := q.db.Query(ctx, listCities)
+func (q *Queries) ListCities(ctx context.Context, arg ListCitiesParams) ([]ListCitiesRow, error) {
+	rows, err := q.db.Query(ctx, listCities, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -140,6 +148,7 @@ func (q *Queries) ListCities(ctx context.Context) ([]ListCitiesRow, error) {
 			&i.FirstName,
 			&i.SecondName,
 			&i.LastName,
+			&i.Count,
 		); err != nil {
 			return nil, err
 		}

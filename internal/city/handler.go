@@ -3,6 +3,7 @@ package city
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -57,13 +58,38 @@ func (h *Handler) GetCity(c *gin.Context) {
 }
 
 func (h *Handler) GetAll(c *gin.Context) {
-	cities, err := h.service.GetAll(c.Request.Context())
+	limit, err := strconv.Atoi(c.Query("rows"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid rows per page"})
+		return
+	}
+	if limit < 1 || limit > 100 {
+		limit = 10
+	}
+	page, err := strconv.Atoi(c.Query("page"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page number"})
+		return
+	}
+	if page < 1 {
+		page = 1
+	}
+	offset := (page - 1) * limit
+	
+	cities, err := h.service.GetAll(c.Request.Context(), limit, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch cities"})
 		return
 	}
+	
+	count := 0
 	if cities == nil {
 		cities = []repository.ListCitiesRow{}
+	} else {
+		count = int(cities[0].Count)
 	}
-	c.JSON(http.StatusOK, cities)
+	c.JSON(http.StatusOK, gin.H{
+		"cities": cities,
+		"count": count,
+	})
 }

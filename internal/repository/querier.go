@@ -30,7 +30,7 @@ type Querier interface {
 	GetResidentFull(ctx context.Context, id uuid.UUID) (GetResidentFullRow, error)
 	GetUserByEmail(ctx context.Context, email string) (GetUserByEmailRow, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (GetUserByIDRow, error)
-	ListCities(ctx context.Context) ([]ListCitiesRow, error)
+	ListCities(ctx context.Context, arg ListCitiesParams) ([]ListCitiesRow, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUsersRow, error)
 	SearchResidentsByName(ctx context.Context, toTsquery string) ([]SearchResidentsByNameRow, error)
 	SoftDeleteUser(ctx context.Context, id uuid.UUID) error
