@@ -46,9 +46,9 @@ func (h *Handler) GetCity(c *gin.Context) {
 	resident, err := h.service.GetCity(c.Request.Context(), id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Resident not found"})
+			c.JSON(http.StatusNotFound, gin.H{"error": "City not found"})
 		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch resident"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch city"})
 		}
 		return
 	}

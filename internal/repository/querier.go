@@ -28,9 +28,10 @@ type Querier interface {
 	GetCity(ctx context.Context, id uuid.UUID) (GetCityRow, error)
 	GetRefreshToken(ctx context.Context, token string) (RefreshTokens, error)
 	GetResidentFull(ctx context.Context, id uuid.UUID) (GetResidentFullRow, error)
-	GetUserByEmail(ctx context.Context, email string) (Actor, error)
-	GetUserByID(ctx context.Context, id uuid.UUID) (Actor, error)
+	GetUserByEmail(ctx context.Context, email string) (GetUserByEmailRow, error)
+	GetUserByID(ctx context.Context, id uuid.UUID) (GetUserByIDRow, error)
 	ListCities(ctx context.Context) ([]ListCitiesRow, error)
+	ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUsersRow, error)
 	SearchResidentsByName(ctx context.Context, toTsquery string) ([]SearchResidentsByNameRow, error)
 	SoftDeleteUser(ctx context.Context, id uuid.UUID) error
 	UpdateResidentAddress(ctx context.Context, arg UpdateResidentAddressParams) error

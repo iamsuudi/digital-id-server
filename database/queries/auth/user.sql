@@ -7,13 +7,22 @@ INSERT INTO actor (
 )
 RETURNING *;
 
+-- name: ListUsers :many
+SELECT *, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name, COUNT(*) OVER() as count
+FROM actor
+WHERE deleted_at IS NULL
+ORDER BY created_at DESC
+LIMIT $1 OFFSET $2;
+
 -- name: GetUserByEmail :one
-SELECT * FROM actor
+SELECT *, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
+FROM actor
 WHERE email = $1 AND deleted_at IS NULL
 LIMIT 1;
 
 -- name: GetUserByID :one
-SELECT * FROM actor
+SELECT *, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
+FROM actor
 WHERE id = $1 AND deleted_at IS NULL;
 
 -- name: SoftDeleteUser :exec
