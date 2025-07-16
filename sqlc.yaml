@@ -5,7 +5,7 @@ sql:
       - "database/queries"
       - "database/queries/auth"
       - "database/queries/resident"
-      - "database/queries/core"
+      - "database/queries/location"
     engine: "postgresql"
     gen:
       go:

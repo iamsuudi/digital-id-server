@@ -17,9 +17,8 @@ const getResidentFull = `-- name: GetResidentFull :one
 SELECT
   r.id, r.email, r.first_name, r.second_name, r.last_name, r.birth_date, r.gender, r.phone, r.marital_status, r.religion, r.ethnicity, r.disability_status, r.education_level, r.languages_spoken, r.address_id, r.created_at, r.deleted_at, r.search_vector,
   a.house_number,
-  a.district,
   c.name AS city_name,
-  rg.name AS region_name,
+  k.name AS kebele_name,
   b.blood_type,
   b.face,
   d.type AS document_type,
@@ -36,7 +35,7 @@ SELECT
 FROM resident r
 LEFT JOIN address a ON r.address_id = a.id
 LEFT JOIN city c ON a.city_id = c.id
-LEFT JOIN region rg ON c.region_id = rg.id
+LEFT JOIN kebele k ON a.kebele_id = k.id
 LEFT JOIN biometric b ON r.id = b.resident_id
 LEFT JOIN document d ON r.id = d.resident_id
 LEFT JOIN employment e ON r.id = e.resident_id
@@ -64,9 +63,8 @@ type GetResidentFullRow struct {
 	DeletedAt                *time.Time  `db:"deleted_at" json:"deleted_at"`
 	SearchVector             *string     `db:"search_vector" json:"search_vector"`
 	HouseNumber              *string     `db:"house_number" json:"house_number"`
-	District                 *string     `db:"district" json:"district"`
 	CityName                 *string     `db:"city_name" json:"city_name"`
-	RegionName               *string     `db:"region_name" json:"region_name"`
+	KebeleName               *string     `db:"kebele_name" json:"kebele_name"`
 	BloodType                *string     `db:"blood_type" json:"blood_type"`
 	Face                     *string     `db:"face" json:"face"`
 	DocumentType             *string     `db:"document_type" json:"document_type"`
@@ -105,9 +103,8 @@ func (q *Queries) GetResidentFull(ctx context.Context, id uuid.UUID) (GetResiden
 		&i.DeletedAt,
 		&i.SearchVector,
 		&i.HouseNumber,
-		&i.District,
 		&i.CityName,
-		&i.RegionName,
+		&i.KebeleName,
 		&i.BloodType,
 		&i.Face,
 		&i.DocumentType,

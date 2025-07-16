@@ -61,13 +61,13 @@ func (s *Service) RegisterResident(ctx context.Context, input RegisterResidentIn
 	// 3. Get or create address
 	addr, err := qtx.GetAddress(ctx, repository.GetAddressParams{
 		HouseNumber: input.HouseNumber,
-		District:    input.District,
+		KebeleID:    input.KebeleID,
 		CityID:      input.CityID,
 	})
 	if errors.Is(err, pgx.ErrNoRows) {
 		newAddrID, err := qtx.CreateAddress(ctx, repository.CreateAddressParams{
 			HouseNumber: input.HouseNumber,
-			District:    input.District,
+			KebeleID:    input.KebeleID,
 			CityID:      input.CityID,
 		})
 		if err != nil {
@@ -126,7 +126,7 @@ func (s *Service) RegisterResident(ctx context.Context, input RegisterResidentIn
 	if err != nil {
 		return err
 	}
-	
+
 	return tx.Commit(ctx)
 }
 

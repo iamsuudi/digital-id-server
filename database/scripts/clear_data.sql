@@ -1,13 +1,4 @@
--- Truncate tables in reverse dependency order to respect foreign key constraints
-TRUNCATE TABLE refresh_tokens CASCADE;
-TRUNCATE TABLE users CASCADE;
-TRUNCATE TABLE emergency CASCADE;
-TRUNCATE TABLE employment CASCADE;
-TRUNCATE TABLE payment CASCADE;
-TRUNCATE TABLE idcard CASCADE;
-TRUNCATE TABLE document CASCADE;
-TRUNCATE TABLE biometric CASCADE;
-TRUNCATE TABLE resident CASCADE;
-TRUNCATE TABLE address CASCADE;
-TRUNCATE TABLE city CASCADE;
-TRUNCATE TABLE region CASCADE;
+TRUNCATE TABLE refresh_tokens, emergency, employment, payment,
+             idcard, document, biometric, resident,
+             address, kebele, subcity, city, actor
+CASCADE;

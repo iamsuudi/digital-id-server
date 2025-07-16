@@ -7,18 +7,19 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 )
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (
+INSERT INTO actor (
   first_name, second_name, last_name,
   email, phone, password_hash, role
 ) VALUES (
   $1, $2, $3, $4, $5, $6, $7
 )
-RETURNING id
+RETURNING id, first_name, second_name, last_name, email, phone, password_hash, role, created_at, deleted_at
 `
 
 type CreateUserParams struct {
@@ -31,7 +32,7 @@ type CreateUserParams struct {
 	Role         string `db:"role" json:"role"`
 }
 
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (uuid.UUID, error) {
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (Actor, error) {
 	row := q.db.QueryRow(ctx, createUser,
 		arg.FirstName,
 		arg.SecondName,
@@ -41,20 +42,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (uuid.UU
 		arg.PasswordHash,
 		arg.Role,
 	)
-	var id uuid.UUID
-	err := row.Scan(&id)
-	return id, err
-}
-
-const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, first_name, second_name, last_name, email, phone, password_hash, role, created_at, deleted_at FROM users
-WHERE email = $1 AND deleted_at IS NULL
-LIMIT 1
-`
-
-func (q *Queries) GetUserByEmail(ctx context.Context, email string) (Users, error) {
-	row := q.db.QueryRow(ctx, getUserByEmail, email)
-	var i Users
+	var i Actor
 	err := row.Scan(
 		&i.ID,
 		&i.FirstName,
@@ -66,18 +54,73 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (Users, erro
 		&i.Role,
 		&i.CreatedAt,
 		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const getUserByEmail = `-- name: GetUserByEmail :one
+SELECT id, first_name, second_name, last_name, email, phone, password_hash, role, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
+FROM actor
+WHERE email = $1 AND deleted_at IS NULL
+LIMIT 1
+`
+
+type GetUserByEmailRow struct {
+	ID           uuid.UUID  `db:"id" json:"id"`
+	FirstName    string     `db:"first_name" json:"first_name"`
+	SecondName   string     `db:"second_name" json:"second_name"`
+	LastName     string     `db:"last_name" json:"last_name"`
+	Email        string     `db:"email" json:"email"`
+	Phone        string     `db:"phone" json:"phone"`
+	PasswordHash string     `db:"password_hash" json:"password_hash"`
+	Role         string     `db:"role" json:"role"`
+	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
+	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
+	FullName     string     `db:"full_name" json:"full_name"`
+}
+
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEmailRow, error) {
+	row := q.db.QueryRow(ctx, getUserByEmail, email)
+	var i GetUserByEmailRow
+	err := row.Scan(
+		&i.ID,
+		&i.FirstName,
+		&i.SecondName,
+		&i.LastName,
+		&i.Email,
+		&i.Phone,
+		&i.PasswordHash,
+		&i.Role,
+		&i.CreatedAt,
+		&i.DeletedAt,
+		&i.FullName,
 	)
 	return i, err
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, first_name, second_name, last_name, email, phone, password_hash, role, created_at, deleted_at FROM users
+SELECT id, first_name, second_name, last_name, email, phone, password_hash, role, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
+FROM actor
 WHERE id = $1 AND deleted_at IS NULL
 `
 
-func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (Users, error) {
+type GetUserByIDRow struct {
+	ID           uuid.UUID  `db:"id" json:"id"`
+	FirstName    string     `db:"first_name" json:"first_name"`
+	SecondName   string     `db:"second_name" json:"second_name"`
+	LastName     string     `db:"last_name" json:"last_name"`
+	Email        string     `db:"email" json:"email"`
+	Phone        string     `db:"phone" json:"phone"`
+	PasswordHash string     `db:"password_hash" json:"password_hash"`
+	Role         string     `db:"role" json:"role"`
+	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
+	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
+	FullName     string     `db:"full_name" json:"full_name"`
+}
+
+func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (GetUserByIDRow, error) {
 	row := q.db.QueryRow(ctx, getUserByID, id)
-	var i Users
+	var i GetUserByIDRow
 	err := row.Scan(
 		&i.ID,
 		&i.FirstName,
@@ -89,12 +132,74 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (Users, error) 
 		&i.Role,
 		&i.CreatedAt,
 		&i.DeletedAt,
+		&i.FullName,
 	)
 	return i, err
 }
 
+const listUsers = `-- name: ListUsers :many
+SELECT id, first_name, second_name, last_name, email, phone, password_hash, role, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name, COUNT(*) OVER() as count
+FROM actor
+WHERE deleted_at IS NULL
+ORDER BY created_at DESC
+LIMIT $1 OFFSET $2
+`
+
+type ListUsersParams struct {
+	Limit  int32 `db:"limit" json:"limit"`
+	Offset int32 `db:"offset" json:"offset"`
+}
+
+type ListUsersRow struct {
+	ID           uuid.UUID  `db:"id" json:"id"`
+	FirstName    string     `db:"first_name" json:"first_name"`
+	SecondName   string     `db:"second_name" json:"second_name"`
+	LastName     string     `db:"last_name" json:"last_name"`
+	Email        string     `db:"email" json:"email"`
+	Phone        string     `db:"phone" json:"phone"`
+	PasswordHash string     `db:"password_hash" json:"password_hash"`
+	Role         string     `db:"role" json:"role"`
+	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
+	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
+	FullName     string     `db:"full_name" json:"full_name"`
+	Count        int64      `db:"count" json:"count"`
+}
+
+func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUsersRow, error) {
+	rows, err := q.db.Query(ctx, listUsers, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListUsersRow{}
+	for rows.Next() {
+		var i ListUsersRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.FirstName,
+			&i.SecondName,
+			&i.LastName,
+			&i.Email,
+			&i.Phone,
+			&i.PasswordHash,
+			&i.Role,
+			&i.CreatedAt,
+			&i.DeletedAt,
+			&i.FullName,
+			&i.Count,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const softDeleteUser = `-- name: SoftDeleteUser :exec
-UPDATE users
+UPDATE actor
 SET deleted_at = NOW()
 WHERE id = $1
 `

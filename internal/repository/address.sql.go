@@ -13,43 +13,44 @@ import (
 
 const createAddress = `-- name: CreateAddress :one
 INSERT INTO address (
-  house_number, district, city_id
+  house_number, kebele_id, city_id
 ) VALUES ($1, $2, $3)
 RETURNING id
 `
 
 type CreateAddressParams struct {
 	HouseNumber string    `db:"house_number" json:"house_number"`
-	District    string    `db:"district" json:"district"`
+	KebeleID    uuid.UUID `db:"kebele_id" json:"kebele_id"`
 	CityID      uuid.UUID `db:"city_id" json:"city_id"`
 }
 
 func (q *Queries) CreateAddress(ctx context.Context, arg CreateAddressParams) (uuid.UUID, error) {
-	row := q.db.QueryRow(ctx, createAddress, arg.HouseNumber, arg.District, arg.CityID)
+	row := q.db.QueryRow(ctx, createAddress, arg.HouseNumber, arg.KebeleID, arg.CityID)
 	var id uuid.UUID
 	err := row.Scan(&id)
 	return id, err
 }
 
 const getAddress = `-- name: GetAddress :one
-SELECT id, house_number, district, city_id, created_at, deleted_at, search_vector FROM address
-WHERE house_number = $1 AND district = $2 AND city_id = $3
+SELECT id, house_number, kebele_id, subcity_id, city_id, created_at, deleted_at, search_vector FROM address
+WHERE house_number = $1 AND kebele_id = $2 AND city_id = $3
 LIMIT 1
 `
 
 type GetAddressParams struct {
 	HouseNumber string    `db:"house_number" json:"house_number"`
-	District    string    `db:"district" json:"district"`
+	KebeleID    uuid.UUID `db:"kebele_id" json:"kebele_id"`
 	CityID      uuid.UUID `db:"city_id" json:"city_id"`
 }
 
 func (q *Queries) GetAddress(ctx context.Context, arg GetAddressParams) (Address, error) {
-	row := q.db.QueryRow(ctx, getAddress, arg.HouseNumber, arg.District, arg.CityID)
+	row := q.db.QueryRow(ctx, getAddress, arg.HouseNumber, arg.KebeleID, arg.CityID)
 	var i Address
 	err := row.Scan(
 		&i.ID,
 		&i.HouseNumber,
-		&i.District,
+		&i.KebeleID,
+		&i.SubcityID,
 		&i.CityID,
 		&i.CreatedAt,
 		&i.DeletedAt,

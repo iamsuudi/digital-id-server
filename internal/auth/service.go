@@ -10,6 +10,7 @@ import (
 	"github.com/iamsuudi/digital-id-server/internal/repository"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
+	"github.com/iamsuudi/digital-id-server/shared/types"
 )
 
 type Service struct {
@@ -22,7 +23,7 @@ func NewService(dbConn *pgxpool.Pool, dbQueries repository.Querier) *Service {
 }
 
 // Authenticate verifies a user's email and password.
-func (s *Service) Authenticate(ctx context.Context, email, password string) (*repository.Users, error) {
+func (s *Service) Authenticate(ctx context.Context, email, password string) (*repository.GetUserByEmailRow, error) {
 	user, err := s.q.GetUserByEmail(ctx, email)
 	if err != nil {
 		return nil, errors.New("invalid email or password")
@@ -36,7 +37,7 @@ func (s *Service) Authenticate(ctx context.Context, email, password string) (*re
 }
 
 // RegisterUser creates a new user account with hashed password.
-func (s *Service) RegisterUser(ctx context.Context, input RegisterInput) error {
+func (s *Service) RegisterUser(ctx context.Context, input types.UserRegisterInput) error {
 	_, err := s.q.GetUserByEmail(ctx, input.Email)
 	if err == nil {
 		return fmt.Errorf("email %s already in use", input.Email)
@@ -109,7 +110,7 @@ func (s *Service) DeleteRefreshToken(ctx context.Context, token string) error {
 	return s.q.DeleteRefreshToken(ctx, token)
 }
 
-func (s *Service) GetUserByID(ctx context.Context, userID uuid.UUID) (*repository.Users, error) {
+func (s *Service) GetUserByID(ctx context.Context, userID uuid.UUID) (*repository.GetUserByIDRow, error) {
 	user, err := s.q.GetUserByID(ctx, userID)
 	if err != nil {
 		return nil, err
