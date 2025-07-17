@@ -134,6 +134,6 @@ func (s *Service) GetResident(ctx context.Context, id uuid.UUID) (repository.Get
 	return s.q.GetResidentFull(ctx, id)
 }
 
-func (s *Service) GetAll(ctx context.Context) ([]repository.GetAllResidentsRow, error) {
+func (s *Service) GetAll(ctx context.Context) ([]repository.Resident, error) {
 	return s.q.GetAllResidents(ctx)
 }

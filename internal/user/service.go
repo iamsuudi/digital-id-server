@@ -25,9 +25,21 @@ func (s *Service) GetUserByEmail(ctx context.Context, email string) (repository.
 	return s.q.GetUserByEmail(ctx, email)
 }
 
-func (s *Service) GetAll(ctx context.Context, limit int, offset int) ([]repository.ListUsersRow, error) {
-	return s.q.ListUsers(ctx, repository.ListUsersParams{
+func (s *Service) GetAll(ctx context.Context, limit, offset int, query string) (int64, []repository.ListUsersRow, error) {
+	count, _ := s.q.CountListUsers(ctx)
+	users, err := s.q.ListUsers(ctx, repository.ListUsersParams{
 		Limit:  int32(limit),
 		Offset: int32(offset),
 	})
+	return count, users, err
+}
+
+func (s *Service) SearchUsers(ctx context.Context, limit, offset int, query string) (int64, []repository.SearchUsersRow, error) {
+	count, _ := s.q.CountUsersSearch(ctx, query)
+	users, err :=  s.q.SearchUsers(ctx, repository.SearchUsersParams{
+		Limit:  int32(limit),
+		Offset: int32(offset),
+		Query:  &query,
+	})
+	return count, users, err
 }

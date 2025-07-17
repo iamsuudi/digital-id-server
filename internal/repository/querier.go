@@ -11,6 +11,8 @@ import (
 )
 
 type Querier interface {
+	CountListUsers(ctx context.Context) (int64, error)
+	CountUsersSearch(ctx context.Context, query string) (int64, error)
 	CreateAddress(ctx context.Context, arg CreateAddressParams) (uuid.UUID, error)
 	CreateBiometric(ctx context.Context, arg CreateBiometricParams) error
 	CreateCity(ctx context.Context, name string) (City, error)
@@ -24,7 +26,7 @@ type Querier interface {
 	DeleteRefreshToken(ctx context.Context, token string) error
 	DeleteRefreshTokensByUser(ctx context.Context, userID uuid.UUID) error
 	GetAddress(ctx context.Context, arg GetAddressParams) (Address, error)
-	GetAllResidents(ctx context.Context) ([]GetAllResidentsRow, error)
+	GetAllResidents(ctx context.Context) ([]Resident, error)
 	GetCity(ctx context.Context, id uuid.UUID) (GetCityRow, error)
 	GetRefreshToken(ctx context.Context, token string) (RefreshTokens, error)
 	GetResidentFull(ctx context.Context, id uuid.UUID) (GetResidentFullRow, error)
@@ -33,6 +35,7 @@ type Querier interface {
 	ListCities(ctx context.Context, arg ListCitiesParams) ([]ListCitiesRow, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUsersRow, error)
 	SearchResidentsByName(ctx context.Context, toTsquery string) ([]SearchResidentsByNameRow, error)
+	SearchUsers(ctx context.Context, arg SearchUsersParams) ([]SearchUsersRow, error)
 	SoftDeleteUser(ctx context.Context, id uuid.UUID) error
 	UpdateResidentAddress(ctx context.Context, arg UpdateResidentAddressParams) error
 }

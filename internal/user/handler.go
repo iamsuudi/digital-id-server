@@ -2,12 +2,14 @@ package user
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
-	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/iamsuudi/digital-id-server/internal/repository"
+	"github.com/iamsuudi/digital-id-server/shared/utils"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -60,39 +62,46 @@ func (h *Handler) GetUser(c *gin.Context) {
 }
 
 func (h *Handler) GetAll(c *gin.Context) {
-	limit, err := strconv.Atoi(c.Query("rows"))
-	if err != nil {
+	limit, _, offset, limitErr, pageErr := utils.PaginationHelper(c)
+	query := c.Query("query")
+
+	if limitErr != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid rows per page"})
 		return
 	}
-	if limit < 1 || limit > 100 {
-		limit = 10
-	}
-	page, err := strconv.Atoi(c.Query("page"))
-	if err != nil {
+	if pageErr != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page number"})
 		return
 	}
-	if page < 1 {
-		page = 1
-	}
-	offset := (page - 1) * limit
 
-	users, err := h.service.GetAll(c.Request.Context(), limit, offset)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch users"})
-		return
-	}
-	
-	count := 0;
-	if users == nil {
-		users = []repository.ListUsersRow{}
+	if strings.TrimSpace(query) == "" {
+		count, users, err := h.service.GetAll(c.Request.Context(), limit, offset, query)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch users"})
+			return
+		}
+		if users == nil {
+			users = []repository.ListUsersRow{}
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"users": users,
+			"count": count,
+		})
 	} else {
-		count = int(users[0].Count)
+		count, users, err := h.service.SearchUsers(c, limit, offset, query)
+		fmt.Print(err)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch users"})
+			return
+		}
+		if users == nil {
+			users = []repository.SearchUsersRow{}
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"users": users,
+			"count": count,
+		})
 	}
-	
-	c.JSON(http.StatusOK, gin.H{
-		"users": users,
-		"count": count,
-	})
 }
