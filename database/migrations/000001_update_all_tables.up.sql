@@ -23,6 +23,7 @@ CREATE TYPE religion AS ENUM (
 
 -- Enable uuid-ossp extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 -- Tables
 CREATE TABLE actor (
@@ -45,6 +46,12 @@ CREATE TABLE actor (
             'CASHIER'
         )
     ),
+    search_vector TSVECTOR GENERATED ALWAYS AS (
+        to_tsvector(
+            'english',
+            first_name || ' ' || second_name || ' ' || last_name
+        )
+    ) STORED,
     created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP(3)
 );
@@ -231,6 +238,7 @@ CREATE TABLE refresh_tokens (
 );
 
 -- Indexes for full-text search
+CREATE INDEX actor_search_idx ON actor USING GIN (search_vector);
 CREATE INDEX city_search_idx ON city USING GIN (search_vector);
 CREATE INDEX subcity_search_idx ON city USING GIN (search_vector);
 CREATE INDEX kebele_search_idx ON city USING GIN (search_vector);
@@ -242,3 +250,44 @@ CREATE INDEX idcard_search_idx ON idcard USING GIN (search_vector);
 CREATE INDEX payment_search_idx ON payment USING GIN (search_vector);
 CREATE INDEX employment_search_idx ON employment USING GIN (search_vector);
 CREATE INDEX emergency_search_idx ON emergency USING GIN (search_vector);
+
+
+-- Indexes for fuzzy search
+-- 1. actor (full name)
+CREATE INDEX actor_name_trgm_idx ON actor USING gin ((first_name || ' ' || second_name || ' ' || last_name) gin_trgm_ops);
+
+-- 2. city
+CREATE INDEX city_name_trgm_idx ON city USING gin (name gin_trgm_ops);
+
+-- 3. subcity
+CREATE INDEX subcity_name_trgm_idx ON subcity USING gin (name gin_trgm_ops);
+
+-- 4. kebele
+CREATE INDEX kebele_name_trgm_idx ON kebele USING gin (name gin_trgm_ops);
+
+-- 5. address (house number)
+CREATE INDEX address_house_trgm_idx ON address USING gin (house_number gin_trgm_ops);
+
+-- 6. resident (full name)
+CREATE INDEX resident_name_trgm_idx ON resident USING gin ((first_name || ' ' || second_name || ' ' || last_name) gin_trgm_ops);
+
+-- 7. biometric (blood_type)
+CREATE INDEX biometric_blood_trgm_idx ON biometric USING gin (blood_type gin_trgm_ops);
+
+-- 8. document (number)
+CREATE INDEX document_number_trgm_idx ON document USING gin (number gin_trgm_ops);
+
+-- 9. idcard (number + issue_place)
+CREATE INDEX idcard_combo_trgm_idx ON idcard USING gin ((number || ' ' || issue_place) gin_trgm_ops);
+
+-- 10. payment (description + reference)
+CREATE INDEX payment_combo_trgm_idx ON payment USING gin ((description || ' ' || reference) gin_trgm_ops);
+
+-- 11. employment (status + occupation + employer_name + work_address)
+CREATE INDEX employment_combo_trgm_idx ON employment USING gin (
+    (status || ' ' || COALESCE(occupation,'') || ' ' ||
+     COALESCE(employer_name,'') || ' ' || COALESCE(work_address,'')) gin_trgm_ops
+);
+
+-- 12. emergency (name + relation)
+CREATE INDEX emergency_combo_trgm_idx ON emergency USING gin ((name || ' ' || relation) gin_trgm_ops);

@@ -16,11 +16,13 @@ WHERE c.id = $1 AND c.deleted_at IS NULL;
 SELECT c.*,
 a.first_name,
 a.second_name,
-a.last_name
+a.last_name,
+COUNT(*) OVER() as count
 FROM city c
 LEFT JOIN actor a ON a.id = c.admin_id
 WHERE c.deleted_at IS NULL
-ORDER BY c.name ASC;
+ORDER BY c.created_at DESC
+LIMIT $1 OFFSET $2;
 
 -- name: CreateKebele :one
 INSERT INTO kebele (name, city_id)

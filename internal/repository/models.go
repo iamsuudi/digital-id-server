@@ -330,6 +330,7 @@ type Actor struct {
 	Phone        string     `db:"phone" json:"phone"`
 	PasswordHash string     `db:"password_hash" json:"password_hash"`
 	Role         string     `db:"role" json:"role"`
+	SearchVector *string    `db:"search_vector" json:"search_vector"`
 	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
 }

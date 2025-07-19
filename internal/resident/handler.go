@@ -81,7 +81,7 @@ func (h *Handler) GetAll(c *gin.Context) {
 		return
 	}
 	if residents == nil {
-		residents = []repository.GetAllResidentsRow{}
+		residents = []repository.Resident{}
 	}
 	c.JSON(http.StatusOK, residents)
 }

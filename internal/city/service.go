@@ -26,6 +26,9 @@ func (s *Service) GetCity(ctx context.Context, id uuid.UUID) (repository.GetResi
 	return s.q.GetResidentFull(ctx, id)
 }
 
-func (s *Service) GetAll(ctx context.Context) ([]repository.ListCitiesRow, error) {
-	return s.q.ListCities(ctx)
+func (s *Service) GetAll(ctx context.Context, limit, offset int) ([]repository.ListCitiesRow, error) {
+	return s.q.ListCities(ctx, repository.ListCitiesParams{
+		Limit: int32(limit),
+		Offset: int32(offset),
+	})
 }
