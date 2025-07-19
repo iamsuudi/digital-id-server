@@ -10,7 +10,7 @@ import (
 )
 
 const getAllResidents = `-- name: GetAllResidents :many
-SELECT id, email, first_name, second_name, last_name, birth_date, gender, phone, marital_status, religion, ethnicity, disability_status, education_level, languages_spoken, address_id, created_at, deleted_at, search_vector
+SELECT id, email, first_name, second_name, last_name, birth_date, gender, phone, marital_status, religion, ethnicity, disability_status, education_level, languages_spoken, address_id, search_vector, created_at, deleted_at
 FROM resident
 WHERE deleted_at IS NULL
 ORDER BY created_at DESC
@@ -41,9 +41,9 @@ func (q *Queries) GetAllResidents(ctx context.Context) ([]Resident, error) {
 			&i.EducationLevel,
 			&i.LanguagesSpoken,
 			&i.AddressID,
+			&i.SearchVector,
 			&i.CreatedAt,
 			&i.DeletedAt,
-			&i.SearchVector,
 		); err != nil {
 			return nil, err
 		}

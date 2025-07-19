@@ -23,8 +23,3 @@ LEFT JOIN actor a ON a.id = c.admin_id
 WHERE c.deleted_at IS NULL
 ORDER BY c.created_at DESC
 LIMIT $1 OFFSET $2;
-
--- name: CreateKebele :one
-INSERT INTO kebele (name, city_id)
-VALUES ($1, $2)
-RETURNING *;

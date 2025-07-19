@@ -36,7 +36,7 @@ func (s *Service) GetAll(ctx context.Context, limit, offset int, query string) (
 
 func (s *Service) SearchUsers(ctx context.Context, limit, offset int, query string) (int64, []repository.SearchUsersRow, error) {
 	count, _ := s.q.CountUsersSearch(ctx, query)
-	users, err :=  s.q.SearchUsers(ctx, repository.SearchUsersParams{
+	users, err := s.q.SearchUsers(ctx, repository.SearchUsersParams{
 		Limit:  int32(limit),
 		Offset: int32(offset),
 		Query:  &query,

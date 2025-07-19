@@ -32,7 +32,7 @@ func (q *Queries) CreateAddress(ctx context.Context, arg CreateAddressParams) (u
 }
 
 const getAddress = `-- name: GetAddress :one
-SELECT id, house_number, kebele_id, subcity_id, city_id, created_at, deleted_at, search_vector FROM address
+SELECT id, house_number, kebele_id, subcity_id, city_id, search_vector, created_at, deleted_at FROM address
 WHERE house_number = $1 AND kebele_id = $2 AND city_id = $3
 LIMIT 1
 `
@@ -52,9 +52,9 @@ func (q *Queries) GetAddress(ctx context.Context, arg GetAddressParams) (Address
 		&i.KebeleID,
 		&i.SubcityID,
 		&i.CityID,
+		&i.SearchVector,
 		&i.CreatedAt,
 		&i.DeletedAt,
-		&i.SearchVector,
 	)
 	return i, err
 }

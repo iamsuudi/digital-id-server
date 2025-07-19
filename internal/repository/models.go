@@ -279,7 +279,7 @@ type Religion string
 const (
 	ReligionCHRISTIAN Religion = "CHRISTIAN"
 	ReligionMUSLIM    Religion = "MUSLIM"
-	ReligionATHIEST   Religion = "ATHIEST"
+	ReligionATHEIST   Religion = "ATHEIST"
 	ReligionHINDU     Religion = "HINDU"
 	ReligionBUDDHIST  Religion = "BUDDHIST"
 	ReligionOTHER     Religion = "OTHER"
@@ -341,9 +341,9 @@ type Address struct {
 	KebeleID     uuid.UUID  `db:"kebele_id" json:"kebele_id"`
 	SubcityID    *uuid.UUID `db:"subcity_id" json:"subcity_id"`
 	CityID       uuid.UUID  `db:"city_id" json:"city_id"`
+	SearchVector *string    `db:"search_vector" json:"search_vector"`
 	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
-	SearchVector *string    `db:"search_vector" json:"search_vector"`
 }
 
 type Biometric struct {
@@ -352,18 +352,18 @@ type Biometric struct {
 	Fingerprint  []byte     `db:"fingerprint" json:"fingerprint"`
 	BloodType    string     `db:"blood_type" json:"blood_type"`
 	Face         string     `db:"face" json:"face"`
+	SearchVector *string    `db:"search_vector" json:"search_vector"`
 	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
-	SearchVector *string    `db:"search_vector" json:"search_vector"`
 }
 
 type City struct {
 	ID           uuid.UUID  `db:"id" json:"id"`
 	Name         string     `db:"name" json:"name"`
 	AdminID      *uuid.UUID `db:"admin_id" json:"admin_id"`
+	SearchVector *string    `db:"search_vector" json:"search_vector"`
 	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
-	SearchVector *string    `db:"search_vector" json:"search_vector"`
 }
 
 type Document struct {
@@ -373,9 +373,9 @@ type Document struct {
 	Url          string     `db:"url" json:"url"`
 	Status       string     `db:"status" json:"status"`
 	Number       string     `db:"number" json:"number"`
+	SearchVector *string    `db:"search_vector" json:"search_vector"`
 	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
-	SearchVector *string    `db:"search_vector" json:"search_vector"`
 }
 
 type Emergency struct {
@@ -384,9 +384,9 @@ type Emergency struct {
 	Name         string     `db:"name" json:"name"`
 	Relation     string     `db:"relation" json:"relation"`
 	Phone        string     `db:"phone" json:"phone"`
+	SearchVector *string    `db:"search_vector" json:"search_vector"`
 	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
-	SearchVector *string    `db:"search_vector" json:"search_vector"`
 }
 
 type Employment struct {
@@ -396,9 +396,9 @@ type Employment struct {
 	Occupation   *string    `db:"occupation" json:"occupation"`
 	EmployerName *string    `db:"employer_name" json:"employer_name"`
 	WorkAddress  *string    `db:"work_address" json:"work_address"`
+	SearchVector *string    `db:"search_vector" json:"search_vector"`
 	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
-	SearchVector *string    `db:"search_vector" json:"search_vector"`
 }
 
 type Idcard struct {
@@ -408,20 +408,20 @@ type Idcard struct {
 	IssueDate    time.Time  `db:"issue_date" json:"issue_date"`
 	ExpiryDate   time.Time  `db:"expiry_date" json:"expiry_date"`
 	IssuePlace   string     `db:"issue_place" json:"issue_place"`
+	SearchVector *string    `db:"search_vector" json:"search_vector"`
 	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
-	SearchVector *string    `db:"search_vector" json:"search_vector"`
 }
 
 type Kebele struct {
 	ID           uuid.UUID  `db:"id" json:"id"`
 	Name         string     `db:"name" json:"name"`
 	SubcityID    *uuid.UUID `db:"subcity_id" json:"subcity_id"`
-	ExecutiveID  *uuid.UUID `db:"executive_id" json:"executive_id"`
 	CityID       uuid.UUID  `db:"city_id" json:"city_id"`
+	ExecutiveID  *uuid.UUID `db:"executive_id" json:"executive_id"`
+	SearchVector *string    `db:"search_vector" json:"search_vector"`
 	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
-	SearchVector *string    `db:"search_vector" json:"search_vector"`
 }
 
 type Payment struct {
@@ -432,9 +432,9 @@ type Payment struct {
 	Status       string         `db:"status" json:"status"`
 	Reference    string         `db:"reference" json:"reference"`
 	Method       string         `db:"method" json:"method"`
+	SearchVector *string        `db:"search_vector" json:"search_vector"`
 	CreatedAt    time.Time      `db:"created_at" json:"created_at"`
 	DeletedAt    *time.Time     `db:"deleted_at" json:"deleted_at"`
-	SearchVector *string        `db:"search_vector" json:"search_vector"`
 }
 
 type RefreshTokens struct {
@@ -461,9 +461,9 @@ type Resident struct {
 	EducationLevel   *string    `db:"education_level" json:"education_level"`
 	LanguagesSpoken  string     `db:"languages_spoken" json:"languages_spoken"`
 	AddressID        *uuid.UUID `db:"address_id" json:"address_id"`
+	SearchVector     *string    `db:"search_vector" json:"search_vector"`
 	CreatedAt        time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt        *time.Time `db:"deleted_at" json:"deleted_at"`
-	SearchVector     *string    `db:"search_vector" json:"search_vector"`
 }
 
 type Subcity struct {
@@ -471,7 +471,7 @@ type Subcity struct {
 	Name         string     `db:"name" json:"name"`
 	CityID       uuid.UUID  `db:"city_id" json:"city_id"`
 	ManagerID    *uuid.UUID `db:"manager_id" json:"manager_id"`
+	SearchVector *string    `db:"search_vector" json:"search_vector"`
 	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
-	SearchVector *string    `db:"search_vector" json:"search_vector"`
 }

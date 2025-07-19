@@ -15,7 +15,7 @@ import (
 
 const getResidentFull = `-- name: GetResidentFull :one
 SELECT
-  r.id, r.email, r.first_name, r.second_name, r.last_name, r.birth_date, r.gender, r.phone, r.marital_status, r.religion, r.ethnicity, r.disability_status, r.education_level, r.languages_spoken, r.address_id, r.created_at, r.deleted_at, r.search_vector,
+  r.id, r.email, r.first_name, r.second_name, r.last_name, r.birth_date, r.gender, r.phone, r.marital_status, r.religion, r.ethnicity, r.disability_status, r.education_level, r.languages_spoken, r.address_id, r.search_vector, r.created_at, r.deleted_at,
   a.house_number,
   c.name AS city_name,
   k.name AS kebele_name,
@@ -59,9 +59,9 @@ type GetResidentFullRow struct {
 	EducationLevel           *string     `db:"education_level" json:"education_level"`
 	LanguagesSpoken          string      `db:"languages_spoken" json:"languages_spoken"`
 	AddressID                *uuid.UUID  `db:"address_id" json:"address_id"`
+	SearchVector             *string     `db:"search_vector" json:"search_vector"`
 	CreatedAt                time.Time   `db:"created_at" json:"created_at"`
 	DeletedAt                *time.Time  `db:"deleted_at" json:"deleted_at"`
-	SearchVector             *string     `db:"search_vector" json:"search_vector"`
 	HouseNumber              *string     `db:"house_number" json:"house_number"`
 	CityName                 *string     `db:"city_name" json:"city_name"`
 	KebeleName               *string     `db:"kebele_name" json:"kebele_name"`
@@ -99,9 +99,9 @@ func (q *Queries) GetResidentFull(ctx context.Context, id uuid.UUID) (GetResiden
 		&i.EducationLevel,
 		&i.LanguagesSpoken,
 		&i.AddressID,
+		&i.SearchVector,
 		&i.CreatedAt,
 		&i.DeletedAt,
-		&i.SearchVector,
 		&i.HouseNumber,
 		&i.CityName,
 		&i.KebeleName,

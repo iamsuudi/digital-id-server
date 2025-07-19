@@ -1,6 +1,6 @@
 version: "2"
 sql:
-  - schema: "database/migrations"
+  - schema: "database/schemas"
     queries: 
       - "database/queries"
       - "database/queries/auth"
