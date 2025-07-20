@@ -81,7 +81,7 @@ func (h *Handler) GetAll(c *gin.Context) {
 			return
 		}
 		if users == nil {
-			users = []repository.ListUsersRow{}
+			users = []repository.ListUsersUnderScopeRow{}
 		}
 
 		c.JSON(http.StatusOK, gin.H{
@@ -96,7 +96,7 @@ func (h *Handler) GetAll(c *gin.Context) {
 			return
 		}
 		if users == nil {
-			users = []repository.SearchUsersRow{}
+			users = []repository.SearchUsersUnderScopeRow{}
 		}
 
 		c.JSON(http.StatusOK, gin.H{

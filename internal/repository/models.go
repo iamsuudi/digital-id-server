@@ -321,20 +321,6 @@ func (ns NullReligion) Value() (driver.Value, error) {
 	return string(ns.Religion), nil
 }
 
-type Actor struct {
-	ID           uuid.UUID  `db:"id" json:"id"`
-	FirstName    string     `db:"first_name" json:"first_name"`
-	SecondName   string     `db:"second_name" json:"second_name"`
-	LastName     string     `db:"last_name" json:"last_name"`
-	Email        string     `db:"email" json:"email"`
-	Phone        string     `db:"phone" json:"phone"`
-	PasswordHash string     `db:"password_hash" json:"password_hash"`
-	Role         string     `db:"role" json:"role"`
-	SearchVector *string    `db:"search_vector" json:"search_vector"`
-	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
-	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
-}
-
 type Address struct {
 	ID           uuid.UUID  `db:"id" json:"id"`
 	HouseNumber  string     `db:"house_number" json:"house_number"`
@@ -344,6 +330,16 @@ type Address struct {
 	SearchVector *string    `db:"search_vector" json:"search_vector"`
 	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
+}
+
+type AuditLog struct {
+	ID         uuid.UUID          `db:"id" json:"id"`
+	ActorID    *uuid.UUID         `db:"actor_id" json:"actor_id"`
+	ActionType string             `db:"action_type" json:"action_type"`
+	ObjectType string             `db:"object_type" json:"object_type"`
+	ObjectID   pgtype.Int8        `db:"object_id" json:"object_id"`
+	DiffJson   []byte             `db:"diff_json" json:"diff_json"`
+	Ts         pgtype.Timestamptz `db:"ts" json:"ts"`
 }
 
 type Biometric struct {
@@ -360,7 +356,6 @@ type Biometric struct {
 type City struct {
 	ID           uuid.UUID  `db:"id" json:"id"`
 	Name         string     `db:"name" json:"name"`
-	AdminID      *uuid.UUID `db:"admin_id" json:"admin_id"`
 	SearchVector *string    `db:"search_vector" json:"search_vector"`
 	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
@@ -418,7 +413,6 @@ type Kebele struct {
 	Name         string     `db:"name" json:"name"`
 	SubcityID    *uuid.UUID `db:"subcity_id" json:"subcity_id"`
 	CityID       uuid.UUID  `db:"city_id" json:"city_id"`
-	ExecutiveID  *uuid.UUID `db:"executive_id" json:"executive_id"`
 	SearchVector *string    `db:"search_vector" json:"search_vector"`
 	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
@@ -435,6 +429,12 @@ type Payment struct {
 	SearchVector *string        `db:"search_vector" json:"search_vector"`
 	CreatedAt    time.Time      `db:"created_at" json:"created_at"`
 	DeletedAt    *time.Time     `db:"deleted_at" json:"deleted_at"`
+}
+
+type Permission struct {
+	Name        string  `db:"name" json:"name"`
+	Label       string  `db:"label" json:"label"`
+	Description *string `db:"description" json:"description"`
 }
 
 type RefreshTokens struct {
@@ -466,12 +466,48 @@ type Resident struct {
 	DeletedAt        *time.Time `db:"deleted_at" json:"deleted_at"`
 }
 
+type Role struct {
+	Slug           string  `db:"slug" json:"slug"`
+	Name           string  `db:"name" json:"name"`
+	ParentRoleSlug *string `db:"parent_role_slug" json:"parent_role_slug"`
+	LevelRank      int32   `db:"level_rank" json:"level_rank"`
+}
+
+type RolePermission struct {
+	RoleSlug       string `db:"role_slug" json:"role_slug"`
+	PermissionName string `db:"permission_name" json:"permission_name"`
+}
+
 type Subcity struct {
 	ID           uuid.UUID  `db:"id" json:"id"`
 	Name         string     `db:"name" json:"name"`
 	CityID       uuid.UUID  `db:"city_id" json:"city_id"`
-	ManagerID    *uuid.UUID `db:"manager_id" json:"manager_id"`
 	SearchVector *string    `db:"search_vector" json:"search_vector"`
 	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
+}
+
+type User struct {
+	ID           uuid.UUID  `db:"id" json:"id"`
+	FirstName    string     `db:"first_name" json:"first_name"`
+	SecondName   string     `db:"second_name" json:"second_name"`
+	LastName     string     `db:"last_name" json:"last_name"`
+	Email        string     `db:"email" json:"email"`
+	Phone        string     `db:"phone" json:"phone"`
+	PasswordHash string     `db:"password_hash" json:"password_hash"`
+	CityID       *uuid.UUID `db:"city_id" json:"city_id"`
+	SubcityID    *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	KebeleID     *uuid.UUID `db:"kebele_id" json:"kebele_id"`
+	RoleSlug     string     `db:"role_slug" json:"role_slug"`
+	SearchVector *string    `db:"search_vector" json:"search_vector"`
+	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
+	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
+}
+
+type UserPermissionOverride struct {
+	UserID         uuid.UUID          `db:"user_id" json:"user_id"`
+	PermissionName string             `db:"permission_name" json:"permission_name"`
+	IsGranted      bool               `db:"is_granted" json:"is_granted"`
+	GrantedBy      *uuid.UUID         `db:"granted_by" json:"granted_by"`
+	GrantedAt      pgtype.Timestamptz `db:"granted_at" json:"granted_at"`
 }

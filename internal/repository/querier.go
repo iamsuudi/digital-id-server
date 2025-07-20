@@ -11,33 +11,27 @@ import (
 )
 
 type Querier interface {
+	CountListCities(ctx context.Context) (int64, error)
 	CountListUsers(ctx context.Context) (int64, error)
-	CountUsersSearch(ctx context.Context, query string) (int64, error)
-	CreateAddress(ctx context.Context, arg CreateAddressParams) (uuid.UUID, error)
-	CreateBiometric(ctx context.Context, arg CreateBiometricParams) error
+	CountListUsersUnderScope(ctx context.Context, arg CountListUsersUnderScopeParams) (int64, error)
+	CountUsersSearchUnderScope(ctx context.Context, arg CountUsersSearchUnderScopeParams) (int64, error)
 	CreateCity(ctx context.Context, name string) (City, error)
-	CreateDocument(ctx context.Context, arg CreateDocumentParams) error
-	CreateEmergency(ctx context.Context, arg CreateEmergencyParams) error
-	CreateEmployment(ctx context.Context, arg CreateEmploymentParams) error
 	CreateKebele(ctx context.Context, arg CreateKebeleParams) (Kebele, error)
 	CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) (uuid.UUID, error)
-	CreateResident(ctx context.Context, arg CreateResidentParams) (uuid.UUID, error)
-	CreateUser(ctx context.Context, arg CreateUserParams) (Actor, error)
+	CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error)
 	DeleteRefreshToken(ctx context.Context, token string) error
 	DeleteRefreshTokensByUser(ctx context.Context, userID uuid.UUID) error
-	GetAddress(ctx context.Context, arg GetAddressParams) (Address, error)
-	GetAllResidents(ctx context.Context) ([]Resident, error)
 	GetCity(ctx context.Context, id uuid.UUID) (GetCityRow, error)
 	GetRefreshToken(ctx context.Context, token string) (RefreshTokens, error)
-	GetResidentFull(ctx context.Context, id uuid.UUID) (GetResidentFullRow, error)
 	GetUserByEmail(ctx context.Context, email string) (GetUserByEmailRow, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (GetUserByIDRow, error)
+	GetUserScope(ctx context.Context, id uuid.UUID) (GetUserScopeRow, error)
+	ListAllUsers(ctx context.Context, arg ListAllUsersParams) ([]ListAllUsersRow, error)
 	ListCities(ctx context.Context, arg ListCitiesParams) ([]ListCitiesRow, error)
-	ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUsersRow, error)
-	SearchResidentsByName(ctx context.Context, toTsquery string) ([]SearchResidentsByNameRow, error)
-	SearchUsers(ctx context.Context, arg SearchUsersParams) ([]SearchUsersRow, error)
+	ListUsersUnderScope(ctx context.Context, arg ListUsersUnderScopeParams) ([]ListUsersUnderScopeRow, error)
+	SearchUsersUnderScope(ctx context.Context, arg SearchUsersUnderScopeParams) ([]SearchUsersUnderScopeRow, error)
 	SoftDeleteUser(ctx context.Context, id uuid.UUID) error
-	UpdateResidentAddress(ctx context.Context, arg UpdateResidentAddressParams) error
+	UpdateUserRole(ctx context.Context, arg UpdateUserRoleParams) error
 }
 
 var _ Querier = (*Queries)(nil)

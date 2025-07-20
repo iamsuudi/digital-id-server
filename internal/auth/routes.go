@@ -16,6 +16,6 @@ func RegisterRoutes(rg *gin.RouterGroup, dbConn *pgxpool.Pool, dbQueries *reposi
 		authGroup.POST("/logout", handler.Logout)
 		authGroup.POST("/register", handler.RegisterUser)
 		authGroup.POST("/refresh", handler.RefreshToken)
-		authGroup.GET("/me", AuthMiddleware(), handler.Me)
+		authGroup.GET("/me", Authenticate(), handler.Me)
 	}
 }

@@ -12,10 +12,23 @@ import (
 	"github.com/google/uuid"
 )
 
+const countListCities = `-- name: CountListCities :one
+SELECT COUNT(*)
+FROM city
+WHERE deleted_at IS NULL
+`
+
+func (q *Queries) CountListCities(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countListCities)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createCity = `-- name: CreateCity :one
 INSERT INTO city (name)
 VALUES ($1)
-RETURNING id, name, admin_id, search_vector, created_at, deleted_at
+RETURNING id, name, search_vector, created_at, deleted_at
 `
 
 func (q *Queries) CreateCity(ctx context.Context, name string) (City, error) {
@@ -24,7 +37,6 @@ func (q *Queries) CreateCity(ctx context.Context, name string) (City, error) {
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
-		&i.AdminID,
 		&i.SearchVector,
 		&i.CreatedAt,
 		&i.DeletedAt,
@@ -33,25 +45,20 @@ func (q *Queries) CreateCity(ctx context.Context, name string) (City, error) {
 }
 
 const getCity = `-- name: GetCity :one
-SELECT c.id, c.name, c.admin_id, c.search_vector, c.created_at, c.deleted_at,
-a.first_name,
-a.second_name,
-a.last_name
+SELECT c.id, c.name, c.search_vector, c.created_at, c.deleted_at, u.id as admin_id, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS admin_name
 FROM city c
-LEFT JOIN actor a ON a.id = c.admin_id
+LEFT JOIN "user" u ON u.city_id = c.id
 WHERE c.id = $1 AND c.deleted_at IS NULL
 `
 
 type GetCityRow struct {
 	ID           uuid.UUID  `db:"id" json:"id"`
 	Name         string     `db:"name" json:"name"`
-	AdminID      *uuid.UUID `db:"admin_id" json:"admin_id"`
 	SearchVector *string    `db:"search_vector" json:"search_vector"`
 	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
-	FirstName    *string    `db:"first_name" json:"first_name"`
-	SecondName   *string    `db:"second_name" json:"second_name"`
-	LastName     *string    `db:"last_name" json:"last_name"`
+	AdminID      *uuid.UUID `db:"admin_id" json:"admin_id"`
+	AdminName    string     `db:"admin_name" json:"admin_name"`
 }
 
 func (q *Queries) GetCity(ctx context.Context, id uuid.UUID) (GetCityRow, error) {
@@ -60,25 +67,19 @@ func (q *Queries) GetCity(ctx context.Context, id uuid.UUID) (GetCityRow, error)
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
-		&i.AdminID,
 		&i.SearchVector,
 		&i.CreatedAt,
 		&i.DeletedAt,
-		&i.FirstName,
-		&i.SecondName,
-		&i.LastName,
+		&i.AdminID,
+		&i.AdminName,
 	)
 	return i, err
 }
 
 const listCities = `-- name: ListCities :many
-SELECT c.id, c.name, c.admin_id, c.search_vector, c.created_at, c.deleted_at,
-a.first_name,
-a.second_name,
-a.last_name,
-COUNT(*) OVER() as count
+SELECT c.id, c.name, c.search_vector, c.created_at, c.deleted_at, u.id as admin_id, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS admin_name
 FROM city c
-LEFT JOIN actor a ON a.id = c.admin_id
+LEFT JOIN "user" u ON u.city_id = c.id
 WHERE c.deleted_at IS NULL
 ORDER BY c.created_at DESC
 LIMIT $1 OFFSET $2
@@ -92,14 +93,11 @@ type ListCitiesParams struct {
 type ListCitiesRow struct {
 	ID           uuid.UUID  `db:"id" json:"id"`
 	Name         string     `db:"name" json:"name"`
-	AdminID      *uuid.UUID `db:"admin_id" json:"admin_id"`
 	SearchVector *string    `db:"search_vector" json:"search_vector"`
 	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
-	FirstName    *string    `db:"first_name" json:"first_name"`
-	SecondName   *string    `db:"second_name" json:"second_name"`
-	LastName     *string    `db:"last_name" json:"last_name"`
-	Count        int64      `db:"count" json:"count"`
+	AdminID      *uuid.UUID `db:"admin_id" json:"admin_id"`
+	AdminName    string     `db:"admin_name" json:"admin_name"`
 }
 
 func (q *Queries) ListCities(ctx context.Context, arg ListCitiesParams) ([]ListCitiesRow, error) {
@@ -114,14 +112,11 @@ func (q *Queries) ListCities(ctx context.Context, arg ListCitiesParams) ([]ListC
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
-			&i.AdminID,
 			&i.SearchVector,
 			&i.CreatedAt,
 			&i.DeletedAt,
-			&i.FirstName,
-			&i.SecondName,
-			&i.LastName,
-			&i.Count,
+			&i.AdminID,
+			&i.AdminName,
 		); err != nil {
 			return nil, err
 		}

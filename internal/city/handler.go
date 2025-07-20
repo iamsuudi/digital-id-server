@@ -76,17 +76,14 @@ func (h *Handler) GetAll(c *gin.Context) {
 	}
 	offset := (page - 1) * limit
 	
-	cities, err := h.service.GetAll(c.Request.Context(), limit, offset)
+	count, cities, err := h.service.GetAll(c.Request.Context(), limit, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch cities"})
 		return
 	}
 	
-	count := 0
 	if cities == nil {
 		cities = []repository.ListCitiesRow{}
-	} else {
-		count = int(cities[0].Count)
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"cities": cities,

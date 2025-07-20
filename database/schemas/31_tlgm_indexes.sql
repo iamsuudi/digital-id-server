@@ -1,5 +1,5 @@
 -- Trigram GIN indexes for LIKE / ILIKE / fuzzy search
-CREATE INDEX IF NOT EXISTS actor_name_trgm_idx      ON actor      USING GIN ((first_name||' '||second_name||' '||last_name) gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS user_name_trgm_idx      ON "user"      USING GIN ((first_name||' '||second_name||' '||last_name) gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS city_name_trgm_idx       ON city       USING GIN (name gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS subcity_name_trgm_idx    ON subcity    USING GIN (name gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS kebele_name_trgm_idx     ON kebele     USING GIN (name gin_trgm_ops);

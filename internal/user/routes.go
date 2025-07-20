@@ -11,7 +11,7 @@ func RegisterRoutes(rg *gin.RouterGroup, dbConn *pgxpool.Pool, dbQueries *reposi
 	service := NewService(dbConn, dbQueries)
 	handler := NewHandler(service)
 
-	usersGroup := rg.Group("/users", auth.AuthMiddleware())
+	usersGroup := rg.Group("/users", auth.Authenticate(), auth.Authorize("superadmin"))
 	{
 		usersGroup.GET("/", handler.GetAll)
 		usersGroup.GET("/one", handler.GetUser)

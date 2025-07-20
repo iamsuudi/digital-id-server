@@ -1,5 +1,5 @@
 -- GIN indexes for pre-computed search_vector columns
-CREATE INDEX IF NOT EXISTS actor_search_idx      ON actor      USING GIN (search_vector);
+CREATE INDEX IF NOT EXISTS user_search_idx      ON "user"      USING GIN (search_vector);
 CREATE INDEX IF NOT EXISTS city_search_idx       ON city       USING GIN (search_vector);
 CREATE INDEX IF NOT EXISTS subcity_search_idx    ON subcity    USING GIN (search_vector);
 CREATE INDEX IF NOT EXISTS kebele_search_idx     ON kebele     USING GIN (search_vector);

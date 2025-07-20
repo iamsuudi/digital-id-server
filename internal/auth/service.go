@@ -8,9 +8,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/iamsuudi/digital-id-server/internal/repository"
+	"github.com/iamsuudi/digital-id-server/shared/types"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
-	"github.com/iamsuudi/digital-id-server/shared/types"
 )
 
 type Service struct {
@@ -55,7 +55,7 @@ func (s *Service) RegisterUser(ctx context.Context, input types.UserRegisterInpu
 		Email:        input.Email,
 		Phone:        input.Phone,
 		PasswordHash: string(hashedPassword),
-		Role:         input.Role,
+		RoleSlug:     input.RoleSlug,
 	})
 	return err
 }
@@ -82,7 +82,7 @@ func (s *Service) RefreshAccessToken(ctx context.Context, token string) (string,
 		return "", err
 	}
 
-	newJWT, err := GenerateJWT(user.ID, user.Role)
+	newJWT, err := GenerateJWT(user.ID, user.RoleSlug)
 	if err != nil {
 		return "", err
 	}

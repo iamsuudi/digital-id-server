@@ -22,13 +22,23 @@ func (s *Service) CreateCity(ctx context.Context, input types.CityInput) (reposi
 	return s.q.CreateCity(ctx, input.Name)
 }
 
-func (s *Service) GetCity(ctx context.Context, id uuid.UUID) (repository.GetResidentFullRow, error) {
-	return s.q.GetResidentFull(ctx, id)
+func (s *Service) GetCity(ctx context.Context, id uuid.UUID) (repository.GetCityRow, error) {
+	return s.q.GetCity(ctx, id)
 }
 
-func (s *Service) GetAll(ctx context.Context, limit, offset int) ([]repository.ListCitiesRow, error) {
-	return s.q.ListCities(ctx, repository.ListCitiesParams{
+func (s *Service) GetAll(ctx context.Context, limit, offset int) (int64, []repository.ListCitiesRow, error) {
+	count, err := s.q.CountListCities(ctx)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	cities, err := s.q.ListCities(ctx, repository.ListCitiesParams{
 		Limit: int32(limit),
 		Offset: int32(offset),
 	})
+	if err != nil {
+		return 0, nil, err
+	}
+
+	return count, cities, nil
 }

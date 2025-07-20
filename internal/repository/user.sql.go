@@ -14,7 +14,7 @@ import (
 
 const countListUsers = `-- name: CountListUsers :one
 SELECT COUNT(*)
-FROM actor
+FROM "user"
 WHERE deleted_at IS NULL
 `
 
@@ -25,28 +25,61 @@ func (q *Queries) CountListUsers(ctx context.Context) (int64, error) {
 	return count, err
 }
 
-const countUsersSearch = `-- name: CountUsersSearch :one
+const countListUsersUnderScope = `-- name: CountListUsersUnderScope :one
 SELECT COUNT(*)
-FROM actor
-WHERE deleted_at IS NULL
-AND search_vector @@ plainto_tsquery('english', $1)
+FROM "user"
+WHERE deleted_at IS NULL AND
+    ($1::uuid IS NULL OR u.city_id = $1::uuid) AND
+    ($2::uuid IS NULL OR u.subcity_id = $2::uuid) AND
+    ($3::uuid IS NULL OR u.kebele_id = $3::uuid)
 `
 
-func (q *Queries) CountUsersSearch(ctx context.Context, query string) (int64, error) {
-	row := q.db.QueryRow(ctx, countUsersSearch, query)
+type CountListUsersUnderScopeParams struct {
+	CityID    uuid.UUID `db:"city_id" json:"city_id"`
+	SubcityID uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	KebeleID  uuid.UUID `db:"kebele_id" json:"kebele_id"`
+}
+
+func (q *Queries) CountListUsersUnderScope(ctx context.Context, arg CountListUsersUnderScopeParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countListUsersUnderScope, arg.CityID, arg.SubcityID, arg.KebeleID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countUsersSearchUnderScope = `-- name: CountUsersSearchUnderScope :one
+SELECT COUNT(*)
+FROM "user"
+WHERE deleted_at IS NULL AND
+    search_vector @@ plainto_tsquery('english', $1) AND 
+    ($2::uuid IS NULL OR u.city_id = $2::uuid) AND
+    ($3::uuid IS NULL OR u.subcity_id = $3::uuid) AND
+    ($4::uuid IS NULL OR u.kebele_id = $4::uuid)
+`
+
+type CountUsersSearchUnderScopeParams struct {
+	Query     string    `db:"query" json:"query"`
+	CityID    uuid.UUID `db:"city_id" json:"city_id"`
+	SubcityID uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	KebeleID  uuid.UUID `db:"kebele_id" json:"kebele_id"`
+}
+
+func (q *Queries) CountUsersSearchUnderScope(ctx context.Context, arg CountUsersSearchUnderScopeParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countUsersSearchUnderScope,
+		arg.Query,
+		arg.CityID,
+		arg.SubcityID,
+		arg.KebeleID,
+	)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
 }
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO actor (
-  first_name, second_name, last_name,
-  email, phone, password_hash, role
-) VALUES (
-  $1, $2, $3, $4, $5, $6, $7
-)
-RETURNING id, first_name, second_name, last_name, email, phone, password_hash, role, search_vector, created_at, deleted_at
+INSERT INTO "user" (first_name, second_name, last_name, email, phone, password_hash, role_slug)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+RETURNING id, first_name, second_name, last_name, email, phone, password_hash, city_id, subcity_id, kebele_id, role_slug, search_vector, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
 `
 
 type CreateUserParams struct {
@@ -56,10 +89,28 @@ type CreateUserParams struct {
 	Email        string `db:"email" json:"email"`
 	Phone        string `db:"phone" json:"phone"`
 	PasswordHash string `db:"password_hash" json:"password_hash"`
-	Role         string `db:"role" json:"role"`
+	RoleSlug     string `db:"role_slug" json:"role_slug"`
 }
 
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (Actor, error) {
+type CreateUserRow struct {
+	ID           uuid.UUID  `db:"id" json:"id"`
+	FirstName    string     `db:"first_name" json:"first_name"`
+	SecondName   string     `db:"second_name" json:"second_name"`
+	LastName     string     `db:"last_name" json:"last_name"`
+	Email        string     `db:"email" json:"email"`
+	Phone        string     `db:"phone" json:"phone"`
+	PasswordHash string     `db:"password_hash" json:"password_hash"`
+	CityID       *uuid.UUID `db:"city_id" json:"city_id"`
+	SubcityID    *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	KebeleID     *uuid.UUID `db:"kebele_id" json:"kebele_id"`
+	RoleSlug     string     `db:"role_slug" json:"role_slug"`
+	SearchVector *string    `db:"search_vector" json:"search_vector"`
+	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
+	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
+	FullName     string     `db:"full_name" json:"full_name"`
+}
+
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error) {
 	row := q.db.QueryRow(ctx, createUser,
 		arg.FirstName,
 		arg.SecondName,
@@ -67,9 +118,9 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (Actor, 
 		arg.Email,
 		arg.Phone,
 		arg.PasswordHash,
-		arg.Role,
+		arg.RoleSlug,
 	)
-	var i Actor
+	var i CreateUserRow
 	err := row.Scan(
 		&i.ID,
 		&i.FirstName,
@@ -78,19 +129,22 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (Actor, 
 		&i.Email,
 		&i.Phone,
 		&i.PasswordHash,
-		&i.Role,
+		&i.CityID,
+		&i.SubcityID,
+		&i.KebeleID,
+		&i.RoleSlug,
 		&i.SearchVector,
 		&i.CreatedAt,
 		&i.DeletedAt,
+		&i.FullName,
 	)
 	return i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, first_name, second_name, last_name, email, phone, password_hash, role, search_vector, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
-FROM actor
+SELECT id, first_name, second_name, last_name, email, phone, password_hash, city_id, subcity_id, kebele_id, role_slug, search_vector, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
+FROM "user"
 WHERE email = $1 AND deleted_at IS NULL
-LIMIT 1
 `
 
 type GetUserByEmailRow struct {
@@ -101,7 +155,10 @@ type GetUserByEmailRow struct {
 	Email        string     `db:"email" json:"email"`
 	Phone        string     `db:"phone" json:"phone"`
 	PasswordHash string     `db:"password_hash" json:"password_hash"`
-	Role         string     `db:"role" json:"role"`
+	CityID       *uuid.UUID `db:"city_id" json:"city_id"`
+	SubcityID    *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	KebeleID     *uuid.UUID `db:"kebele_id" json:"kebele_id"`
+	RoleSlug     string     `db:"role_slug" json:"role_slug"`
 	SearchVector *string    `db:"search_vector" json:"search_vector"`
 	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
@@ -119,7 +176,10 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEm
 		&i.Email,
 		&i.Phone,
 		&i.PasswordHash,
-		&i.Role,
+		&i.CityID,
+		&i.SubcityID,
+		&i.KebeleID,
+		&i.RoleSlug,
 		&i.SearchVector,
 		&i.CreatedAt,
 		&i.DeletedAt,
@@ -129,8 +189,8 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEm
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, first_name, second_name, last_name, email, phone, password_hash, role, search_vector, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
-FROM actor
+SELECT id, first_name, second_name, last_name, email, phone, password_hash, city_id, subcity_id, kebele_id, role_slug, search_vector, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
+FROM "user"
 WHERE id = $1 AND deleted_at IS NULL
 `
 
@@ -142,7 +202,10 @@ type GetUserByIDRow struct {
 	Email        string     `db:"email" json:"email"`
 	Phone        string     `db:"phone" json:"phone"`
 	PasswordHash string     `db:"password_hash" json:"password_hash"`
-	Role         string     `db:"role" json:"role"`
+	CityID       *uuid.UUID `db:"city_id" json:"city_id"`
+	SubcityID    *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	KebeleID     *uuid.UUID `db:"kebele_id" json:"kebele_id"`
+	RoleSlug     string     `db:"role_slug" json:"role_slug"`
 	SearchVector *string    `db:"search_vector" json:"search_vector"`
 	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
@@ -160,7 +223,10 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (GetUserByIDRow
 		&i.Email,
 		&i.Phone,
 		&i.PasswordHash,
-		&i.Role,
+		&i.CityID,
+		&i.SubcityID,
+		&i.KebeleID,
+		&i.RoleSlug,
 		&i.SearchVector,
 		&i.CreatedAt,
 		&i.DeletedAt,
@@ -169,20 +235,40 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (GetUserByIDRow
 	return i, err
 }
 
-const listUsers = `-- name: ListUsers :many
-SELECT id, first_name, second_name, last_name, email, phone, password_hash, role, search_vector, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
-FROM actor
-WHERE deleted_at IS NULL
-ORDER BY created_at DESC
-LIMIT $1 OFFSET $2
+const getUserScope = `-- name: GetUserScope :one
+SELECT city_id, subcity_id, kebele_id FROM "user" WHERE id = $1
 `
 
-type ListUsersParams struct {
-	Limit  int32 `db:"limit" json:"limit"`
-	Offset int32 `db:"offset" json:"offset"`
+type GetUserScopeRow struct {
+	CityID    *uuid.UUID `db:"city_id" json:"city_id"`
+	SubcityID *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	KebeleID  *uuid.UUID `db:"kebele_id" json:"kebele_id"`
 }
 
-type ListUsersRow struct {
+func (q *Queries) GetUserScope(ctx context.Context, id uuid.UUID) (GetUserScopeRow, error) {
+	row := q.db.QueryRow(ctx, getUserScope, id)
+	var i GetUserScopeRow
+	err := row.Scan(&i.CityID, &i.SubcityID, &i.KebeleID)
+	return i, err
+}
+
+const listAllUsers = `-- name: ListAllUsers :many
+SELECT u.id, u.first_name, u.second_name, u.last_name, u.email, u.phone, u.password_hash, u.city_id, u.subcity_id, u.kebele_id, u.role_slug, u.search_vector, u.created_at, u.deleted_at, r.name AS role,
+       CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
+FROM "user" u
+JOIN role r ON r.slug = u.role_slug
+WHERE u.deleted_at IS NULL
+ORDER BY u.id
+LIMIT  $2
+OFFSET $1
+`
+
+type ListAllUsersParams struct {
+	Offset int32 `db:"offset" json:"offset"`
+	Limit  int32 `db:"limit" json:"limit"`
+}
+
+type ListAllUsersRow struct {
 	ID           uuid.UUID  `db:"id" json:"id"`
 	FirstName    string     `db:"first_name" json:"first_name"`
 	SecondName   string     `db:"second_name" json:"second_name"`
@@ -190,22 +276,26 @@ type ListUsersRow struct {
 	Email        string     `db:"email" json:"email"`
 	Phone        string     `db:"phone" json:"phone"`
 	PasswordHash string     `db:"password_hash" json:"password_hash"`
-	Role         string     `db:"role" json:"role"`
+	CityID       *uuid.UUID `db:"city_id" json:"city_id"`
+	SubcityID    *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	KebeleID     *uuid.UUID `db:"kebele_id" json:"kebele_id"`
+	RoleSlug     string     `db:"role_slug" json:"role_slug"`
 	SearchVector *string    `db:"search_vector" json:"search_vector"`
 	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
+	Role         string     `db:"role" json:"role"`
 	FullName     string     `db:"full_name" json:"full_name"`
 }
 
-func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUsersRow, error) {
-	rows, err := q.db.Query(ctx, listUsers, arg.Limit, arg.Offset)
+func (q *Queries) ListAllUsers(ctx context.Context, arg ListAllUsersParams) ([]ListAllUsersRow, error) {
+	rows, err := q.db.Query(ctx, listAllUsers, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []ListUsersRow{}
+	items := []ListAllUsersRow{}
 	for rows.Next() {
-		var i ListUsersRow
+		var i ListAllUsersRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.FirstName,
@@ -214,10 +304,14 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUse
 			&i.Email,
 			&i.Phone,
 			&i.PasswordHash,
-			&i.Role,
+			&i.CityID,
+			&i.SubcityID,
+			&i.KebeleID,
+			&i.RoleSlug,
 			&i.SearchVector,
 			&i.CreatedAt,
 			&i.DeletedAt,
+			&i.Role,
 			&i.FullName,
 		); err != nil {
 			return nil, err
@@ -230,25 +324,27 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUse
 	return items, nil
 }
 
-const searchUsers = `-- name: SearchUsers :many
-SELECT id, first_name, second_name, last_name, email, phone, password_hash, role, search_vector, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
-FROM actor
-WHERE deleted_at IS NULL
-AND search_vector @@ to_tsquery('english', $1 || ':*')
-ORDER BY
-ts_rank(search_vector, to_tsquery('english', $1 || ':*')) DESC,
-similarity(first_name || ' ' || second_name || ' ' || last_name, $1) DESC,
-created_at DESC
-LIMIT $3 OFFSET $2
+const listUsersUnderScope = `-- name: ListUsersUnderScope :many
+SELECT u.id, u.first_name, u.second_name, u.last_name, u.email, u.phone, u.password_hash, u.city_id, u.subcity_id, u.kebele_id, u.role_slug, u.search_vector, u.created_at, u.deleted_at, r.name AS role, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
+FROM "user" u
+JOIN role r ON r.slug = u.role_slug
+WHERE deleted_at IS NULL AND
+    ($1::uuid IS NULL OR u.city_id = $1::uuid) AND
+    ($2::uuid IS NULL OR u.subcity_id = $2::uuid) AND
+    ($3::uuid IS NULL OR u.kebele_id = $3::uuid)
+ORDER BY u.id
+LIMIT $5 OFFSET $4
 `
 
-type SearchUsersParams struct {
-	Query  *string `db:"query" json:"query"`
-	Offset int32   `db:"offset" json:"offset"`
-	Limit  int32   `db:"limit" json:"limit"`
+type ListUsersUnderScopeParams struct {
+	CityID    uuid.UUID `db:"city_id" json:"city_id"`
+	SubcityID uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	KebeleID  uuid.UUID `db:"kebele_id" json:"kebele_id"`
+	Offset    int32     `db:"offset" json:"offset"`
+	Limit     int32     `db:"limit" json:"limit"`
 }
 
-type SearchUsersRow struct {
+type ListUsersUnderScopeRow struct {
 	ID           uuid.UUID  `db:"id" json:"id"`
 	FirstName    string     `db:"first_name" json:"first_name"`
 	SecondName   string     `db:"second_name" json:"second_name"`
@@ -256,22 +352,32 @@ type SearchUsersRow struct {
 	Email        string     `db:"email" json:"email"`
 	Phone        string     `db:"phone" json:"phone"`
 	PasswordHash string     `db:"password_hash" json:"password_hash"`
-	Role         string     `db:"role" json:"role"`
+	CityID       *uuid.UUID `db:"city_id" json:"city_id"`
+	SubcityID    *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	KebeleID     *uuid.UUID `db:"kebele_id" json:"kebele_id"`
+	RoleSlug     string     `db:"role_slug" json:"role_slug"`
 	SearchVector *string    `db:"search_vector" json:"search_vector"`
 	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
+	Role         string     `db:"role" json:"role"`
 	FullName     string     `db:"full_name" json:"full_name"`
 }
 
-func (q *Queries) SearchUsers(ctx context.Context, arg SearchUsersParams) ([]SearchUsersRow, error) {
-	rows, err := q.db.Query(ctx, searchUsers, arg.Query, arg.Offset, arg.Limit)
+func (q *Queries) ListUsersUnderScope(ctx context.Context, arg ListUsersUnderScopeParams) ([]ListUsersUnderScopeRow, error) {
+	rows, err := q.db.Query(ctx, listUsersUnderScope,
+		arg.CityID,
+		arg.SubcityID,
+		arg.KebeleID,
+		arg.Offset,
+		arg.Limit,
+	)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []SearchUsersRow{}
+	items := []ListUsersUnderScopeRow{}
 	for rows.Next() {
-		var i SearchUsersRow
+		var i ListUsersUnderScopeRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.FirstName,
@@ -280,10 +386,110 @@ func (q *Queries) SearchUsers(ctx context.Context, arg SearchUsersParams) ([]Sea
 			&i.Email,
 			&i.Phone,
 			&i.PasswordHash,
-			&i.Role,
+			&i.CityID,
+			&i.SubcityID,
+			&i.KebeleID,
+			&i.RoleSlug,
 			&i.SearchVector,
 			&i.CreatedAt,
 			&i.DeletedAt,
+			&i.Role,
+			&i.FullName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const searchUsersUnderScope = `-- name: SearchUsersUnderScope :many
+SELECT id, first_name, second_name, last_name, email, phone, password_hash, city_id, subcity_id, kebele_id, role_slug, search_vector, created_at, deleted_at, slug, name, parent_role_slug, level_rank, r.name, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
+FROM "user" u
+JOIN role r ON r.slug = u.role_slug
+WHERE deleted_at IS NULL AND
+    search_vector @@ to_tsquery('english', $1 || ':*') AND
+    ($2::uuid IS NULL OR u.city_id = $2::uuid) AND
+    ($3::uuid IS NULL OR u.subcity_id = $3::uuid) AND
+    ($4::uuid IS NULL OR u.kebele_id = $4::uuid)
+ORDER BY
+    ts_rank(search_vector, to_tsquery('english', $1 || ':*')) DESC,
+    similarity(first_name || ' ' || second_name || ' ' || last_name, $1) DESC,
+    created_at DESC
+LIMIT $6 OFFSET $5
+`
+
+type SearchUsersUnderScopeParams struct {
+	Query     *string   `db:"query" json:"query"`
+	CityID    uuid.UUID `db:"city_id" json:"city_id"`
+	SubcityID uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	KebeleID  uuid.UUID `db:"kebele_id" json:"kebele_id"`
+	Offset    int32     `db:"offset" json:"offset"`
+	Limit     int32     `db:"limit" json:"limit"`
+}
+
+type SearchUsersUnderScopeRow struct {
+	ID             uuid.UUID  `db:"id" json:"id"`
+	FirstName      string     `db:"first_name" json:"first_name"`
+	SecondName     string     `db:"second_name" json:"second_name"`
+	LastName       string     `db:"last_name" json:"last_name"`
+	Email          string     `db:"email" json:"email"`
+	Phone          string     `db:"phone" json:"phone"`
+	PasswordHash   string     `db:"password_hash" json:"password_hash"`
+	CityID         *uuid.UUID `db:"city_id" json:"city_id"`
+	SubcityID      *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	KebeleID       *uuid.UUID `db:"kebele_id" json:"kebele_id"`
+	RoleSlug       string     `db:"role_slug" json:"role_slug"`
+	SearchVector   *string    `db:"search_vector" json:"search_vector"`
+	CreatedAt      time.Time  `db:"created_at" json:"created_at"`
+	DeletedAt      *time.Time `db:"deleted_at" json:"deleted_at"`
+	Slug           string     `db:"slug" json:"slug"`
+	Name           string     `db:"name" json:"name"`
+	ParentRoleSlug *string    `db:"parent_role_slug" json:"parent_role_slug"`
+	LevelRank      int32      `db:"level_rank" json:"level_rank"`
+	Name_2         string     `db:"name_2" json:"name_2"`
+	FullName       string     `db:"full_name" json:"full_name"`
+}
+
+func (q *Queries) SearchUsersUnderScope(ctx context.Context, arg SearchUsersUnderScopeParams) ([]SearchUsersUnderScopeRow, error) {
+	rows, err := q.db.Query(ctx, searchUsersUnderScope,
+		arg.Query,
+		arg.CityID,
+		arg.SubcityID,
+		arg.KebeleID,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []SearchUsersUnderScopeRow{}
+	for rows.Next() {
+		var i SearchUsersUnderScopeRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.FirstName,
+			&i.SecondName,
+			&i.LastName,
+			&i.Email,
+			&i.Phone,
+			&i.PasswordHash,
+			&i.CityID,
+			&i.SubcityID,
+			&i.KebeleID,
+			&i.RoleSlug,
+			&i.SearchVector,
+			&i.CreatedAt,
+			&i.DeletedAt,
+			&i.Slug,
+			&i.Name,
+			&i.ParentRoleSlug,
+			&i.LevelRank,
+			&i.Name_2,
 			&i.FullName,
 		); err != nil {
 			return nil, err
@@ -297,12 +503,28 @@ func (q *Queries) SearchUsers(ctx context.Context, arg SearchUsersParams) ([]Sea
 }
 
 const softDeleteUser = `-- name: SoftDeleteUser :exec
-UPDATE actor
+UPDATE "user"
 SET deleted_at = NOW()
 WHERE id = $1
 `
 
 func (q *Queries) SoftDeleteUser(ctx context.Context, id uuid.UUID) error {
 	_, err := q.db.Exec(ctx, softDeleteUser, id)
+	return err
+}
+
+const updateUserRole = `-- name: UpdateUserRole :exec
+UPDATE "user"
+SET role_slug = $2
+WHERE id = $1
+`
+
+type UpdateUserRoleParams struct {
+	ID       uuid.UUID `db:"id" json:"id"`
+	RoleSlug string    `db:"role_slug" json:"role_slug"`
+}
+
+func (q *Queries) UpdateUserRole(ctx context.Context, arg UpdateUserRoleParams) error {
+	_, err := q.db.Exec(ctx, updateUserRole, arg.ID, arg.RoleSlug)
 	return err
 }

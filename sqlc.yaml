@@ -4,8 +4,8 @@ sql:
     queries: 
       - "database/queries"
       - "database/queries/auth"
-      - "database/queries/resident"
-      - "database/queries/location"
+      # - "database/queries/resident"
+      # - "database/queries/location"
     engine: "postgresql"
     gen:
       go:
