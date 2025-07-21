@@ -2,6 +2,7 @@ package auth
 
 import (
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -32,24 +33,47 @@ func Authenticate() gin.HandlerFunc {
 	}
 }
 
-func Authorize(allowedRoles ...string) gin.HandlerFunc {
-	roleSet := make(map[string]bool, len(allowedRoles))
-	for _, role := range allowedRoles {
-		roleSet[role] = true
+func hasRole(ctx *gin.Context, expectedRole string) bool {
+	raw, exists := ctx.Get(ContextUserRoleKey)
+	role, ok := raw.(string)
+	if !exists || !ok {
+		return false
 	}
+	return role == expectedRole
+}
+
+func Authorize(allowedRoles ...string) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		raw, exists := ctx.Get(ContextUserRoleKey)
-		if !exists {
-			ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-				"error": "Access Denied: Role missing",
-			})
+		role, ok := raw.(string)
+		if !exists || !ok {
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			return
 		}
 
-		role, ok := raw.(string)
-		if !ok || !roleSet[role] {
-			ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-				"error": "Access Denied: Not Authorized",
-			})
+		if slices.Contains(allowedRoles, role) {
+			ctx.Next()
+			return
 		}
+
+		ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+	}
+}
+
+// RolePrefixRedirect returns a Gin middleware that internally routes
+//
+//	/foo/bar   ->   /{prefix}/foo/bar
+//
+// when the current user has the required role.
+func RolePrefixRedirect(prefix string) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		if hasRole(ctx, prefix) {
+			// Construct the new path with prefix
+			newPath := "/api/v1/" + prefix + strings.TrimPrefix(ctx.Request.URL.Path, "/api/v1") + "?" + ctx.Request.URL.RawQuery
+			ctx.Redirect(http.StatusFound, newPath) // 302 redirect
+			ctx.Abort()
+			return
+		}
+		ctx.Next()
 	}
 }

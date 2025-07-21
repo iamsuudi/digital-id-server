@@ -105,3 +105,47 @@ func (h *Handler) GetAll(c *gin.Context) {
 		})
 	}
 }
+
+func (h *Handler) GetAllForSuperadmin(c *gin.Context) {
+	limit, _, offset, limitErr, pageErr := utils.PaginationHelper(c)
+	query := c.Query("query")
+	if limitErr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid rows per page"})
+		return
+	}
+	if pageErr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page number"})
+		return
+	}
+
+	if strings.TrimSpace(query) == "" {
+		count, users, err := h.service.GetAllForSuperadmin(c.Request.Context(), limit, offset, query)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch users"})
+			return
+		}
+		if users == nil {
+			users = []repository.ListAllUsersRow{}
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"users": users,
+			"count": count,
+		})
+	} else {
+		count, users, err := h.service.SearchUsers(c, limit, offset, query)
+		fmt.Print(err)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch users"})
+			return
+		}
+		if users == nil {
+			users = []repository.SearchUsersUnderScopeRow{}
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"users": users,
+			"count": count,
+		})
+	}
+}

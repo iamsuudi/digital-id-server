@@ -1,9 +1,9 @@
 -- 1. roles (tree) ------------------------------------------------
 CREATE TABLE role (
-    slug            TEXT PRIMARY KEY,
-    name            TEXT NOT NULL,
-    parent_role_slug  TEXT REFERENCES role(slug) ON DELETE RESTRICT,
-    level_rank      int  NOT NULL   -- lower = more powerful
+    slug                TEXT PRIMARY KEY,
+    name                TEXT NOT NULL,
+    parent_role_slug    TEXT REFERENCES role(slug) ON DELETE RESTRICT,
+    level_rank          int  NOT NULL   -- lower = more powerful
 );
 
 -- 2. user -------------------------------------------------
@@ -14,10 +14,10 @@ CREATE TABLE "user" (
     last_name        TEXT NOT NULL,
     email            TEXT UNIQUE NOT NULL,
     phone            TEXT NOT NULL,
-    password_hash    TEXT        NOT NULL,
+    password_hash    TEXT NOT NULL,
     city_id          UUID REFERENCES city(id)    ON DELETE SET NULL,
     subcity_id       UUID REFERENCES subcity(id) ON DELETE SET NULL,
-    kebele_id        UUID REFERENCES kebele(id)     ON DELETE SET NULL,
+    kebele_id        UUID REFERENCES kebele(id)  ON DELETE SET NULL,
     role_slug        TEXT NOT NULL REFERENCES role(slug)  ON DELETE RESTRICT,
     search_vector    tsvector GENERATED ALWAYS AS (to_tsvector('english',
         first_name||' '||second_name||' '||last_name)) STORED,
@@ -39,7 +39,7 @@ CREATE TABLE permission (
 );
 
 INSERT INTO role (slug, name, parent_role_slug, level_rank) VALUES
-('superadmin', 'SuperAdmin', NULL, 0),
+('superadmin', 'SuperAdmin',  NULL, 0),
 ('admin',      'Admin',       'superadmin', 10),
 ('manager',    'Manager',     'admin', 20),
 ('executive',  'Executive',   'manager', 30),
