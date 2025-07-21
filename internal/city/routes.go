@@ -11,7 +11,7 @@ func RegisterRoutes(rg *gin.RouterGroup, dbConn *pgxpool.Pool, dbQueries *reposi
 	service := NewService(dbConn, dbQueries)
 	handler := NewHandler(service)
 
-	residentGroup := rg.Group("/cities", auth.AuthMiddleware())
+	residentGroup := rg.Group("/cities", auth.Authenticate())
 	{
 		residentGroup.POST("/create", handler.CreateCity)
 		residentGroup.GET("/:id", handler.GetCity)

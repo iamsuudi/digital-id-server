@@ -37,7 +37,7 @@ func (h *Handler) Login(c *gin.Context) {
 		return
 	}
 
-	accessToken, err := GenerateJWT(user.ID, user.Role)
+	accessToken, err := GenerateJWT(user.ID, user.RoleSlug)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate access token"})
 		return
@@ -52,9 +52,9 @@ func (h *Handler) Login(c *gin.Context) {
 	}
 
 	// Set access token (JWT)
-	c.SetCookie("jwt", accessToken, 86400, "/", "", true, true) // 1 day
+	c.SetCookie("oict_jwt", accessToken, 86400, "/", "", true, true) // 1 day
 	// Set refresh token securely
-	c.SetCookie("refresh_token", refreshToken, 604800, "/", "", true, true) // 7 days
+	c.SetCookie("oict_refresh_token", refreshToken, 604800, "/", "", true, true) // 7 days
 
 	c.JSON(http.StatusOK, user)
 }
@@ -65,8 +65,8 @@ func (h *Handler) Logout(c *gin.Context) {
 		_ = h.Service.DeleteRefreshToken(c.Request.Context(), rt) // Optional cleanup
 	}
 
-	c.SetCookie("jwt", "", -1, "/", "", true, true)
-	c.SetCookie("refresh_token", "", -1, "/", "", true, true)
+	c.SetCookie("oict_jwt", "", -1, "/", "", true, true)
+	c.SetCookie("oict_refresh_token", "", -1, "/", "", true, true)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Logged out"})
 }
@@ -88,7 +88,7 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 }
 
 func (h *Handler) RefreshToken(c *gin.Context) {
-	rt, err := c.Cookie("refresh_token")
+	rt, err := c.Cookie("oict_refresh_token")
 	if err != nil || rt == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "No refresh token"})
 		return
@@ -100,7 +100,7 @@ func (h *Handler) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie("jwt", newToken, 86400, "/", "", true, true) // 1 day
+	c.SetCookie("oict_jwt", newToken, 86400, "/", "", true, true) // 1 day
 
 	c.JSON(http.StatusOK, gin.H{"message": "Token refreshed"})
 }

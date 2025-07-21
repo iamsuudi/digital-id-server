@@ -25,21 +25,62 @@ func (s *Service) GetUserByEmail(ctx context.Context, email string) (repository.
 	return s.q.GetUserByEmail(ctx, email)
 }
 
-func (s *Service) GetAll(ctx context.Context, limit, offset int, query string) (int64, []repository.ListUsersRow, error) {
-	count, _ := s.q.CountListUsers(ctx)
-	users, err := s.q.ListUsers(ctx, repository.ListUsersParams{
+func (s *Service) GetAll(ctx context.Context, limit, offset int, query string) (int64, []repository.ListUsersUnderScopeRow, error) {
+	count, _ := s.q.CountListUsersUnderScope(ctx, repository.CountListUsersUnderScopeParams{
+		
+	})
+	users, err := s.q.ListUsersUnderScope(ctx, repository.ListUsersUnderScopeParams{
 		Limit:  int32(limit),
 		Offset: int32(offset),
 	})
 	return count, users, err
 }
 
-func (s *Service) SearchUsers(ctx context.Context, limit, offset int, query string) (int64, []repository.SearchUsersRow, error) {
-	count, _ := s.q.CountUsersSearch(ctx, query)
-	users, err :=  s.q.SearchUsers(ctx, repository.SearchUsersParams{
+func (s *Service) GetAllForSuperadmin(ctx context.Context, limit, offset int, query string) (int64, []repository.ListAllUsersRow, error) {
+	count, _ := s.q.CountListUsers(ctx)
+	users, err := s.q.ListAllUsers(ctx, repository.ListAllUsersParams{
+		Limit:  int32(limit),
+		Offset: int32(offset),
+	})
+	return count, users, err
+}
+
+func (s *Service) SearchUsers(ctx context.Context, limit, offset int, query string) (int64, []repository.SearchUsersUnderScopeRow, error) {
+	count, err := s.q.CountUsersSearchUnderScope(ctx, repository.CountUsersSearchUnderScopeParams{
+		Query: query,
+	})
+	if err != nil {
+		return 0, nil, err
+	}
+	
+	users, err := s.q.SearchUsersUnderScope(ctx, repository.SearchUsersUnderScopeParams{
 		Limit:  int32(limit),
 		Offset: int32(offset),
 		Query:  &query,
 	})
-	return count, users, err
+	if err != nil {
+		return 0, nil, err
+	}
+	
+	return count, users, nil
+}
+
+func (s *Service) SearchUsersForSuperadmin(ctx context.Context, limit, offset int, query string) (int64, []repository.SearchUsersUnderScopeRow, error) {
+	count, err := s.q.CountUsersSearchUnderScope(ctx, repository.CountUsersSearchUnderScopeParams{
+		Query: query,
+	})
+	if err != nil {
+		return 0, nil, err
+	}
+	
+	users, err := s.q.SearchUsersUnderScope(ctx, repository.SearchUsersUnderScopeParams{
+		Limit:  int32(limit),
+		Offset: int32(offset),
+		Query:  &query,
+	})
+	if err != nil {
+		return 0, nil, err
+	}
+	
+	return count, users, nil
 }

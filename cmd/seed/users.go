@@ -26,22 +26,22 @@ func CreateUsers() []types.UserRegisterInput {
 			Email:      strings.ToLower(fmt.Sprintf("%s%d@oict.com", role, id)),
 			Phone:      fmt.Sprintf("+251911%06d", id),
 			Password:   fmt.Sprintf("password%d", id), // simple, unique password
-			Role:       role,
+			RoleSlug:   role,
 		}
 	}
 
 	// 1 superadmin
-	users = append(users, next("SUPERADMIN", "system", "", ""))
+	users = append(users, next("superadmin", "system", "", ""))
 
 	// 1 admin per city
 	for _, city := range Data {
-		users = append(users, next("ADMIN", city.Name, "", ""))
+		users = append(users, next("admin", city.Name, "", ""))
 	}
 
 	// 1 manager per sub-city
 	for _, city := range Data {
 		for _, sc := range city.SubCities {
-			users = append(users, next("MANAGER", city.Name, sc.Name, ""))
+			users = append(users, next("manager", city.Name, sc.Name, ""))
 		}
 	}
 
@@ -49,7 +49,7 @@ func CreateUsers() []types.UserRegisterInput {
 	for _, city := range Data {
 		for _, sc := range city.SubCities {
 			for _, kb := range sc.Kebeles {
-				for _, role := range []string{"EXECUTIVE", "ENCODER", "CASHIER"} {
+				for _, role := range []string{"executive", "encoder", "cashier"} {
 					users = append(users, next(role, city.Name, sc.Name, kb.Name))
 				}
 			}
@@ -64,7 +64,7 @@ func seedUsers(ctx context.Context, queries *repository.Queries) {
 	start := time.Now()
 
 	for _, user := range users {
-
+		fmt.Println(user.Email, user.Password)
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 		if err != nil {
 			log.Fatalf("Failed to hash password: %v", err)
@@ -77,7 +77,7 @@ func seedUsers(ctx context.Context, queries *repository.Queries) {
 			Email:        user.Email,
 			Phone:        user.Phone,
 			PasswordHash: string(hashedPassword),
-			Role:         user.Role,
+			RoleSlug:     user.RoleSlug,
 		})
 		if err != nil {
 			log.Fatalf("Failed to seed user: %v", err)

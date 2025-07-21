@@ -7,5 +7,5 @@ type UserRegisterInput struct {
 	Email      string `form:"email" binding:"required,email"`
 	Phone      string `form:"phone" binding:"required"`
 	Password   string `form:"password" binding:"required,min=6"`
-	Role       string `form:"role" binding:"required"`
+	RoleSlug   string `form:"role" binding:"required"`
 }

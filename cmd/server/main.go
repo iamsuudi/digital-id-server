@@ -6,7 +6,7 @@ import (
 	"github.com/iamsuudi/digital-id-server/internal/auth"
 	"github.com/iamsuudi/digital-id-server/internal/city"
 	"github.com/iamsuudi/digital-id-server/internal/repository"
-	"github.com/iamsuudi/digital-id-server/internal/resident"
+	// "github.com/iamsuudi/digital-id-server/internal/resident"
 	"github.com/iamsuudi/digital-id-server/internal/user"
 	"github.com/iamsuudi/digital-id-server/shared/config"
 )
@@ -27,7 +27,7 @@ func main() {
 	dbQueries := repository.New(dbConn)
 
 	auth.RegisterRoutes(v1, dbConn, dbQueries)
-	resident.RegisterRoutes(v1, dbConn, dbQueries)
+	// resident.RegisterRoutes(v1, dbConn, dbQueries)
 	city.RegisterRoutes(v1, dbConn, dbQueries)
 	user.RegisterRoutes(v1, dbConn, dbQueries)
 

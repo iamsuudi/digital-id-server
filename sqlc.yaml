@@ -1,11 +1,11 @@
 version: "2"
 sql:
-  - schema: "database/migrations"
+  - schema: "database/schemas"
     queries: 
       - "database/queries"
       - "database/queries/auth"
-      - "database/queries/resident"
-      - "database/queries/location"
+      # - "database/queries/resident"
+      # - "database/queries/location"
     engine: "postgresql"
     gen:
       go:

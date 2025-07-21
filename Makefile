@@ -28,6 +28,12 @@ reset_db:
 	psql -U $(DB_USER) -h $(DB_HOST) -p $(DB_PORT) -c "DROP DATABASE IF EXISTS $(DB_NAME);"
 	psql -U $(DB_USER) -h $(DB_HOST) -p $(DB_PORT) -c "CREATE DATABASE $(DB_NAME);"
 
+reload_schema: reset_db
+	@for f in database/schemas/*.sql; do \
+	    echo "-- running $$f"; \
+	    psql "$(db_url)" -v ON_ERROR_STOP=1 -f "$$f"; \
+	done
+
 clear_migrations:
 	rm database/migrations/*.sql
 
