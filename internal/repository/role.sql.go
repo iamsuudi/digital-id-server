@@ -19,7 +19,7 @@ WHERE EXISTS (
     FROM role_permission rp
     JOIN role role ON role.slug = rp.role_slug
     WHERE rp.permission_name = p.name
-      AND role.level_rank <= (
+      AND role.level_rank = (
           SELECT level_rank FROM role WHERE slug = (SELECT role_slug FROM "user" WHERE id = $1)
       )
 )
