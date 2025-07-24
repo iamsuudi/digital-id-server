@@ -11,6 +11,10 @@ import (
 )
 
 type Querier interface {
+	CanActorGrantPermissionToRole(ctx context.Context, arg CanActorGrantPermissionToRoleParams) (bool, error)
+	// returns true if the actor’s role is strictly more powerful than target_role
+	CanActorManipulateRole(ctx context.Context, arg CanActorManipulateRoleParams) (bool, error)
+	CanActorTouchTarget(ctx context.Context, arg CanActorTouchTargetParams) (bool, error)
 	CountListCities(ctx context.Context) (int64, error)
 	CountListUsers(ctx context.Context) (int64, error)
 	CountListUsersUnderScope(ctx context.Context, arg CountListUsersUnderScopeParams) (int64, error)
@@ -21,15 +25,29 @@ type Querier interface {
 	CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error)
 	DeleteRefreshToken(ctx context.Context, token string) error
 	DeleteRefreshTokensByUser(ctx context.Context, userID uuid.UUID) error
+	// returns every permission the actor can legally manipulate
+	GetAssignablePermissionsForActor(ctx context.Context, id uuid.UUID) ([]Permission, error)
 	GetCity(ctx context.Context, id uuid.UUID) (GetCityRow, error)
+	GetCurrentUserMaxRoleLevel(ctx context.Context, id uuid.UUID) (int32, error)
+	GetEffectivePermissionsForUser(ctx context.Context, roleSlug string) ([]GetEffectivePermissionsForUserRow, error)
 	GetRefreshToken(ctx context.Context, token string) (RefreshTokens, error)
+	GetRoleTree(ctx context.Context, slug string) ([]GetRoleTreeRow, error)
 	GetUserByEmail(ctx context.Context, email string) (GetUserByEmailRow, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (GetUserByIDRow, error)
 	GetUserScope(ctx context.Context, id uuid.UUID) (GetUserScopeRow, error)
+	GrantPermissionToRole(ctx context.Context, arg GrantPermissionToRoleParams) error
 	ListAllUsers(ctx context.Context, arg ListAllUsersParams) ([]ListAllUsersRow, error)
 	ListCities(ctx context.Context, arg ListCitiesParams) ([]ListCitiesRow, error)
+	ListPermissionMatrixInScope(ctx context.Context, arg ListPermissionMatrixInScopeParams) ([]ListPermissionMatrixInScopeRow, error)
+	ListPermissionOverridesForUser(ctx context.Context, userID uuid.UUID) ([]ListPermissionOverridesForUserRow, error)
+	ListPermissions(ctx context.Context) ([]Permission, error)
+	ListRolePermissions(ctx context.Context) ([]ListRolePermissionsRow, error)
+	ListRoles(ctx context.Context) ([]Role, error)
 	ListUsersUnderScope(ctx context.Context, arg ListUsersUnderScopeParams) ([]ListUsersUnderScopeRow, error)
+	RemoveUserPermissionOverride(ctx context.Context, arg RemoveUserPermissionOverrideParams) error
+	RevokePermissionFromRole(ctx context.Context, arg RevokePermissionFromRoleParams) error
 	SearchUsersUnderScope(ctx context.Context, arg SearchUsersUnderScopeParams) ([]SearchUsersUnderScopeRow, error)
+	SetUserPermissionOverride(ctx context.Context, arg SetUserPermissionOverrideParams) error
 	SoftDeleteUser(ctx context.Context, id uuid.UUID) error
 	UpdateUserRole(ctx context.Context, arg UpdateUserRoleParams) error
 }

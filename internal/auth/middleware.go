@@ -13,6 +13,15 @@ const (
 	ContextUserRoleKey = "user_role"
 )
 
+func hasRole(ctx *gin.Context, expectedRole string) bool {
+	raw, exists := ctx.Get(ContextUserRoleKey)
+	role, ok := raw.(string)
+	if !exists || !ok {
+		return false
+	}
+	return role == expectedRole
+}
+
 func Authenticate() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token, err := c.Cookie("oict_jwt")
@@ -31,15 +40,6 @@ func Authenticate() gin.HandlerFunc {
 		c.Set(ContextUserRoleKey, claims.Role)
 		c.Next()
 	}
-}
-
-func hasRole(ctx *gin.Context, expectedRole string) bool {
-	raw, exists := ctx.Get(ContextUserRoleKey)
-	role, ok := raw.(string)
-	if !exists || !ok {
-		return false
-	}
-	return role == expectedRole
 }
 
 func Authorize(allowedRoles ...string) gin.HandlerFunc {

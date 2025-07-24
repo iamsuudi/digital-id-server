@@ -21,7 +21,7 @@ CREATE TABLE "user" (
     role_slug        TEXT NOT NULL REFERENCES role(slug)  ON DELETE RESTRICT,
     search_vector    tsvector GENERATED ALWAYS AS (to_tsvector('english',
         first_name||' '||second_name||' '||last_name)) STORED,
-        
+
     created_at    TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at    TIMESTAMP(3)
     -- CHECK (
@@ -60,6 +60,15 @@ CREATE TABLE role_permission (
     permission_name TEXT  REFERENCES permission(name) ON DELETE CASCADE,
     PRIMARY KEY (role_slug, permission_name)
 );
+
+-- Grant superadmin all current permissions
+INSERT INTO role_permission (role_slug, permission_name) VALUES
+('superadmin', 'can_edit_price'),
+('superadmin', 'can_issue_refund'),
+('superadmin', 'can_void_receipt'),
+('superadmin', 'can_close_shift'),
+('superadmin', 'can_export_reports')
+ON CONFLICT DO NOTHING;
 
 -- 7. sparse overrides (per-user permission toggles) --------------
 CREATE TABLE user_permission_override (
