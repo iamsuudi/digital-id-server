@@ -2,8 +2,8 @@ package auth
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/iamsuudi/digital-id-server/internal/repository"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"digital-id-server/internal/repository"
 )
 
 func RegisterRoutes(rg *gin.RouterGroup, dbConn *pgxpool.Pool, dbQueries *repository.Queries) {

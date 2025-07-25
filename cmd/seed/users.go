@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iamsuudi/digital-id-server/internal/repository"
-	"github.com/iamsuudi/digital-id-server/shared/types"
 	"golang.org/x/crypto/bcrypt"
+	"digital-id-server/shared/types"
+	"digital-id-server/internal/repository"
 )
 
 // CreateUsers returns the proportional user list with plain passwords.

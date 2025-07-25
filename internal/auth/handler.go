@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/iamsuudi/digital-id-server/shared/types"
+	"digital-id-server/shared/types"
 )
 
 type Handler struct {

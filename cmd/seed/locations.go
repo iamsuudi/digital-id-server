@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/iamsuudi/digital-id-server/internal/repository"
+	"digital-id-server/internal/repository"
 )
 
 // Kebele is the smallest administrative unit.

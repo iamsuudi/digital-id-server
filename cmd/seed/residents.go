@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/iamsuudi/digital-id-server/internal/repository"
+	"digital-id-server/internal/repository"
 )
 
 func seedResidents(ctx context.Context, queries *repository.Queries) {
