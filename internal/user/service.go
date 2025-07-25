@@ -26,9 +26,7 @@ func (s *Service) GetUserByEmail(ctx context.Context, email string) (repository.
 }
 
 func (s *Service) GetAll(ctx context.Context, limit, offset int, query string) (int64, []repository.ListUsersUnderScopeRow, error) {
-	count, _ := s.q.CountListUsersUnderScope(ctx, repository.CountListUsersUnderScopeParams{
-		
-	})
+	count, _ := s.q.CountListUsersUnderScope(ctx, repository.CountListUsersUnderScopeParams{})
 	users, err := s.q.ListUsersUnderScope(ctx, repository.ListUsersUnderScopeParams{
 		Limit:  int32(limit),
 		Offset: int32(offset),
@@ -52,7 +50,7 @@ func (s *Service) SearchUsers(ctx context.Context, limit, offset int, query stri
 	if err != nil {
 		return 0, nil, err
 	}
-	
+
 	users, err := s.q.SearchUsersUnderScope(ctx, repository.SearchUsersUnderScopeParams{
 		Limit:  int32(limit),
 		Offset: int32(offset),
@@ -61,26 +59,24 @@ func (s *Service) SearchUsers(ctx context.Context, limit, offset int, query stri
 	if err != nil {
 		return 0, nil, err
 	}
-	
+
 	return count, users, nil
 }
 
-func (s *Service) SearchUsersForSuperadmin(ctx context.Context, limit, offset int, query string) (int64, []repository.SearchUsersUnderScopeRow, error) {
-	count, err := s.q.CountUsersSearchUnderScope(ctx, repository.CountUsersSearchUnderScopeParams{
-		Query: query,
-	})
+func (s *Service) SearchUsersForSuperadmin(ctx context.Context, limit, offset int, query string) (int64, []repository.SearchUsersRow, error) {
+	count, err := s.q.CountUsersSearch(ctx, query)
 	if err != nil {
 		return 0, nil, err
 	}
-	
-	users, err := s.q.SearchUsersUnderScope(ctx, repository.SearchUsersUnderScopeParams{
+
+	users, err := s.q.SearchUsers(ctx, repository.SearchUsersParams{
 		Limit:  int32(limit),
 		Offset: int32(offset),
-		Query:  &query,
+		Query:  query,
 	})
 	if err != nil {
 		return 0, nil, err
 	}
-	
+
 	return count, users, nil
 }
