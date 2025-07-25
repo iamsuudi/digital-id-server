@@ -4,7 +4,7 @@ CREATE TABLE biometric (
     fingerprint  BYTEA,
     blood_type   TEXT NOT NULL,
     face         TEXT NOT NULL,
-    search_vector tsvector GENERATED ALWAYS AS (to_tsvector('english', blood_type)) STORED,
+    
     created_at   TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at   TIMESTAMP(3)
 );

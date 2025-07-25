@@ -5,9 +5,7 @@ CREATE TABLE employment (
     occupation    TEXT,
     employer_name TEXT,
     work_address  TEXT,
-    search_vector tsvector GENERATED ALWAYS AS (to_tsvector('english',
-        status||' '||COALESCE(occupation,'')||' '||
-        COALESCE(employer_name,'')||' '||COALESCE(work_address,''))) STORED,
+    
     created_at    TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at    TIMESTAMP(3)
 );

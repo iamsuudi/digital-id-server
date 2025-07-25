@@ -14,7 +14,7 @@ import (
 const createKebele = `-- name: CreateKebele :one
 INSERT INTO kebele (name, city_id)
 VALUES ($1, $2)
-RETURNING id, name, subcity_id, city_id, search_vector, created_at, deleted_at
+RETURNING id, name, subcity_id, city_id, created_at, deleted_at
 `
 
 type CreateKebeleParams struct {
@@ -30,7 +30,6 @@ func (q *Queries) CreateKebele(ctx context.Context, arg CreateKebeleParams) (Keb
 		&i.Name,
 		&i.SubcityID,
 		&i.CityID,
-		&i.SearchVector,
 		&i.CreatedAt,
 		&i.DeletedAt,
 	)

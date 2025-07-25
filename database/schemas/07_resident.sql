@@ -14,8 +14,7 @@ CREATE TABLE resident (
     education_level  TEXT,
     languages_spoken TEXT            NOT NULL,
     address_id       UUID REFERENCES address(id) ON DELETE SET NULL,
-    search_vector    tsvector GENERATED ALWAYS AS (to_tsvector('english',
-        first_name||' '||second_name||' '||last_name)) STORED,
+    
     created_at       TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at       TIMESTAMP(3)
 );
