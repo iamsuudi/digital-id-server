@@ -18,6 +18,7 @@ type Querier interface {
 	CountListCities(ctx context.Context) (int64, error)
 	CountListUsers(ctx context.Context) (int64, error)
 	CountListUsersUnderScope(ctx context.Context, arg CountListUsersUnderScopeParams) (int64, error)
+	CountUsersSearch(ctx context.Context, query string) (int64, error)
 	CountUsersSearchUnderScope(ctx context.Context, arg CountUsersSearchUnderScopeParams) (int64, error)
 	CreateCity(ctx context.Context, name string) (City, error)
 	CreateKebele(ctx context.Context, arg CreateKebeleParams) (Kebele, error)
@@ -46,6 +47,7 @@ type Querier interface {
 	ListUsersUnderScope(ctx context.Context, arg ListUsersUnderScopeParams) ([]ListUsersUnderScopeRow, error)
 	RemoveUserPermissionOverride(ctx context.Context, arg RemoveUserPermissionOverrideParams) error
 	RevokePermissionFromRole(ctx context.Context, arg RevokePermissionFromRoleParams) error
+	SearchUsers(ctx context.Context, arg SearchUsersParams) ([]SearchUsersRow, error)
 	SearchUsersUnderScope(ctx context.Context, arg SearchUsersUnderScopeParams) ([]SearchUsersUnderScopeRow, error)
 	SetUserPermissionOverride(ctx context.Context, arg SetUserPermissionOverrideParams) error
 	SoftDeleteUser(ctx context.Context, id uuid.UUID) error

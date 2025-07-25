@@ -92,7 +92,7 @@ func (h *Handler) GetAll(c *gin.Context) {
 		count, users, err := h.service.SearchUsers(c, limit, offset, query)
 		fmt.Print(err)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch users"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to search users"})
 			return
 		}
 		if users == nil {
@@ -133,14 +133,14 @@ func (h *Handler) GetAllForSuperadmin(c *gin.Context) {
 			"count": count,
 		})
 	} else {
-		count, users, err := h.service.SearchUsers(c, limit, offset, query)
-		fmt.Print(err)
+		count, users, err := h.service.SearchUsersForSuperadmin(c, limit, offset, query)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch users"})
+			fmt.Print("super:", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to search users"})
 			return
 		}
 		if users == nil {
-			users = []repository.SearchUsersUnderScopeRow{}
+			users = []repository.SearchUsersRow{}
 		}
 
 		c.JSON(http.StatusOK, gin.H{
