@@ -25,7 +25,7 @@ func (s *Service) GetUserByEmail(ctx context.Context, email string) (repository.
 	return s.q.GetUserByEmail(ctx, email)
 }
 
-func (s *Service) GetAll(ctx context.Context, limit, offset int, query string) (int64, []repository.ListUsersUnderScopeRow, error) {
+func (s *Service) GetAllUnderScope(ctx context.Context, limit, offset int, query string) (int64, []repository.ListUsersUnderScopeRow, error) {
 	count, _ := s.q.CountListUsersUnderScope(ctx, repository.CountListUsersUnderScopeParams{})
 	users, err := s.q.ListUsersUnderScope(ctx, repository.ListUsersUnderScopeParams{
 		Limit:  int32(limit),
@@ -43,7 +43,7 @@ func (s *Service) GetAllForSuperadmin(ctx context.Context, limit, offset int, qu
 	return count, users, err
 }
 
-func (s *Service) SearchUsers(ctx context.Context, limit, offset int, query string) (int64, []repository.SearchUsersUnderScopeRow, error) {
+func (s *Service) SearchUsersUnderScope(ctx context.Context, limit, offset int, query string) (int64, []repository.SearchUsersUnderScopeRow, error) {
 	count, err := s.q.CountUsersSearchUnderScope(ctx, repository.CountUsersSearchUnderScopeParams{
 		Query: query,
 	})

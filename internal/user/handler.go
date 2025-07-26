@@ -6,11 +6,12 @@ import (
 	"net/http"
 	"strings"
 
+	"digital-id-server/internal/repository"
+	"digital-id-server/shared/utils"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"digital-id-server/internal/repository"
-	"digital-id-server/shared/utils"
 )
 
 type Handler struct {
@@ -75,7 +76,7 @@ func (h *Handler) GetAll(c *gin.Context) {
 	}
 
 	if strings.TrimSpace(query) == "" {
-		count, users, err := h.service.GetAll(c.Request.Context(), limit, offset, query)
+		count, users, err := h.service.GetAllUnderScope(c.Request.Context(), limit, offset, query)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch users"})
 			return
@@ -89,7 +90,7 @@ func (h *Handler) GetAll(c *gin.Context) {
 			"count": count,
 		})
 	} else {
-		count, users, err := h.service.SearchUsers(c, limit, offset, query)
+		count, users, err := h.service.SearchUsersUnderScope(c, limit, offset, query)
 		fmt.Print(err)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to search users"})
@@ -107,6 +108,50 @@ func (h *Handler) GetAll(c *gin.Context) {
 }
 
 func (h *Handler) GetAllForSuperadmin(c *gin.Context) {
+	limit, _, offset, limitErr, pageErr := utils.PaginationHelper(c)
+	query := c.Query("query")
+	if limitErr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid rows per page"})
+		return
+	}
+	if pageErr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page number"})
+		return
+	}
+
+	if strings.TrimSpace(query) == "" {
+		count, users, err := h.service.GetAllForSuperadmin(c.Request.Context(), limit, offset, query)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch users"})
+			return
+		}
+		if users == nil {
+			users = []repository.ListAllUsersRow{}
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"users": users,
+			"count": count,
+		})
+	} else {
+		count, users, err := h.service.SearchUsersForSuperadmin(c, limit, offset, query)
+		if err != nil {
+			fmt.Print("super:", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to search users"})
+			return
+		}
+		if users == nil {
+			users = []repository.SearchUsersRow{}
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"users": users,
+			"count": count,
+		})
+	}
+}
+
+func (h *Handler) GetManagers(c *gin.Context) {
 	limit, _, offset, limitErr, pageErr := utils.PaginationHelper(c)
 	query := c.Query("query")
 	if limitErr != nil {

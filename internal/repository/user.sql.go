@@ -580,6 +580,29 @@ func (q *Queries) SoftDeleteUser(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
+const updateUserPlacement = `-- name: UpdateUserPlacement :exec
+UPDATE "user"
+SET city_id = $2, subcity_id = $3, kebele_id = $4
+WHERE id = $1
+`
+
+type UpdateUserPlacementParams struct {
+	ID        uuid.UUID  `db:"id" json:"id"`
+	CityID    *uuid.UUID `db:"city_id" json:"city_id"`
+	SubcityID *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	KebeleID  *uuid.UUID `db:"kebele_id" json:"kebele_id"`
+}
+
+func (q *Queries) UpdateUserPlacement(ctx context.Context, arg UpdateUserPlacementParams) error {
+	_, err := q.db.Exec(ctx, updateUserPlacement,
+		arg.ID,
+		arg.CityID,
+		arg.SubcityID,
+		arg.KebeleID,
+	)
+	return err
+}
+
 const updateUserRole = `-- name: UpdateUserRole :exec
 UPDATE "user"
 SET role_slug = $2

@@ -15,6 +15,7 @@ func RegisterRoutes(rg *gin.RouterGroup, dbConn *pgxpool.Pool, dbQueries *reposi
 	{
 		residentGroup.POST("/create", handler.CreateSubCity)
 		residentGroup.GET("/:id", handler.GetSubCity)
+		residentGroup.PUT("/:id", handler.UpdateSubCity)
 		residentGroup.GET("/", handler.GetAll)
 	}
 }
