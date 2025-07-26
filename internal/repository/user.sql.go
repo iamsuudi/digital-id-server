@@ -51,7 +51,7 @@ const countUsersSearch = `-- name: CountUsersSearch :one
 SELECT COUNT(*)
 FROM "user"
 WHERE deleted_at IS NULL AND
-    search_vector @@ plainto_tsquery('english', $1)
+    similarity(CONCAT_WS(' ', first_name, second_name, last_name), $1) > 0.2
 `
 
 func (q *Queries) CountUsersSearch(ctx context.Context, query string) (int64, error) {
@@ -65,7 +65,7 @@ const countUsersSearchUnderScope = `-- name: CountUsersSearchUnderScope :one
 SELECT COUNT(*)
 FROM "user" u
 WHERE deleted_at IS NULL AND
-    search_vector @@ plainto_tsquery('english', $1) AND
+    similarity(CONCAT_WS(' ', first_name, second_name, last_name), $1) > 0.2 AND
     ($2::uuid IS NULL OR u.city_id = $2::uuid) AND
     ($3::uuid IS NULL OR u.subcity_id = $3::uuid) AND
     ($4::uuid IS NULL OR u.kebele_id = $4::uuid)
@@ -476,23 +476,21 @@ func (q *Queries) SearchUsers(ctx context.Context, arg SearchUsersParams) ([]Sea
 }
 
 const searchUsersUnderScope = `-- name: SearchUsersUnderScope :many
-SELECT id, first_name, second_name, last_name, email, phone, password_hash, city_id, subcity_id, kebele_id, role_slug, created_at, deleted_at, slug, name, parent_role_slug, level_rank, r.name, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
+SELECT id, first_name, second_name, last_name, email, phone, password_hash, city_id, subcity_id, kebele_id, role_slug, created_at, deleted_at, slug, name, parent_role_slug, level_rank, r.name, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name,
+    similarity(CONCAT_WS(' ', first_name, second_name, last_name), $1) AS sim
 FROM "user" u
 JOIN role r ON r.slug = u.role_slug
 WHERE deleted_at IS NULL AND
-    search_vector @@ to_tsquery('english', $1 || ':*') AND
+    similarity(CONCAT_WS(' ', first_name, second_name, last_name), $1) > 0.2 AND
     ($2::uuid IS NULL OR u.city_id = $2::uuid) AND
     ($3::uuid IS NULL OR u.subcity_id = $3::uuid) AND
     ($4::uuid IS NULL OR u.kebele_id = $4::uuid)
-ORDER BY
-    ts_rank(search_vector, to_tsquery('english', $1 || ':*')) DESC,
-    similarity(first_name || ' ' || second_name || ' ' || last_name, $1) DESC,
-    created_at DESC
+ORDER BY sim DESC, created_at DESC
 LIMIT $6 OFFSET $5
 `
 
 type SearchUsersUnderScopeParams struct {
-	Query     *string   `db:"query" json:"query"`
+	Query     string    `db:"query" json:"query"`
 	CityID    uuid.UUID `db:"city_id" json:"city_id"`
 	SubcityID uuid.UUID `db:"subcity_id" json:"subcity_id"`
 	KebeleID  uuid.UUID `db:"kebele_id" json:"kebele_id"`
@@ -520,6 +518,7 @@ type SearchUsersUnderScopeRow struct {
 	LevelRank      int32      `db:"level_rank" json:"level_rank"`
 	Name_2         string     `db:"name_2" json:"name_2"`
 	FullName       string     `db:"full_name" json:"full_name"`
+	Sim            float32    `db:"sim" json:"sim"`
 }
 
 func (q *Queries) SearchUsersUnderScope(ctx context.Context, arg SearchUsersUnderScopeParams) ([]SearchUsersUnderScopeRow, error) {
@@ -558,6 +557,7 @@ func (q *Queries) SearchUsersUnderScope(ctx context.Context, arg SearchUsersUnde
 			&i.LevelRank,
 			&i.Name_2,
 			&i.FullName,
+			&i.Sim,
 		); err != nil {
 			return nil, err
 		}
