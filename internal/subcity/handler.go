@@ -1,4 +1,4 @@
-package city
+package subcity
 
 import (
 	"errors"
@@ -20,14 +20,14 @@ func NewHandler(s *Service) *Handler {
 	return &Handler{service: s}
 }
 
-func (h *Handler) CreateCity(c *gin.Context) {
-	var input types.CityInput
+func (h *Handler) CreateSubCity(c *gin.Context) {
+	var input types.SubCityInput
 	if err := c.ShouldBind(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input: " + err.Error()})
 		return
 	}
 
-	city, err := h.service.CreateCity(c.Request.Context(), input)
+	city, err := h.service.CreateSubCity(c.Request.Context(), input)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create city: " + err.Error()})
 		return
@@ -36,7 +36,7 @@ func (h *Handler) CreateCity(c *gin.Context) {
 	c.JSON(http.StatusCreated, city)
 }
 
-func (h *Handler) GetCity(c *gin.Context) {
+func (h *Handler) GetSubCity(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := uuid.Parse(idParam)
 	if err != nil {
@@ -44,17 +44,17 @@ func (h *Handler) GetCity(c *gin.Context) {
 		return
 	}
 
-	city, err := h.service.GetCity(c.Request.Context(), id)
+	subcity, err := h.service.GetSubCity(c.Request.Context(), id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "City not found"})
+			c.JSON(http.StatusNotFound, gin.H{"error": "SubCity not found"})
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch city"})
 		}
 		return
 	}
 
-	c.JSON(http.StatusOK, city)
+	c.JSON(http.StatusOK, subcity)
 }
 
 func (h *Handler) GetAll(c *gin.Context) {
@@ -76,17 +76,17 @@ func (h *Handler) GetAll(c *gin.Context) {
 	}
 	offset := (page - 1) * limit
 	
-	count, cities, err := h.service.GetAll(c.Request.Context(), limit, offset)
+	count, subcities, err := h.service.GetAll(c.Request.Context(), limit, offset)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch cities"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch subcities"})
 		return
 	}
 	
-	if cities == nil {
-		cities = []repository.ListCitiesRow{}
+	if subcities == nil {
+		subcities = []repository.ListSubCitiesRow{}
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"cities": cities,
+		"subcities": subcities,
 		"count": count,
 	})
 }
