@@ -1,13 +1,15 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
 	"digital-id-server/database"
 	"digital-id-server/internal/auth"
 	"digital-id-server/internal/city"
 	"digital-id-server/internal/permission"
 	"digital-id-server/internal/repository"
 	"digital-id-server/internal/role"
+	"digital-id-server/internal/subcity"
+
+	"github.com/gin-gonic/gin"
 
 	// "digital-id-server/internal/resident"
 	"digital-id-server/internal/user"
@@ -35,6 +37,7 @@ func main() {
 	user.RegisterRoutes(v1, dbConn, dbQueries)
 	role.RegisterRoutes(v1, dbConn, dbQueries)
 	permission.RegisterRoutes(v1, dbConn, dbQueries)
+	subcity.RegisterRoutes(v1, dbConn, dbQueries)
 
 	r.Run(":8080")
 }

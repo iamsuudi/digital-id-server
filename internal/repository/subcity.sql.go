@@ -50,8 +50,9 @@ func (q *Queries) CreateSubCity(ctx context.Context, arg CreateSubCityParams) (S
 }
 
 const getSubCity = `-- name: GetSubCity :one
-SELECT s.id, s.name, s.city_id, s.created_at, s.deleted_at, u.id as manager_id, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS manager_name
+SELECT s.id, s.name, s.city_id, s.created_at, s.deleted_at, c.name as city_name, u.id as manager_id, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS manager_name
 FROM subcity s
+LEFT JOIN city c ON c.id = s.city_id
 LEFT JOIN "user" u ON u.subcity_id = s.id
 WHERE s.id = $1 AND s.deleted_at IS NULL
 `
@@ -62,6 +63,7 @@ type GetSubCityRow struct {
 	CityID      uuid.UUID  `db:"city_id" json:"city_id"`
 	CreatedAt   time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt   *time.Time `db:"deleted_at" json:"deleted_at"`
+	CityName    *string    `db:"city_name" json:"city_name"`
 	ManagerID   *uuid.UUID `db:"manager_id" json:"manager_id"`
 	ManagerName string     `db:"manager_name" json:"manager_name"`
 }
@@ -75,6 +77,7 @@ func (q *Queries) GetSubCity(ctx context.Context, id uuid.UUID) (GetSubCityRow, 
 		&i.CityID,
 		&i.CreatedAt,
 		&i.DeletedAt,
+		&i.CityName,
 		&i.ManagerID,
 		&i.ManagerName,
 	)
@@ -82,8 +85,9 @@ func (q *Queries) GetSubCity(ctx context.Context, id uuid.UUID) (GetSubCityRow, 
 }
 
 const listSubCities = `-- name: ListSubCities :many
-SELECT s.id, s.name, s.city_id, s.created_at, s.deleted_at, u.id as manager_id, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS manager_name
+SELECT s.id, s.name, s.city_id, s.created_at, s.deleted_at, c.name as city_name, u.id as manager_id, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS manager_name
 FROM subcity s
+LEFT JOIN city c ON c.id = s.city_id
 LEFT JOIN "user" u ON u.subcity_id = s.id
 WHERE s.deleted_at IS NULL
 ORDER BY s.created_at DESC
@@ -101,6 +105,7 @@ type ListSubCitiesRow struct {
 	CityID      uuid.UUID  `db:"city_id" json:"city_id"`
 	CreatedAt   time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt   *time.Time `db:"deleted_at" json:"deleted_at"`
+	CityName    *string    `db:"city_name" json:"city_name"`
 	ManagerID   *uuid.UUID `db:"manager_id" json:"manager_id"`
 	ManagerName string     `db:"manager_name" json:"manager_name"`
 }
@@ -120,6 +125,7 @@ func (q *Queries) ListSubCities(ctx context.Context, arg ListSubCitiesParams) ([
 			&i.CityID,
 			&i.CreatedAt,
 			&i.DeletedAt,
+			&i.CityName,
 			&i.ManagerID,
 			&i.ManagerName,
 		); err != nil {
