@@ -122,3 +122,27 @@ func (q *Queries) ListCities(ctx context.Context, arg ListCitiesParams) ([]ListC
 	}
 	return items, nil
 }
+
+const updateCity = `-- name: UpdateCity :one
+UPDATE city
+SET name = $2
+WHERE id = $1
+RETURNING id, name, created_at, deleted_at
+`
+
+type UpdateCityParams struct {
+	ID   uuid.UUID `db:"id" json:"id"`
+	Name string    `db:"name" json:"name"`
+}
+
+func (q *Queries) UpdateCity(ctx context.Context, arg UpdateCityParams) (City, error) {
+	row := q.db.QueryRow(ctx, updateCity, arg.ID, arg.Name)
+	var i City
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}

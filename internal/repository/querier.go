@@ -55,6 +55,7 @@ type Querier interface {
 	SearchUsersUnderScope(ctx context.Context, arg SearchUsersUnderScopeParams) ([]SearchUsersUnderScopeRow, error)
 	SetUserPermissionOverride(ctx context.Context, arg SetUserPermissionOverrideParams) error
 	SoftDeleteUser(ctx context.Context, id uuid.UUID) error
+	UpdateCity(ctx context.Context, arg UpdateCityParams) (City, error)
 	UpdateSubCity(ctx context.Context, arg UpdateSubCityParams) (Subcity, error)
 	UpdateUserPlacement(ctx context.Context, arg UpdateUserPlacementParams) error
 	UpdateUserRole(ctx context.Context, arg UpdateUserRoleParams) error

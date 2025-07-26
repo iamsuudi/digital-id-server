@@ -36,6 +36,33 @@ func (h *Handler) CreateCity(c *gin.Context) {
 	c.JSON(http.StatusCreated, city)
 }
 
+func (h *Handler) UpdateCity(c *gin.Context) {
+	var input types.CityInput
+	if err := c.ShouldBind(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input: " + err.Error()})
+		return
+	}
+
+	idParam := c.Param("id")
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid city ID"})
+		return
+	}
+
+	err = h.service.UpdateCity(c.Request.Context(), id, input)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "SubCity not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update subcity"})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true})
+}
+
 func (h *Handler) GetCity(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := uuid.Parse(idParam)
