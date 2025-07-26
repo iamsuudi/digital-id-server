@@ -6,8 +6,7 @@ CREATE TABLE payment (
     status       payment_status NOT NULL,
     reference    TEXT NOT NULL,
     method       payment_method NOT NULL,
-    search_vector tsvector GENERATED ALWAYS AS (to_tsvector('english',
-        description||' '||reference)) STORED,
+    
     created_at   TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at   TIMESTAMP(3)
 );

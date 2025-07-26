@@ -8,9 +8,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/iamsuudi/digital-id-server/internal/repository"
-	"github.com/iamsuudi/digital-id-server/shared/utils"
 	"github.com/jackc/pgx/v5"
+	"digital-id-server/internal/repository"
+	"digital-id-server/shared/utils"
 )
 
 type Handler struct {

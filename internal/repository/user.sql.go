@@ -51,7 +51,7 @@ const countUsersSearch = `-- name: CountUsersSearch :one
 SELECT COUNT(*)
 FROM "user"
 WHERE deleted_at IS NULL AND
-    search_vector @@ plainto_tsquery('english', $1)
+    similarity(CONCAT_WS(' ', first_name, second_name, last_name), $1) > 0.2
 `
 
 func (q *Queries) CountUsersSearch(ctx context.Context, query string) (int64, error) {
@@ -65,7 +65,7 @@ const countUsersSearchUnderScope = `-- name: CountUsersSearchUnderScope :one
 SELECT COUNT(*)
 FROM "user" u
 WHERE deleted_at IS NULL AND
-    search_vector @@ plainto_tsquery('english', $1) AND
+    similarity(CONCAT_WS(' ', first_name, second_name, last_name), $1) > 0.2 AND
     ($2::uuid IS NULL OR u.city_id = $2::uuid) AND
     ($3::uuid IS NULL OR u.subcity_id = $3::uuid) AND
     ($4::uuid IS NULL OR u.kebele_id = $4::uuid)
@@ -93,7 +93,7 @@ func (q *Queries) CountUsersSearchUnderScope(ctx context.Context, arg CountUsers
 const createUser = `-- name: CreateUser :one
 INSERT INTO "user" (first_name, second_name, last_name, email, phone, password_hash, role_slug)
 VALUES ($1, $2, $3, $4, $5, $6, $7)
-RETURNING id, first_name, second_name, last_name, email, phone, password_hash, city_id, subcity_id, kebele_id, role_slug, search_vector, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
+RETURNING id, first_name, second_name, last_name, email, phone, password_hash, city_id, subcity_id, kebele_id, role_slug, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
 `
 
 type CreateUserParams struct {
@@ -118,7 +118,6 @@ type CreateUserRow struct {
 	SubcityID    *uuid.UUID `db:"subcity_id" json:"subcity_id"`
 	KebeleID     *uuid.UUID `db:"kebele_id" json:"kebele_id"`
 	RoleSlug     string     `db:"role_slug" json:"role_slug"`
-	SearchVector *string    `db:"search_vector" json:"search_vector"`
 	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
 	FullName     string     `db:"full_name" json:"full_name"`
@@ -147,7 +146,6 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateU
 		&i.SubcityID,
 		&i.KebeleID,
 		&i.RoleSlug,
-		&i.SearchVector,
 		&i.CreatedAt,
 		&i.DeletedAt,
 		&i.FullName,
@@ -156,7 +154,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateU
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, first_name, second_name, last_name, email, phone, password_hash, city_id, subcity_id, kebele_id, role_slug, search_vector, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
+SELECT id, first_name, second_name, last_name, email, phone, password_hash, city_id, subcity_id, kebele_id, role_slug, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
 FROM "user"
 WHERE email = $1 AND deleted_at IS NULL
 `
@@ -173,7 +171,6 @@ type GetUserByEmailRow struct {
 	SubcityID    *uuid.UUID `db:"subcity_id" json:"subcity_id"`
 	KebeleID     *uuid.UUID `db:"kebele_id" json:"kebele_id"`
 	RoleSlug     string     `db:"role_slug" json:"role_slug"`
-	SearchVector *string    `db:"search_vector" json:"search_vector"`
 	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
 	FullName     string     `db:"full_name" json:"full_name"`
@@ -194,7 +191,6 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEm
 		&i.SubcityID,
 		&i.KebeleID,
 		&i.RoleSlug,
-		&i.SearchVector,
 		&i.CreatedAt,
 		&i.DeletedAt,
 		&i.FullName,
@@ -203,7 +199,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEm
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, first_name, second_name, last_name, email, phone, password_hash, city_id, subcity_id, kebele_id, role_slug, search_vector, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
+SELECT id, first_name, second_name, last_name, email, phone, password_hash, city_id, subcity_id, kebele_id, role_slug, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
 FROM "user"
 WHERE id = $1 AND deleted_at IS NULL
 `
@@ -220,7 +216,6 @@ type GetUserByIDRow struct {
 	SubcityID    *uuid.UUID `db:"subcity_id" json:"subcity_id"`
 	KebeleID     *uuid.UUID `db:"kebele_id" json:"kebele_id"`
 	RoleSlug     string     `db:"role_slug" json:"role_slug"`
-	SearchVector *string    `db:"search_vector" json:"search_vector"`
 	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
 	FullName     string     `db:"full_name" json:"full_name"`
@@ -241,7 +236,6 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (GetUserByIDRow
 		&i.SubcityID,
 		&i.KebeleID,
 		&i.RoleSlug,
-		&i.SearchVector,
 		&i.CreatedAt,
 		&i.DeletedAt,
 		&i.FullName,
@@ -267,7 +261,7 @@ func (q *Queries) GetUserScope(ctx context.Context, id uuid.UUID) (GetUserScopeR
 }
 
 const listAllUsers = `-- name: ListAllUsers :many
-SELECT id, first_name, second_name, last_name, email, phone, password_hash, city_id, subcity_id, kebele_id, role_slug, search_vector, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
+SELECT id, first_name, second_name, last_name, email, phone, password_hash, city_id, subcity_id, kebele_id, role_slug, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
 FROM "user"
 WHERE deleted_at IS NULL
 ORDER BY created_at ASC
@@ -291,7 +285,6 @@ type ListAllUsersRow struct {
 	SubcityID    *uuid.UUID `db:"subcity_id" json:"subcity_id"`
 	KebeleID     *uuid.UUID `db:"kebele_id" json:"kebele_id"`
 	RoleSlug     string     `db:"role_slug" json:"role_slug"`
-	SearchVector *string    `db:"search_vector" json:"search_vector"`
 	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
 	FullName     string     `db:"full_name" json:"full_name"`
@@ -318,7 +311,6 @@ func (q *Queries) ListAllUsers(ctx context.Context, arg ListAllUsersParams) ([]L
 			&i.SubcityID,
 			&i.KebeleID,
 			&i.RoleSlug,
-			&i.SearchVector,
 			&i.CreatedAt,
 			&i.DeletedAt,
 			&i.FullName,
@@ -334,7 +326,7 @@ func (q *Queries) ListAllUsers(ctx context.Context, arg ListAllUsersParams) ([]L
 }
 
 const listUsersUnderScope = `-- name: ListUsersUnderScope :many
-SELECT u.id, u.first_name, u.second_name, u.last_name, u.email, u.phone, u.password_hash, u.city_id, u.subcity_id, u.kebele_id, u.role_slug, u.search_vector, u.created_at, u.deleted_at, r.name AS role, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
+SELECT u.id, u.first_name, u.second_name, u.last_name, u.email, u.phone, u.password_hash, u.city_id, u.subcity_id, u.kebele_id, u.role_slug, u.created_at, u.deleted_at, r.name AS role, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
 FROM "user" u
 JOIN role r ON r.slug = u.role_slug
 WHERE deleted_at IS NULL AND
@@ -365,7 +357,6 @@ type ListUsersUnderScopeRow struct {
 	SubcityID    *uuid.UUID `db:"subcity_id" json:"subcity_id"`
 	KebeleID     *uuid.UUID `db:"kebele_id" json:"kebele_id"`
 	RoleSlug     string     `db:"role_slug" json:"role_slug"`
-	SearchVector *string    `db:"search_vector" json:"search_vector"`
 	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
 	Role         string     `db:"role" json:"role"`
@@ -399,7 +390,6 @@ func (q *Queries) ListUsersUnderScope(ctx context.Context, arg ListUsersUnderSco
 			&i.SubcityID,
 			&i.KebeleID,
 			&i.RoleSlug,
-			&i.SearchVector,
 			&i.CreatedAt,
 			&i.DeletedAt,
 			&i.Role,
@@ -416,7 +406,7 @@ func (q *Queries) ListUsersUnderScope(ctx context.Context, arg ListUsersUnderSco
 }
 
 const searchUsers = `-- name: SearchUsers :many
-SELECT id, first_name, second_name, last_name, email, phone, password_hash, city_id, subcity_id, kebele_id, role_slug, search_vector, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name,
+SELECT id, first_name, second_name, last_name, email, phone, password_hash, city_id, subcity_id, kebele_id, role_slug, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name,
     similarity(CONCAT_WS(' ', first_name, second_name, last_name), $1) AS sim
 FROM "user"
 WHERE deleted_at IS NULL AND
@@ -443,7 +433,6 @@ type SearchUsersRow struct {
 	SubcityID    *uuid.UUID `db:"subcity_id" json:"subcity_id"`
 	KebeleID     *uuid.UUID `db:"kebele_id" json:"kebele_id"`
 	RoleSlug     string     `db:"role_slug" json:"role_slug"`
-	SearchVector *string    `db:"search_vector" json:"search_vector"`
 	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
 	FullName     string     `db:"full_name" json:"full_name"`
@@ -471,7 +460,6 @@ func (q *Queries) SearchUsers(ctx context.Context, arg SearchUsersParams) ([]Sea
 			&i.SubcityID,
 			&i.KebeleID,
 			&i.RoleSlug,
-			&i.SearchVector,
 			&i.CreatedAt,
 			&i.DeletedAt,
 			&i.FullName,
@@ -488,23 +476,21 @@ func (q *Queries) SearchUsers(ctx context.Context, arg SearchUsersParams) ([]Sea
 }
 
 const searchUsersUnderScope = `-- name: SearchUsersUnderScope :many
-SELECT id, first_name, second_name, last_name, email, phone, password_hash, city_id, subcity_id, kebele_id, role_slug, search_vector, created_at, deleted_at, slug, name, parent_role_slug, level_rank, r.name, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
+SELECT id, first_name, second_name, last_name, email, phone, password_hash, city_id, subcity_id, kebele_id, role_slug, created_at, deleted_at, slug, name, parent_role_slug, level_rank, r.name, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name,
+    similarity(CONCAT_WS(' ', first_name, second_name, last_name), $1) AS sim
 FROM "user" u
 JOIN role r ON r.slug = u.role_slug
 WHERE deleted_at IS NULL AND
-    search_vector @@ to_tsquery('english', $1 || ':*') AND
+    similarity(CONCAT_WS(' ', first_name, second_name, last_name), $1) > 0.2 AND
     ($2::uuid IS NULL OR u.city_id = $2::uuid) AND
     ($3::uuid IS NULL OR u.subcity_id = $3::uuid) AND
     ($4::uuid IS NULL OR u.kebele_id = $4::uuid)
-ORDER BY
-    ts_rank(search_vector, to_tsquery('english', $1 || ':*')) DESC,
-    similarity(first_name || ' ' || second_name || ' ' || last_name, $1) DESC,
-    created_at DESC
+ORDER BY sim DESC, created_at DESC
 LIMIT $6 OFFSET $5
 `
 
 type SearchUsersUnderScopeParams struct {
-	Query     *string   `db:"query" json:"query"`
+	Query     string    `db:"query" json:"query"`
 	CityID    uuid.UUID `db:"city_id" json:"city_id"`
 	SubcityID uuid.UUID `db:"subcity_id" json:"subcity_id"`
 	KebeleID  uuid.UUID `db:"kebele_id" json:"kebele_id"`
@@ -524,7 +510,6 @@ type SearchUsersUnderScopeRow struct {
 	SubcityID      *uuid.UUID `db:"subcity_id" json:"subcity_id"`
 	KebeleID       *uuid.UUID `db:"kebele_id" json:"kebele_id"`
 	RoleSlug       string     `db:"role_slug" json:"role_slug"`
-	SearchVector   *string    `db:"search_vector" json:"search_vector"`
 	CreatedAt      time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt      *time.Time `db:"deleted_at" json:"deleted_at"`
 	Slug           string     `db:"slug" json:"slug"`
@@ -533,6 +518,7 @@ type SearchUsersUnderScopeRow struct {
 	LevelRank      int32      `db:"level_rank" json:"level_rank"`
 	Name_2         string     `db:"name_2" json:"name_2"`
 	FullName       string     `db:"full_name" json:"full_name"`
+	Sim            float32    `db:"sim" json:"sim"`
 }
 
 func (q *Queries) SearchUsersUnderScope(ctx context.Context, arg SearchUsersUnderScopeParams) ([]SearchUsersUnderScopeRow, error) {
@@ -563,7 +549,6 @@ func (q *Queries) SearchUsersUnderScope(ctx context.Context, arg SearchUsersUnde
 			&i.SubcityID,
 			&i.KebeleID,
 			&i.RoleSlug,
-			&i.SearchVector,
 			&i.CreatedAt,
 			&i.DeletedAt,
 			&i.Slug,
@@ -572,6 +557,7 @@ func (q *Queries) SearchUsersUnderScope(ctx context.Context, arg SearchUsersUnde
 			&i.LevelRank,
 			&i.Name_2,
 			&i.FullName,
+			&i.Sim,
 		); err != nil {
 			return nil, err
 		}

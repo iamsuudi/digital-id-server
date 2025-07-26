@@ -1,4 +1,4 @@
-module github.com/iamsuudi/digital-id-server
+module digital-id-server
 
 go 1.24.4
 

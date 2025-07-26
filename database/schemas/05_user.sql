@@ -19,11 +19,10 @@ CREATE TABLE "user" (
     subcity_id       UUID REFERENCES subcity(id) ON DELETE SET NULL,
     kebele_id        UUID REFERENCES kebele(id)  ON DELETE SET NULL,
     role_slug        TEXT NOT NULL REFERENCES role(slug)  ON DELETE RESTRICT,
-    search_vector    tsvector GENERATED ALWAYS AS (to_tsvector('english',
-        first_name||' '||second_name||' '||last_name)) STORED,
 
     created_at    TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at    TIMESTAMP(3)
+    
     -- CHECK (
     --     (city_id IS NOT NULL)::int +
     --     (subcity_id IS NOT NULL)::int +

@@ -4,10 +4,10 @@ import (
 	"context"
 	"log"
 
-	"github.com/iamsuudi/digital-id-server/database"
-	"github.com/iamsuudi/digital-id-server/internal/repository"
-	"github.com/iamsuudi/digital-id-server/shared/config"
 	"github.com/joho/godotenv"
+	"digital-id-server/database"
+	"digital-id-server/shared/config"
+	"digital-id-server/internal/repository"
 )
 
 func main() {

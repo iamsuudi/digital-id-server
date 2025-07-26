@@ -6,8 +6,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/iamsuudi/digital-id-server/shared/config"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"digital-id-server/shared/config"
 )
 
 func Connect() *pgxpool.Pool {

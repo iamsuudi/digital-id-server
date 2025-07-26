@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/iamsuudi/digital-id-server/internal/repository"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"digital-id-server/internal/repository"
 )
 
 type Service struct {
@@ -54,7 +54,7 @@ func (s *Service) SearchUsers(ctx context.Context, limit, offset int, query stri
 	users, err := s.q.SearchUsersUnderScope(ctx, repository.SearchUsersUnderScopeParams{
 		Limit:  int32(limit),
 		Offset: int32(offset),
-		Query:  &query,
+		Query:  query,
 	})
 	if err != nil {
 		return 0, nil, err

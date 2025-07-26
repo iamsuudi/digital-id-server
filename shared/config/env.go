@@ -5,8 +5,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/iamsuudi/digital-id-server/shared/types"
 	"github.com/joho/godotenv"
+	"digital-id-server/shared/types"
 )
 
 func Load() {

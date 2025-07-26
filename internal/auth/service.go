@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/iamsuudi/digital-id-server/internal/repository"
-	"github.com/iamsuudi/digital-id-server/shared/types"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
+	"digital-id-server/shared/types"
+	"digital-id-server/internal/repository"
 )
 
 type Service struct {

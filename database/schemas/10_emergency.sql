@@ -4,8 +4,7 @@ CREATE TABLE emergency (
     name         TEXT NOT NULL,
     relation     TEXT NOT NULL,
     phone        VARCHAR(20) NOT NULL,
-    search_vector tsvector GENERATED ALWAYS AS (to_tsvector('english',
-        name||' '||relation)) STORED,
+    
     created_at   TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at   TIMESTAMP(3)
 );

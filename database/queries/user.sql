@@ -51,7 +51,7 @@ LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 SELECT COUNT(*)
 FROM "user"
 WHERE deleted_at IS NULL AND
-    search_vector @@ plainto_tsquery('english', sqlc.arg('query'));
+    similarity(CONCAT_WS(' ', first_name, second_name, last_name), sqlc.arg('query')) > 0.2;
 
 -- name: ListUsersUnderScope :many
 SELECT u.*, r.name AS role, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
@@ -73,25 +73,23 @@ WHERE deleted_at IS NULL AND
     (sqlc.arg('kebele_id')::uuid IS NULL OR u.kebele_id = sqlc.arg('kebele_id')::uuid);
 
 -- name: SearchUsersUnderScope :many
-SELECT *, r.name, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
+SELECT *, r.name, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name,
+    similarity(CONCAT_WS(' ', first_name, second_name, last_name), sqlc.arg('query')) AS sim
 FROM "user" u
 JOIN role r ON r.slug = u.role_slug
 WHERE deleted_at IS NULL AND
-    search_vector @@ to_tsquery('english', sqlc.arg('query') || ':*') AND
+    similarity(CONCAT_WS(' ', first_name, second_name, last_name), sqlc.arg('query')) > 0.2 AND
     (sqlc.arg('city_id')::uuid IS NULL OR u.city_id = sqlc.arg('city_id')::uuid) AND
     (sqlc.arg('subcity_id')::uuid IS NULL OR u.subcity_id = sqlc.arg('subcity_id')::uuid) AND
     (sqlc.arg('kebele_id')::uuid IS NULL OR u.kebele_id = sqlc.arg('kebele_id')::uuid)
-ORDER BY
-    ts_rank(search_vector, to_tsquery('english', sqlc.arg('query') || ':*')) DESC,
-    similarity(first_name || ' ' || second_name || ' ' || last_name, sqlc.arg('query')) DESC,
-    created_at DESC
+ORDER BY sim DESC, created_at DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: CountUsersSearchUnderScope :one
 SELECT COUNT(*)
 FROM "user" u
 WHERE deleted_at IS NULL AND
-    search_vector @@ plainto_tsquery('english', sqlc.arg('query')) AND
+    similarity(CONCAT_WS(' ', first_name, second_name, last_name), sqlc.arg('query')) > 0.2 AND
     (sqlc.arg('city_id')::uuid IS NULL OR u.city_id = sqlc.arg('city_id')::uuid) AND
     (sqlc.arg('subcity_id')::uuid IS NULL OR u.subcity_id = sqlc.arg('subcity_id')::uuid) AND
     (sqlc.arg('kebele_id')::uuid IS NULL OR u.kebele_id = sqlc.arg('kebele_id')::uuid);

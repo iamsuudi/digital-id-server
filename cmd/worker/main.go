@@ -5,15 +5,15 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
-	"github.com/iamsuudi/digital-id-server/shared/config"
-	db "github.com/iamsuudi/digital-id-server/database"
+	"digital-id-server/database"
+	"digital-id-server/shared/config"
 )
 
 func main() {
 	_ = godotenv.Load(".env")
 
 	config.Load()
-	conn := db.Connect()
+	conn := database.Connect()
 	defer conn.Close()
 
 	log.Println("🛠 Starting worker...")

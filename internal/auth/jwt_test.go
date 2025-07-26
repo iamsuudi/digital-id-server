@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/iamsuudi/digital-id-server/internal/auth"
 	"github.com/stretchr/testify/assert"
+	"digital-id-server/internal/auth"
 )
 
 func init() {

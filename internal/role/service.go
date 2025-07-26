@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/iamsuudi/digital-id-server/internal/repository"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"digital-id-server/internal/repository"
 )
 
 type Service struct {
