@@ -16,6 +16,7 @@ type Querier interface {
 	CanActorManipulateRole(ctx context.Context, arg CanActorManipulateRoleParams) (bool, error)
 	CanActorTouchTarget(ctx context.Context, arg CanActorTouchTargetParams) (bool, error)
 	CountListCities(ctx context.Context) (int64, error)
+	CountListSubcities(ctx context.Context) (int64, error)
 	CountListUsers(ctx context.Context) (int64, error)
 	CountListUsersUnderScope(ctx context.Context, arg CountListUsersUnderScopeParams) (int64, error)
 	CountUsersSearch(ctx context.Context, query string) (int64, error)
@@ -23,6 +24,7 @@ type Querier interface {
 	CreateCity(ctx context.Context, name string) (City, error)
 	CreateKebele(ctx context.Context, arg CreateKebeleParams) (Kebele, error)
 	CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) (uuid.UUID, error)
+	CreateSubCity(ctx context.Context, arg CreateSubCityParams) (Subcity, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error)
 	DeleteRefreshToken(ctx context.Context, token string) error
 	DeleteRefreshTokensByUser(ctx context.Context, userID uuid.UUID) error
@@ -33,6 +35,7 @@ type Querier interface {
 	GetEffectivePermissionsForUser(ctx context.Context, roleSlug string) ([]GetEffectivePermissionsForUserRow, error)
 	GetRefreshToken(ctx context.Context, token string) (RefreshTokens, error)
 	GetRoleTree(ctx context.Context, slug string) ([]GetRoleTreeRow, error)
+	GetSubCity(ctx context.Context, id uuid.UUID) (GetSubCityRow, error)
 	GetUserByEmail(ctx context.Context, email string) (GetUserByEmailRow, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (GetUserByIDRow, error)
 	GetUserScope(ctx context.Context, id uuid.UUID) (GetUserScopeRow, error)
@@ -44,6 +47,7 @@ type Querier interface {
 	ListPermissions(ctx context.Context) ([]Permission, error)
 	ListRolePermissions(ctx context.Context) ([]ListRolePermissionsRow, error)
 	ListRoles(ctx context.Context) ([]Role, error)
+	ListSubCities(ctx context.Context, arg ListSubCitiesParams) ([]ListSubCitiesRow, error)
 	ListUsersUnderScope(ctx context.Context, arg ListUsersUnderScopeParams) ([]ListUsersUnderScopeRow, error)
 	RemoveUserPermissionOverride(ctx context.Context, arg RemoveUserPermissionOverrideParams) error
 	RevokePermissionFromRole(ctx context.Context, arg RevokePermissionFromRoleParams) error

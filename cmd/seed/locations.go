@@ -114,16 +114,39 @@ var Data = []City{
 
 func seedLocations(ctx context.Context, queries *repository.Queries) {
 	start := time.Now()
-	
+
 	for _, c := range Data {
-		_, err := queries.CreateCity(ctx, c.Name)
+		city, err := queries.CreateCity(ctx, c.Name)
 		if err != nil {
 			log.Fatalf("Failed to create city: %v", c.Name)
 		}
-		// log.Printf("✅ City created: %s.", city.Name)
+		log.Printf("✅ City created: %s.", city.Name)
+		
+		for _, sc := range c.SubCities {
+			subCity, err := queries.CreateSubCity(ctx, repository.CreateSubCityParams{
+				Name: sc.Name,
+				CityID: city.ID,
+			})
+			if err != nil {
+				log.Fatalf("Failed to create sub-city: %v", sc.Name)
+			}
+			log.Printf("✅ Sub-city created: %s.", subCity.Name)
+			
+			for _, k := range sc.Kebeles {
+				kebele, err := queries.CreateKebele(ctx, repository.CreateKebeleParams{
+					Name: k.Name,
+					SubcityID: &(subCity.ID),
+					CityID: city.ID,
+				})
+				if err != nil {
+					log.Fatalf("Failed to create kebele: %v", k.Name)
+				}
+				log.Printf("✅ Kebele created: %s.", kebele.Name)
+			}
+		}
 	}
-	
+
 	elapsed := time.Since(start)
 
-	fmt.Printf("\n✅ %d cities seeded successfully. Took %s\n", len(Data), elapsed)
+	fmt.Printf("\n✅ Locations seeded successfully. Took %s\n", elapsed)
 }

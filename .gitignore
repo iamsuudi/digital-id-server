@@ -45,3 +45,6 @@ coverage.*
 # Docker
 *.pid
 docker-compose.override.yml
+
+internal/random
+internal/resident

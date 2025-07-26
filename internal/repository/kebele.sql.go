@@ -12,18 +12,19 @@ import (
 )
 
 const createKebele = `-- name: CreateKebele :one
-INSERT INTO kebele (name, city_id)
-VALUES ($1, $2)
+INSERT INTO kebele (name, city_id, subcity_id)
+VALUES ($1, $2, $3)
 RETURNING id, name, subcity_id, city_id, created_at, deleted_at
 `
 
 type CreateKebeleParams struct {
-	Name   string    `db:"name" json:"name"`
-	CityID uuid.UUID `db:"city_id" json:"city_id"`
+	Name      string     `db:"name" json:"name"`
+	CityID    uuid.UUID  `db:"city_id" json:"city_id"`
+	SubcityID *uuid.UUID `db:"subcity_id" json:"subcity_id"`
 }
 
 func (q *Queries) CreateKebele(ctx context.Context, arg CreateKebeleParams) (Kebele, error) {
-	row := q.db.QueryRow(ctx, createKebele, arg.Name, arg.CityID)
+	row := q.db.QueryRow(ctx, createKebele, arg.Name, arg.CityID, arg.SubcityID)
 	var i Kebele
 	err := row.Scan(
 		&i.ID,
