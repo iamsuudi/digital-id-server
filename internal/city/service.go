@@ -40,7 +40,19 @@ func (s *Service) UpdateCity(ctx context.Context, id uuid.UUID, input types.City
 	}
 
 	if input.AdminID != nil {
+		// Remove current user placement
 		err := qtx.UpdateUserPlacement(ctx, repository.UpdateUserPlacementParams{
+			ID:        *input.AdminID,
+			CityID:    nil,
+			SubcityID: nil,
+			KebeleID:  nil,
+		})
+		if err != nil {
+			return err
+		}
+		
+		// Add new user placement
+		err = qtx.UpdateUserPlacement(ctx, repository.UpdateUserPlacementParams{
 			ID:        *input.AdminID,
 			CityID:    &id,
 			SubcityID: nil,

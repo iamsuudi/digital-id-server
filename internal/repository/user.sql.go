@@ -755,9 +755,14 @@ func (q *Queries) SoftDeleteUser(ctx context.Context, id uuid.UUID) error {
 }
 
 const updateUserPlacement = `-- name: UpdateUserPlacement :exec
-UPDATE "user"
+WITH clear_old AS (
+    UPDATE "user"
+    SET city_id = NULL, subcity_id = NULL, kebele_id = NULL
+    WHERE city_id = $2
+)
+UPDATE "user" AS U
 SET city_id = $2, subcity_id = $3, kebele_id = $4
-WHERE id = $1
+WHERE u.id = $1
 `
 
 type UpdateUserPlacementParams struct {
