@@ -25,6 +25,20 @@ func (q *Queries) CountListKebeles(ctx context.Context) (int64, error) {
 	return count, err
 }
 
+const countSearchKebeles = `-- name: CountSearchKebeles :one
+SELECT COUNT(*)
+FROM kebele
+WHERE deleted_at IS NULL AND
+    similarity(CONCAT_WS(' ', name), $1) > 0.2
+`
+
+func (q *Queries) CountSearchKebeles(ctx context.Context, query string) (int64, error) {
+	row := q.db.QueryRow(ctx, countSearchKebeles, query)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createKebele = `-- name: CreateKebele :one
 INSERT INTO kebele (name, city_id, subcity_id)
 VALUES ($1, $2, $3)
@@ -142,6 +156,72 @@ func (q *Queries) ListKebeles(ctx context.Context, arg ListKebelesParams) ([]Lis
 			&i.SubcityName,
 			&i.ExecutiveID,
 			&i.ExecutiveName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const searchKebeles = `-- name: SearchKebeles :many
+SELECT k.id, k.name, k.subcity_id, k.city_id, k.created_at, k.deleted_at, c.name as city_name, sc.name as subcity_name, u.id as executive_id,
+    CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS executive_name,
+    similarity(CONCAT_WS(' ', c.name), $1) AS sim
+FROM kebele k
+LEFT JOIN city c ON c.id = k.city_id
+LEFT JOIN subcity sc ON sc.id = k.subcity_id
+LEFT JOIN "user" u ON u.kebele_id = k.id
+WHERE k.deleted_at IS NULL AND
+    similarity(CONCAT_WS(' ', k.name), $1) > 0.2
+ORDER BY sim DESC, k.created_at DESC
+LIMIT $3 OFFSET $2
+`
+
+type SearchKebelesParams struct {
+	Query  string `db:"query" json:"query"`
+	Offset int32  `db:"offset" json:"offset"`
+	Limit  int32  `db:"limit" json:"limit"`
+}
+
+type SearchKebelesRow struct {
+	ID            uuid.UUID  `db:"id" json:"id"`
+	Name          string     `db:"name" json:"name"`
+	SubcityID     *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	CityID        uuid.UUID  `db:"city_id" json:"city_id"`
+	CreatedAt     time.Time  `db:"created_at" json:"created_at"`
+	DeletedAt     *time.Time `db:"deleted_at" json:"deleted_at"`
+	CityName      *string    `db:"city_name" json:"city_name"`
+	SubcityName   *string    `db:"subcity_name" json:"subcity_name"`
+	ExecutiveID   *uuid.UUID `db:"executive_id" json:"executive_id"`
+	ExecutiveName string     `db:"executive_name" json:"executive_name"`
+	Sim           float32    `db:"sim" json:"sim"`
+}
+
+func (q *Queries) SearchKebeles(ctx context.Context, arg SearchKebelesParams) ([]SearchKebelesRow, error) {
+	rows, err := q.db.Query(ctx, searchKebeles, arg.Query, arg.Offset, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []SearchKebelesRow{}
+	for rows.Next() {
+		var i SearchKebelesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.SubcityID,
+			&i.CityID,
+			&i.CreatedAt,
+			&i.DeletedAt,
+			&i.CityName,
+			&i.SubcityName,
+			&i.ExecutiveID,
+			&i.ExecutiveName,
+			&i.Sim,
 		); err != nil {
 			return nil, err
 		}
