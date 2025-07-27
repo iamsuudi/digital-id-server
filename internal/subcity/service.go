@@ -3,10 +3,11 @@ package subcity
 import (
 	"context"
 
+	"digital-id-server/internal/repository"
+	"digital-id-server/shared/types"
+
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"digital-id-server/shared/types"
-	"digital-id-server/internal/repository"
 )
 
 type Service struct {
@@ -20,9 +21,42 @@ func NewService(dbConn *pgxpool.Pool, dbQueries *repository.Queries) *Service {
 
 func (s *Service) CreateSubCity(ctx context.Context, input types.SubCityInput) (repository.Subcity, error) {
 	return s.q.CreateSubCity(ctx, repository.CreateSubCityParams{
-		Name: input.Name,
-		CityID: input.CityId,
+		Name:   input.Name,
+		CityID: input.CityID,
 	})
+}
+
+func (s *Service) UpdateSubCity(ctx context.Context, id uuid.UUID, input types.SubCityInput) error {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	qtx := s.q.WithTx(tx)
+
+	if input.ManagerID != nil {
+		err := qtx.UpdateUserPlacement(ctx, repository.UpdateUserPlacementParams{
+			ID:        *input.ManagerID,
+			CityID:    &input.CityID,
+			SubcityID: &id,
+			KebeleID:  nil,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	_, err = qtx.UpdateSubCity(ctx, repository.UpdateSubCityParams{
+		ID:     id,
+		Name:   input.Name,
+		CityID: input.CityID,
+	})
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
 }
 
 func (s *Service) GetSubCity(ctx context.Context, id uuid.UUID) (repository.GetSubCityRow, error) {
@@ -36,7 +70,7 @@ func (s *Service) GetAll(ctx context.Context, limit, offset int) (int64, []repos
 	}
 
 	cities, err := s.q.ListSubCities(ctx, repository.ListSubCitiesParams{
-		Limit: int32(limit),
+		Limit:  int32(limit),
 		Offset: int32(offset),
 	})
 	if err != nil {

@@ -21,6 +21,11 @@ UPDATE "user"
 SET role_slug = $2
 WHERE id = $1;
 
+-- name: UpdateUserPlacement :exec
+UPDATE "user"
+SET city_id = $2, subcity_id = $3, kebele_id = $4
+WHERE id = $1;
+
 -- name: SoftDeleteUser :exec
 UPDATE "user"
 SET deleted_at = NOW()

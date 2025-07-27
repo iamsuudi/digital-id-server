@@ -5,11 +5,12 @@ import (
 	"net/http"
 	"strconv"
 
+	"digital-id-server/internal/repository"
+	"digital-id-server/shared/types"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"digital-id-server/shared/types"
-	"digital-id-server/internal/repository"
 )
 
 type Handler struct {
@@ -34,6 +35,33 @@ func (h *Handler) CreateSubCity(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, city)
+}
+
+func (h *Handler) UpdateSubCity(c *gin.Context) {
+	var input types.SubCityInput
+	if err := c.ShouldBind(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input: " + err.Error()})
+		return
+	}
+
+	idParam := c.Param("id")
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid city ID"})
+		return
+	}
+
+	err = h.service.UpdateSubCity(c.Request.Context(), id, input)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "SubCity not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update subcity"})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true})
 }
 
 func (h *Handler) GetSubCity(c *gin.Context) {
@@ -75,18 +103,18 @@ func (h *Handler) GetAll(c *gin.Context) {
 		page = 1
 	}
 	offset := (page - 1) * limit
-	
+
 	count, subcities, err := h.service.GetAll(c.Request.Context(), limit, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch subcities"})
 		return
 	}
-	
+
 	if subcities == nil {
 		subcities = []repository.ListSubCitiesRow{}
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"subcities": subcities,
-		"count": count,
+		"count":     count,
 	})
 }

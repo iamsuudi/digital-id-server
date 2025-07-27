@@ -138,3 +138,29 @@ func (q *Queries) ListSubCities(ctx context.Context, arg ListSubCitiesParams) ([
 	}
 	return items, nil
 }
+
+const updateSubCity = `-- name: UpdateSubCity :one
+UPDATE subcity
+SET name = $2, city_id = $3
+WHERE id = $1
+RETURNING id, name, city_id, created_at, deleted_at
+`
+
+type UpdateSubCityParams struct {
+	ID     uuid.UUID `db:"id" json:"id"`
+	Name   string    `db:"name" json:"name"`
+	CityID uuid.UUID `db:"city_id" json:"city_id"`
+}
+
+func (q *Queries) UpdateSubCity(ctx context.Context, arg UpdateSubCityParams) (Subcity, error) {
+	row := q.db.QueryRow(ctx, updateSubCity, arg.ID, arg.Name, arg.CityID)
+	var i Subcity
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.CityID,
+		&i.CreatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
