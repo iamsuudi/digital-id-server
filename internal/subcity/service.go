@@ -35,6 +35,15 @@ func (s *Service) UpdateSubCity(ctx context.Context, id uuid.UUID, input types.S
 
 	qtx := s.q.WithTx(tx)
 
+	_, err = qtx.UpdateSubCity(ctx, repository.UpdateSubCityParams{
+		ID:     id,
+		Name:   input.Name,
+		CityID: input.CityID,
+	})
+	if err != nil {
+		return err
+	}
+
 	if input.ManagerID != nil {
 		err := qtx.UpdateUserPlacement(ctx, repository.UpdateUserPlacementParams{
 			ID:        *input.ManagerID,
@@ -45,15 +54,6 @@ func (s *Service) UpdateSubCity(ctx context.Context, id uuid.UUID, input types.S
 		if err != nil {
 			return err
 		}
-	}
-
-	_, err = qtx.UpdateSubCity(ctx, repository.UpdateSubCityParams{
-		ID:     id,
-		Name:   input.Name,
-		CityID: input.CityID,
-	})
-	if err != nil {
-		return err
 	}
 
 	return tx.Commit(ctx)

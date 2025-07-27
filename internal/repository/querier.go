@@ -16,6 +16,7 @@ type Querier interface {
 	CanActorManipulateRole(ctx context.Context, arg CanActorManipulateRoleParams) (bool, error)
 	CanActorTouchTarget(ctx context.Context, arg CanActorTouchTargetParams) (bool, error)
 	CountListCities(ctx context.Context) (int64, error)
+	CountListKebeles(ctx context.Context) (int64, error)
 	CountListSubcities(ctx context.Context) (int64, error)
 	CountListUsers(ctx context.Context) (int64, error)
 	CountListUsersUnderScope(ctx context.Context, arg CountListUsersUnderScopeParams) (int64, error)
@@ -33,6 +34,7 @@ type Querier interface {
 	GetCity(ctx context.Context, id uuid.UUID) (GetCityRow, error)
 	GetCurrentUserMaxRoleLevel(ctx context.Context, id uuid.UUID) (int32, error)
 	GetEffectivePermissionsForUser(ctx context.Context, roleSlug string) ([]GetEffectivePermissionsForUserRow, error)
+	GetKebele(ctx context.Context, id uuid.UUID) (GetKebeleRow, error)
 	GetRefreshToken(ctx context.Context, token string) (RefreshTokens, error)
 	GetRoleTree(ctx context.Context, slug string) ([]GetRoleTreeRow, error)
 	GetSubCity(ctx context.Context, id uuid.UUID) (GetSubCityRow, error)
@@ -42,6 +44,7 @@ type Querier interface {
 	GrantPermissionToRole(ctx context.Context, arg GrantPermissionToRoleParams) error
 	ListAllUsers(ctx context.Context, arg ListAllUsersParams) ([]ListAllUsersRow, error)
 	ListCities(ctx context.Context, arg ListCitiesParams) ([]ListCitiesRow, error)
+	ListKebeles(ctx context.Context, arg ListKebelesParams) ([]ListKebelesRow, error)
 	ListPermissionMatrixInScope(ctx context.Context, arg ListPermissionMatrixInScopeParams) ([]ListPermissionMatrixInScopeRow, error)
 	ListPermissionOverridesForUser(ctx context.Context, userID uuid.UUID) ([]ListPermissionOverridesForUserRow, error)
 	ListPermissions(ctx context.Context) ([]Permission, error)
@@ -56,6 +59,7 @@ type Querier interface {
 	SetUserPermissionOverride(ctx context.Context, arg SetUserPermissionOverrideParams) error
 	SoftDeleteUser(ctx context.Context, id uuid.UUID) error
 	UpdateCity(ctx context.Context, arg UpdateCityParams) (City, error)
+	UpdateKebele(ctx context.Context, arg UpdateKebeleParams) (Kebele, error)
 	UpdateSubCity(ctx context.Context, arg UpdateSubCityParams) (Subcity, error)
 	UpdateUserPlacement(ctx context.Context, arg UpdateUserPlacementParams) error
 	UpdateUserRole(ctx context.Context, arg UpdateUserRoleParams) error

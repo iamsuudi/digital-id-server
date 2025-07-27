@@ -8,6 +8,7 @@ import (
 	"digital-id-server/internal/repository"
 	"digital-id-server/internal/role"
 	"digital-id-server/internal/subcity"
+	"digital-id-server/internal/kebele"
 
 	"github.com/gin-gonic/gin"
 
@@ -38,6 +39,7 @@ func main() {
 	role.RegisterRoutes(v1, dbConn, dbQueries)
 	permission.RegisterRoutes(v1, dbConn, dbQueries)
 	subcity.RegisterRoutes(v1, dbConn, dbQueries)
+	kebele.RegisterRoutes(v1, dbConn, dbQueries)
 
 	r.Run(":8080")
 }

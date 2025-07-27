@@ -6,5 +6,5 @@ CREATE TABLE kebele (
     
     created_at    TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at    TIMESTAMP(3),
-    UNIQUE (name, city_id)
+    UNIQUE (name, subcity_id, city_id)
 );
