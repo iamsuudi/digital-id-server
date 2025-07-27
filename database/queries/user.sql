@@ -98,3 +98,31 @@ WHERE deleted_at IS NULL AND
     (sqlc.arg('city_id')::uuid IS NULL OR u.city_id = sqlc.arg('city_id')::uuid) AND
     (sqlc.arg('subcity_id')::uuid IS NULL OR u.subcity_id = sqlc.arg('subcity_id')::uuid) AND
     (sqlc.arg('kebele_id')::uuid IS NULL OR u.kebele_id = sqlc.arg('kebele_id')::uuid);
+
+
+-- name: ListByRole :many
+SELECT *, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
+FROM "user"
+WHERE role_slug = sqlc.arg('role_slug') AND deleted_at IS NULL
+ORDER BY created_at ASC
+LIMIT  sqlc.arg('limit') OFFSET sqlc.arg('offset');
+
+-- name: CountListByRole :one
+SELECT COUNT(*)
+FROM "user"
+WHERE role_slug = sqlc.arg('role_slug') AND deleted_at IS NULL;
+
+-- name: SearchByRole :many
+SELECT *, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name,
+    similarity(CONCAT_WS(' ', first_name, second_name, last_name), sqlc.arg('query')) AS sim
+FROM "user"
+WHERE role_slug = sqlc.arg('role_slug') AND deleted_at IS NULL AND
+    similarity(CONCAT_WS(' ', first_name, second_name, last_name), sqlc.arg('query')) > 0.2
+ORDER BY sim DESC, created_at DESC
+LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
+
+-- name: CountByRoleSearch :one
+SELECT COUNT(*)
+FROM "user"
+WHERE role_slug = sqlc.arg('role_slug') AND deleted_at IS NULL AND
+    similarity(CONCAT_WS(' ', first_name, second_name, last_name), sqlc.arg('query')) > 0.2;

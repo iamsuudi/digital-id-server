@@ -7,9 +7,23 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 )
+
+const countListKebeles = `-- name: CountListKebeles :one
+SELECT COUNT(*)
+FROM kebele
+WHERE deleted_at IS NULL
+`
+
+func (q *Queries) CountListKebeles(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countListKebeles)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
 
 const createKebele = `-- name: CreateKebele :one
 INSERT INTO kebele (name, city_id, subcity_id)
@@ -25,6 +39,141 @@ type CreateKebeleParams struct {
 
 func (q *Queries) CreateKebele(ctx context.Context, arg CreateKebeleParams) (Kebele, error) {
 	row := q.db.QueryRow(ctx, createKebele, arg.Name, arg.CityID, arg.SubcityID)
+	var i Kebele
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.SubcityID,
+		&i.CityID,
+		&i.CreatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const getKebele = `-- name: GetKebele :one
+SELECT k.id, k.name, k.subcity_id, k.city_id, k.created_at, k.deleted_at, c.name as city_name, sc.name as subcity_name, u.id as executive_id, 
+    CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS executive_name
+FROM kebele k
+LEFT JOIN city c ON c.id = k.city_id
+LEFT JOIN subcity sc ON sc.id = k.subcity_id
+LEFT JOIN "user" u ON u.kebele_id = k.id
+WHERE k.id = $1 AND k.deleted_at IS NULL
+`
+
+type GetKebeleRow struct {
+	ID            uuid.UUID  `db:"id" json:"id"`
+	Name          string     `db:"name" json:"name"`
+	SubcityID     *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	CityID        uuid.UUID  `db:"city_id" json:"city_id"`
+	CreatedAt     time.Time  `db:"created_at" json:"created_at"`
+	DeletedAt     *time.Time `db:"deleted_at" json:"deleted_at"`
+	CityName      *string    `db:"city_name" json:"city_name"`
+	SubcityName   *string    `db:"subcity_name" json:"subcity_name"`
+	ExecutiveID   *uuid.UUID `db:"executive_id" json:"executive_id"`
+	ExecutiveName string     `db:"executive_name" json:"executive_name"`
+}
+
+func (q *Queries) GetKebele(ctx context.Context, id uuid.UUID) (GetKebeleRow, error) {
+	row := q.db.QueryRow(ctx, getKebele, id)
+	var i GetKebeleRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.SubcityID,
+		&i.CityID,
+		&i.CreatedAt,
+		&i.DeletedAt,
+		&i.CityName,
+		&i.SubcityName,
+		&i.ExecutiveID,
+		&i.ExecutiveName,
+	)
+	return i, err
+}
+
+const listKebeles = `-- name: ListKebeles :many
+SELECT k.id, k.name, k.subcity_id, k.city_id, k.created_at, k.deleted_at, c.name as city_name, sc.name as subcity_name, u.id as executive_id,
+    CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS executive_name
+FROM kebele k
+LEFT JOIN city c ON c.id = k.city_id
+LEFT JOIN subcity sc ON sc.id = k.subcity_id
+LEFT JOIN "user" u ON u.kebele_id = k.id
+WHERE k.deleted_at IS NULL
+ORDER BY k.created_at DESC
+LIMIT $1 OFFSET $2
+`
+
+type ListKebelesParams struct {
+	Limit  int32 `db:"limit" json:"limit"`
+	Offset int32 `db:"offset" json:"offset"`
+}
+
+type ListKebelesRow struct {
+	ID            uuid.UUID  `db:"id" json:"id"`
+	Name          string     `db:"name" json:"name"`
+	SubcityID     *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	CityID        uuid.UUID  `db:"city_id" json:"city_id"`
+	CreatedAt     time.Time  `db:"created_at" json:"created_at"`
+	DeletedAt     *time.Time `db:"deleted_at" json:"deleted_at"`
+	CityName      *string    `db:"city_name" json:"city_name"`
+	SubcityName   *string    `db:"subcity_name" json:"subcity_name"`
+	ExecutiveID   *uuid.UUID `db:"executive_id" json:"executive_id"`
+	ExecutiveName string     `db:"executive_name" json:"executive_name"`
+}
+
+func (q *Queries) ListKebeles(ctx context.Context, arg ListKebelesParams) ([]ListKebelesRow, error) {
+	rows, err := q.db.Query(ctx, listKebeles, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListKebelesRow{}
+	for rows.Next() {
+		var i ListKebelesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.SubcityID,
+			&i.CityID,
+			&i.CreatedAt,
+			&i.DeletedAt,
+			&i.CityName,
+			&i.SubcityName,
+			&i.ExecutiveID,
+			&i.ExecutiveName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const updateKebele = `-- name: UpdateKebele :one
+UPDATE kebele
+SET name = $2, city_id = $3, subcity_id = $4
+WHERE id = $1
+RETURNING id, name, subcity_id, city_id, created_at, deleted_at
+`
+
+type UpdateKebeleParams struct {
+	ID        uuid.UUID  `db:"id" json:"id"`
+	Name      string     `db:"name" json:"name"`
+	CityID    uuid.UUID  `db:"city_id" json:"city_id"`
+	SubcityID *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+}
+
+func (q *Queries) UpdateKebele(ctx context.Context, arg UpdateKebeleParams) (Kebele, error) {
+	row := q.db.QueryRow(ctx, updateKebele,
+		arg.ID,
+		arg.Name,
+		arg.CityID,
+		arg.SubcityID,
+	)
 	var i Kebele
 	err := row.Scan(
 		&i.ID,

@@ -30,35 +30,35 @@ func (h *Handler) GetUser(c *gin.Context) {
 	case "id":
 		id, err := uuid.Parse(value)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid city ID"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
 			return
 		}
 
-		resident, err := h.service.GetUserById(c.Request.Context(), id)
+		user, err := h.service.GetUserById(c.Request.Context(), id)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
-				c.JSON(http.StatusNotFound, gin.H{"error": "Resident not found"})
+				c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 			} else {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch user"})
 			}
 			return
 		}
-		c.JSON(http.StatusOK, resident)
+		c.JSON(http.StatusOK, user)
 
 	case "email":
-		resident, err := h.service.GetUserByEmail(c.Request.Context(), value)
+		user, err := h.service.GetUserByEmail(c.Request.Context(), value)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
-				c.JSON(http.StatusNotFound, gin.H{"error": "Resident not found"})
+				c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 			} else {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch resident"})
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch user"})
 			}
 			return
 		}
-		c.JSON(http.StatusOK, resident)
+		c.JSON(http.StatusOK, user)
 
 	default:
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Query ?by= must be 'id' or 'email'"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Query ?by= must be 'id', 'email' or 'role'"})
 	}
 }
 
@@ -151,8 +151,9 @@ func (h *Handler) GetAllForSuperadmin(c *gin.Context) {
 	}
 }
 
-func (h *Handler) GetManagers(c *gin.Context) {
+func (h *Handler) GetByRole(c *gin.Context) {
 	limit, _, offset, limitErr, pageErr := utils.PaginationHelper(c)
+	role_slug := c.Query("role_slug")
 	query := c.Query("query")
 	if limitErr != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid rows per page"})
@@ -164,13 +165,13 @@ func (h *Handler) GetManagers(c *gin.Context) {
 	}
 
 	if strings.TrimSpace(query) == "" {
-		count, users, err := h.service.GetAllForSuperadmin(c.Request.Context(), limit, offset, query)
+		count, users, err := h.service.GetByRole(c.Request.Context(), limit, offset, query, role_slug)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch users"})
 			return
 		}
 		if users == nil {
-			users = []repository.ListAllUsersRow{}
+			users = []repository.ListByRoleRow{}
 		}
 
 		c.JSON(http.StatusOK, gin.H{
@@ -178,14 +179,14 @@ func (h *Handler) GetManagers(c *gin.Context) {
 			"count": count,
 		})
 	} else {
-		count, users, err := h.service.SearchUsersForSuperadmin(c, limit, offset, query)
+		count, users, err := h.service.SearchByRole(c, limit, offset, query, role_slug)
 		if err != nil {
 			fmt.Print("super:", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to search users"})
 			return
 		}
 		if users == nil {
-			users = []repository.SearchUsersRow{}
+			users = []repository.SearchByRoleRow{}
 		}
 
 		c.JSON(http.StatusOK, gin.H{

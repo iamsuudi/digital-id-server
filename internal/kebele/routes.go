@@ -1,4 +1,4 @@
-package city
+package kebele
 
 import (
 	"github.com/gin-gonic/gin"
@@ -11,11 +11,11 @@ func RegisterRoutes(rg *gin.RouterGroup, dbConn *pgxpool.Pool, dbQueries *reposi
 	service := NewService(dbConn, dbQueries)
 	handler := NewHandler(service)
 
-	residentGroup := rg.Group("/cities", auth.Authenticate())
+	group := rg.Group("/kebeles", auth.Authenticate())
 	{
-		residentGroup.POST("/create", handler.CreateCity)
-		residentGroup.GET("/:id", handler.GetCity)
-		residentGroup.PUT("/:id", handler.UpdateCity)
-		residentGroup.GET("/", handler.GetAll)
+		group.POST("/create", handler.CreateKebele)
+		group.GET("/:id", handler.GetKebele)
+		group.PUT("/:id", handler.UpdateKebele)
+		group.GET("/", handler.GetAll)
 	}
 }

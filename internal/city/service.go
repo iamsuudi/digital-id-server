@@ -22,6 +22,38 @@ func (s *Service) CreateCity(ctx context.Context, input types.CityInput) (reposi
 	return s.q.CreateCity(ctx, input.Name)
 }
 
+func (s *Service) UpdateCity(ctx context.Context, id uuid.UUID, input types.CityInput) error {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	qtx := s.q.WithTx(tx)
+
+	_, err = qtx.UpdateCity(ctx, repository.UpdateCityParams{
+		ID:     id,
+		Name:   input.Name,
+	})
+	if err != nil {
+		return err
+	}
+
+	if input.AdminID != nil {
+		err := qtx.UpdateUserPlacement(ctx, repository.UpdateUserPlacementParams{
+			ID:        *input.AdminID,
+			CityID:    &id,
+			SubcityID: nil,
+			KebeleID:  nil,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit(ctx)
+}
+
 func (s *Service) GetCity(ctx context.Context, id uuid.UUID) (repository.GetCityRow, error) {
 	return s.q.GetCity(ctx, id)
 }

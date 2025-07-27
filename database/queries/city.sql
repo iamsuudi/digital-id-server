@@ -3,6 +3,12 @@ INSERT INTO city (name)
 VALUES ($1)
 RETURNING *;
 
+-- name: UpdateCity :one
+UPDATE city
+SET name = $2
+WHERE id = $1
+RETURNING *;
+
 -- name: GetCity :one
 SELECT c.*, u.id as admin_id, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS admin_name
 FROM city c

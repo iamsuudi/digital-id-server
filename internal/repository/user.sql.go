@@ -12,6 +12,38 @@ import (
 	"github.com/google/uuid"
 )
 
+const countByRoleSearch = `-- name: CountByRoleSearch :one
+SELECT COUNT(*)
+FROM "user"
+WHERE role_slug = $1 AND deleted_at IS NULL AND
+    similarity(CONCAT_WS(' ', first_name, second_name, last_name), $2) > 0.2
+`
+
+type CountByRoleSearchParams struct {
+	RoleSlug string `db:"role_slug" json:"role_slug"`
+	Query    string `db:"query" json:"query"`
+}
+
+func (q *Queries) CountByRoleSearch(ctx context.Context, arg CountByRoleSearchParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countByRoleSearch, arg.RoleSlug, arg.Query)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countListByRole = `-- name: CountListByRole :one
+SELECT COUNT(*)
+FROM "user"
+WHERE role_slug = $1 AND deleted_at IS NULL
+`
+
+func (q *Queries) CountListByRole(ctx context.Context, roleSlug string) (int64, error) {
+	row := q.db.QueryRow(ctx, countListByRole, roleSlug)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countListUsers = `-- name: CountListUsers :one
 SELECT COUNT(*)
 FROM "user"
@@ -325,6 +357,72 @@ func (q *Queries) ListAllUsers(ctx context.Context, arg ListAllUsersParams) ([]L
 	return items, nil
 }
 
+const listByRole = `-- name: ListByRole :many
+SELECT id, first_name, second_name, last_name, email, phone, password_hash, city_id, subcity_id, kebele_id, role_slug, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
+FROM "user"
+WHERE role_slug = $1 AND deleted_at IS NULL
+ORDER BY created_at ASC
+LIMIT  $3 OFFSET $2
+`
+
+type ListByRoleParams struct {
+	RoleSlug string `db:"role_slug" json:"role_slug"`
+	Offset   int32  `db:"offset" json:"offset"`
+	Limit    int32  `db:"limit" json:"limit"`
+}
+
+type ListByRoleRow struct {
+	ID           uuid.UUID  `db:"id" json:"id"`
+	FirstName    string     `db:"first_name" json:"first_name"`
+	SecondName   string     `db:"second_name" json:"second_name"`
+	LastName     string     `db:"last_name" json:"last_name"`
+	Email        string     `db:"email" json:"email"`
+	Phone        string     `db:"phone" json:"phone"`
+	PasswordHash string     `db:"password_hash" json:"password_hash"`
+	CityID       *uuid.UUID `db:"city_id" json:"city_id"`
+	SubcityID    *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	KebeleID     *uuid.UUID `db:"kebele_id" json:"kebele_id"`
+	RoleSlug     string     `db:"role_slug" json:"role_slug"`
+	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
+	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
+	FullName     string     `db:"full_name" json:"full_name"`
+}
+
+func (q *Queries) ListByRole(ctx context.Context, arg ListByRoleParams) ([]ListByRoleRow, error) {
+	rows, err := q.db.Query(ctx, listByRole, arg.RoleSlug, arg.Offset, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListByRoleRow{}
+	for rows.Next() {
+		var i ListByRoleRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.FirstName,
+			&i.SecondName,
+			&i.LastName,
+			&i.Email,
+			&i.Phone,
+			&i.PasswordHash,
+			&i.CityID,
+			&i.SubcityID,
+			&i.KebeleID,
+			&i.RoleSlug,
+			&i.CreatedAt,
+			&i.DeletedAt,
+			&i.FullName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listUsersUnderScope = `-- name: ListUsersUnderScope :many
 SELECT u.id, u.first_name, u.second_name, u.last_name, u.email, u.phone, u.password_hash, u.city_id, u.subcity_id, u.kebele_id, u.role_slug, u.created_at, u.deleted_at, r.name AS role, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
 FROM "user" u
@@ -394,6 +492,82 @@ func (q *Queries) ListUsersUnderScope(ctx context.Context, arg ListUsersUnderSco
 			&i.DeletedAt,
 			&i.Role,
 			&i.FullName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const searchByRole = `-- name: SearchByRole :many
+SELECT id, first_name, second_name, last_name, email, phone, password_hash, city_id, subcity_id, kebele_id, role_slug, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name,
+    similarity(CONCAT_WS(' ', first_name, second_name, last_name), $1) AS sim
+FROM "user"
+WHERE role_slug = $2 AND deleted_at IS NULL AND
+    similarity(CONCAT_WS(' ', first_name, second_name, last_name), $1) > 0.2
+ORDER BY sim DESC, created_at DESC
+LIMIT $4 OFFSET $3
+`
+
+type SearchByRoleParams struct {
+	Query    string `db:"query" json:"query"`
+	RoleSlug string `db:"role_slug" json:"role_slug"`
+	Offset   int32  `db:"offset" json:"offset"`
+	Limit    int32  `db:"limit" json:"limit"`
+}
+
+type SearchByRoleRow struct {
+	ID           uuid.UUID  `db:"id" json:"id"`
+	FirstName    string     `db:"first_name" json:"first_name"`
+	SecondName   string     `db:"second_name" json:"second_name"`
+	LastName     string     `db:"last_name" json:"last_name"`
+	Email        string     `db:"email" json:"email"`
+	Phone        string     `db:"phone" json:"phone"`
+	PasswordHash string     `db:"password_hash" json:"password_hash"`
+	CityID       *uuid.UUID `db:"city_id" json:"city_id"`
+	SubcityID    *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	KebeleID     *uuid.UUID `db:"kebele_id" json:"kebele_id"`
+	RoleSlug     string     `db:"role_slug" json:"role_slug"`
+	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
+	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
+	FullName     string     `db:"full_name" json:"full_name"`
+	Sim          float32    `db:"sim" json:"sim"`
+}
+
+func (q *Queries) SearchByRole(ctx context.Context, arg SearchByRoleParams) ([]SearchByRoleRow, error) {
+	rows, err := q.db.Query(ctx, searchByRole,
+		arg.Query,
+		arg.RoleSlug,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []SearchByRoleRow{}
+	for rows.Next() {
+		var i SearchByRoleRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.FirstName,
+			&i.SecondName,
+			&i.LastName,
+			&i.Email,
+			&i.Phone,
+			&i.PasswordHash,
+			&i.CityID,
+			&i.SubcityID,
+			&i.KebeleID,
+			&i.RoleSlug,
+			&i.CreatedAt,
+			&i.DeletedAt,
+			&i.FullName,
+			&i.Sim,
 		); err != nil {
 			return nil, err
 		}
