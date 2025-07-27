@@ -81,3 +81,21 @@ func (s *Service) GetAll(ctx context.Context, limit, offset int) (int64, []repos
 
 	return count, cities, nil
 }
+
+func (s *Service) SearchKebeles(ctx context.Context, limit, offset int, query string) (int64, []repository.SearchKebelesRow, error) {
+	count, err := s.q.CountSearchKebeles(ctx, query)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	kebeles, err := s.q.SearchKebeles(ctx, repository.SearchKebelesParams{
+		Limit:  int32(limit),
+		Offset: int32(offset),
+		Query:  query,
+	})
+	if err != nil {
+		return 0, nil, err
+	}
+
+	return count, kebeles, nil
+}

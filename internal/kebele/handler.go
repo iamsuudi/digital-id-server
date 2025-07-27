@@ -3,10 +3,11 @@ package kebele
 import (
 	"errors"
 	"net/http"
-	"strconv"
+	"strings"
 
 	"digital-id-server/internal/repository"
 	"digital-id-server/shared/types"
+	"digital-id-server/shared/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -85,36 +86,47 @@ func (h *Handler) GetKebele(c *gin.Context) {
 	c.JSON(http.StatusOK, subcity)
 }
 
+
 func (h *Handler) GetAll(c *gin.Context) {
-	limit, err := strconv.Atoi(c.Query("rows"))
-	if err != nil {
+	limit, _, offset, limitErr, pageErr := utils.PaginationHelper(c)
+	query := c.Query("query")
+
+	if limitErr != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid rows per page"})
 		return
 	}
-	if limit < 1 || limit > 100 {
-		limit = 10
-	}
-	page, err := strconv.Atoi(c.Query("page"))
-	if err != nil {
+	if pageErr != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page number"})
 		return
 	}
-	if page < 1 {
-		page = 1
-	}
-	offset := (page - 1) * limit
 
-	count, kebeles, err := h.service.GetAll(c.Request.Context(), limit, offset)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch kebeles"})
-		return
-	}
+	if strings.TrimSpace(query) == "" {
+		count, kebeles, err := h.service.GetAll(c.Request.Context(), limit, offset)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch kebeles"})
+			return
+		}
+		if kebeles == nil {
+			kebeles = []repository.ListKebelesRow{}
+		}
 
-	if kebeles == nil {
-		kebeles = []repository.ListKebelesRow{}
+		c.JSON(http.StatusOK, gin.H{
+			"kebeles": kebeles,
+			"count":  count,
+		})
+	} else {
+		count, kebeles, err := h.service.SearchKebeles(c, limit, offset, query)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to search kebeles"})
+			return
+		}
+		if kebeles == nil {
+			kebeles = []repository.SearchKebelesRow{}
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"kebeles": kebeles,
+			"count":  count,
+		})
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"kebeles": kebeles,
-		"count":     count,
-	})
 }
