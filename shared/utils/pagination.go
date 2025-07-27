@@ -6,12 +6,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func PaginationHelper(c *gin.Context) (limit, page, offset int, limitErr, pageErr error) {
+func PaginationHelper(c *gin.Context) (limit, offset int, query string, limitErr, pageErr error) {
 	limit, limitErr = strconv.Atoi(c.Query("rows"))
-	page, pageErr = strconv.Atoi(c.Query("page"))
+	page, pageErr := strconv.Atoi(c.Query("page"))
+	query = c.Query("query")
 	
 	if limitErr != nil || pageErr != nil {
-		return limit, page, offset, limitErr, pageErr
+		return limit, offset, query, limitErr, pageErr
 	}
 	
 	if limit < 1 || limit > 100 {
@@ -23,5 +24,5 @@ func PaginationHelper(c *gin.Context) (limit, page, offset int, limitErr, pageEr
 	}
 	
 	offset = (page - 1) * limit
-	return limit, page, offset, limitErr, pageErr
+	return limit, offset, query,limitErr, pageErr
 }

@@ -86,11 +86,8 @@ func (h *Handler) GetKebele(c *gin.Context) {
 	c.JSON(http.StatusOK, subcity)
 }
 
-
 func (h *Handler) GetAll(c *gin.Context) {
-	limit, _, offset, limitErr, pageErr := utils.PaginationHelper(c)
-	query := c.Query("query")
-
+	limit, offset, query, limitErr, pageErr := utils.PaginationHelper(c)
 	if limitErr != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid rows per page"})
 		return
