@@ -16,12 +16,15 @@ type Querier interface {
 	CanActorManipulateRole(ctx context.Context, arg CanActorManipulateRoleParams) (bool, error)
 	CanActorTouchTarget(ctx context.Context, arg CanActorTouchTargetParams) (bool, error)
 	CountByRoleSearch(ctx context.Context, arg CountByRoleSearchParams) (int64, error)
+	CountCitiesSearch(ctx context.Context, query string) (int64, error)
 	CountListByRole(ctx context.Context, roleSlug string) (int64, error)
 	CountListCities(ctx context.Context) (int64, error)
 	CountListKebeles(ctx context.Context) (int64, error)
 	CountListSubcities(ctx context.Context) (int64, error)
 	CountListUsers(ctx context.Context) (int64, error)
 	CountListUsersUnderScope(ctx context.Context, arg CountListUsersUnderScopeParams) (int64, error)
+	CountSearchKebeles(ctx context.Context, query string) (int64, error)
+	CountSubCitiesSearch(ctx context.Context, query string) (int64, error)
 	CountUsersSearch(ctx context.Context, query string) (int64, error)
 	CountUsersSearchUnderScope(ctx context.Context, arg CountUsersSearchUnderScopeParams) (int64, error)
 	CreateCity(ctx context.Context, name string) (City, error)
@@ -58,6 +61,9 @@ type Querier interface {
 	RemoveUserPermissionOverride(ctx context.Context, arg RemoveUserPermissionOverrideParams) error
 	RevokePermissionFromRole(ctx context.Context, arg RevokePermissionFromRoleParams) error
 	SearchByRole(ctx context.Context, arg SearchByRoleParams) ([]SearchByRoleRow, error)
+	SearchCities(ctx context.Context, arg SearchCitiesParams) ([]SearchCitiesRow, error)
+	SearchKebeles(ctx context.Context, arg SearchKebelesParams) ([]SearchKebelesRow, error)
+	SearchSubCities(ctx context.Context, arg SearchSubCitiesParams) ([]SearchSubCitiesRow, error)
 	SearchUsers(ctx context.Context, arg SearchUsersParams) ([]SearchUsersRow, error)
 	SearchUsersUnderScope(ctx context.Context, arg SearchUsersUnderScopeParams) ([]SearchUsersUnderScopeRow, error)
 	SetUserPermissionOverride(ctx context.Context, arg SetUserPermissionOverrideParams) error

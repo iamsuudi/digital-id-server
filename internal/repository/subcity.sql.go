@@ -25,6 +25,20 @@ func (q *Queries) CountListSubcities(ctx context.Context) (int64, error) {
 	return count, err
 }
 
+const countSubCitiesSearch = `-- name: CountSubCitiesSearch :one
+SELECT COUNT(*)
+FROM subcity
+WHERE deleted_at IS NULL AND
+    similarity(CONCAT_WS(' ', name), $1) > 0.2
+`
+
+func (q *Queries) CountSubCitiesSearch(ctx context.Context, query string) (int64, error) {
+	row := q.db.QueryRow(ctx, countSubCitiesSearch, query)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createSubCity = `-- name: CreateSubCity :one
 INSERT INTO subcity (name, city_id)
 VALUES ($1, $2)
@@ -128,6 +142,100 @@ func (q *Queries) ListSubCities(ctx context.Context, arg ListSubCitiesParams) ([
 			&i.CityName,
 			&i.ManagerID,
 			&i.ManagerName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const searchSubCities = `-- name: SearchSubCities :many
+SELECT sb.id, sb.name, sb.city_id, sb.created_at, sb.deleted_at, c.id, c.name, c.created_at, c.deleted_at, u.id, first_name, second_name, last_name, email, phone, password_hash, u.city_id, subcity_id, kebele_id, role_slug, u.created_at, u.deleted_at, c.name as city_name, u.id as manager_id, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS manager_name,
+    similarity(CONCAT_WS(' ', sb.name), $1) AS sim
+FROM subcity sb
+JOIN city c ON c.id = sb.city_id
+LEFT JOIN "user" u ON u.subcity_id = sb.id
+WHERE sb.deleted_at IS NULL AND
+    similarity(CONCAT_WS(' ', sb.name), $1) > 0.2
+ORDER BY sim DESC, sb.created_at DESC
+LIMIT $3 OFFSET $2
+`
+
+type SearchSubCitiesParams struct {
+	Query  string `db:"query" json:"query"`
+	Offset int32  `db:"offset" json:"offset"`
+	Limit  int32  `db:"limit" json:"limit"`
+}
+
+type SearchSubCitiesRow struct {
+	ID           uuid.UUID  `db:"id" json:"id"`
+	Name         string     `db:"name" json:"name"`
+	CityID       uuid.UUID  `db:"city_id" json:"city_id"`
+	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
+	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
+	ID_2         uuid.UUID  `db:"id_2" json:"id_2"`
+	Name_2       string     `db:"name_2" json:"name_2"`
+	CreatedAt_2  time.Time  `db:"created_at_2" json:"created_at_2"`
+	DeletedAt_2  *time.Time `db:"deleted_at_2" json:"deleted_at_2"`
+	ID_3         *uuid.UUID `db:"id_3" json:"id_3"`
+	FirstName    *string    `db:"first_name" json:"first_name"`
+	SecondName   *string    `db:"second_name" json:"second_name"`
+	LastName     *string    `db:"last_name" json:"last_name"`
+	Email        *string    `db:"email" json:"email"`
+	Phone        *string    `db:"phone" json:"phone"`
+	PasswordHash *string    `db:"password_hash" json:"password_hash"`
+	CityID_2     *uuid.UUID `db:"city_id_2" json:"city_id_2"`
+	SubcityID    *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	KebeleID     *uuid.UUID `db:"kebele_id" json:"kebele_id"`
+	RoleSlug     *string    `db:"role_slug" json:"role_slug"`
+	CreatedAt_3  *time.Time `db:"created_at_3" json:"created_at_3"`
+	DeletedAt_3  *time.Time `db:"deleted_at_3" json:"deleted_at_3"`
+	CityName     string     `db:"city_name" json:"city_name"`
+	ManagerID    *uuid.UUID `db:"manager_id" json:"manager_id"`
+	ManagerName  string     `db:"manager_name" json:"manager_name"`
+	Sim          float32    `db:"sim" json:"sim"`
+}
+
+func (q *Queries) SearchSubCities(ctx context.Context, arg SearchSubCitiesParams) ([]SearchSubCitiesRow, error) {
+	rows, err := q.db.Query(ctx, searchSubCities, arg.Query, arg.Offset, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []SearchSubCitiesRow{}
+	for rows.Next() {
+		var i SearchSubCitiesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.CityID,
+			&i.CreatedAt,
+			&i.DeletedAt,
+			&i.ID_2,
+			&i.Name_2,
+			&i.CreatedAt_2,
+			&i.DeletedAt_2,
+			&i.ID_3,
+			&i.FirstName,
+			&i.SecondName,
+			&i.LastName,
+			&i.Email,
+			&i.Phone,
+			&i.PasswordHash,
+			&i.CityID_2,
+			&i.SubcityID,
+			&i.KebeleID,
+			&i.RoleSlug,
+			&i.CreatedAt_3,
+			&i.DeletedAt_3,
+			&i.CityName,
+			&i.ManagerID,
+			&i.ManagerName,
+			&i.Sim,
 		); err != nil {
 			return nil, err
 		}

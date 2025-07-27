@@ -79,3 +79,21 @@ func (s *Service) GetAll(ctx context.Context, limit, offset int) (int64, []repos
 
 	return count, cities, nil
 }
+
+func (s *Service) SearchSubCities(ctx context.Context, limit, offset int, query string) (int64, []repository.SearchSubCitiesRow, error) {
+	count, err := s.q.CountSubCitiesSearch(ctx, query)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	subcities, err := s.q.SearchSubCities(ctx, repository.SearchSubCitiesParams{
+		Limit:  int32(limit),
+		Offset: int32(offset),
+		Query:  query,
+	})
+	if err != nil {
+		return 0, nil, err
+	}
+
+	return count, subcities, nil
+}

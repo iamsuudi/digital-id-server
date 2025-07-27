@@ -3,10 +3,11 @@ package city
 import (
 	"context"
 
+	"digital-id-server/internal/repository"
+	"digital-id-server/shared/types"
+
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"digital-id-server/shared/types"
-	"digital-id-server/internal/repository"
 )
 
 type Service struct {
@@ -78,6 +79,24 @@ func (s *Service) GetAll(ctx context.Context, limit, offset int) (int64, []repos
 
 	cities, err := s.q.ListCities(ctx, repository.ListCitiesParams{
 		Limit: int32(limit),
+		Offset: int32(offset),
+	})
+	if err != nil {
+		return 0, nil, err
+	}
+
+	return count, cities, nil
+}
+
+func (s *Service) SearchCities(ctx context.Context, limit, offset int, query string) (int64, []repository.SearchCitiesRow, error) {
+	count, err := s.q.CountCitiesSearch(ctx, query)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	cities, err := s.q.SearchCities(ctx, repository.SearchCitiesParams{
+		Query:  query,
+		Limit:  int32(limit),
 		Offset: int32(offset),
 	})
 	if err != nil {

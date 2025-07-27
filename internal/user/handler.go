@@ -63,9 +63,7 @@ func (h *Handler) GetUser(c *gin.Context) {
 }
 
 func (h *Handler) GetAll(c *gin.Context) {
-	limit, _, offset, limitErr, pageErr := utils.PaginationHelper(c)
-	query := c.Query("query")
-
+	limit, offset, query, limitErr, pageErr := utils.PaginationHelper(c)
 	if limitErr != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid rows per page"})
 		return
@@ -108,8 +106,7 @@ func (h *Handler) GetAll(c *gin.Context) {
 }
 
 func (h *Handler) GetAllForSuperadmin(c *gin.Context) {
-	limit, _, offset, limitErr, pageErr := utils.PaginationHelper(c)
-	query := c.Query("query")
+	limit, offset, query, limitErr, pageErr := utils.PaginationHelper(c)
 	if limitErr != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid rows per page"})
 		return
@@ -152,9 +149,8 @@ func (h *Handler) GetAllForSuperadmin(c *gin.Context) {
 }
 
 func (h *Handler) GetByRole(c *gin.Context) {
-	limit, _, offset, limitErr, pageErr := utils.PaginationHelper(c)
+	limit, offset, query, limitErr, pageErr := utils.PaginationHelper(c)
 	role_slug := c.Query("role_slug")
-	query := c.Query("query")
 	if limitErr != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid rows per page"})
 		return
