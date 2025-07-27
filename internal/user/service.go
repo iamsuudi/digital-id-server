@@ -43,6 +43,16 @@ func (s *Service) GetAllForSuperadmin(ctx context.Context, limit, offset int, qu
 	return count, users, err
 }
 
+func (s *Service) GetByRole(ctx context.Context, limit, offset int, query, role_slug string) (int64, []repository.ListByRoleRow, error) {
+	count, _ := s.q.CountListByRole(ctx, role_slug)
+	users, err := s.q.ListByRole(ctx, repository.ListByRoleParams{
+		Limit:  int32(limit),
+		Offset: int32(offset),
+		RoleSlug: role_slug,
+	})
+	return count, users, err
+}
+
 func (s *Service) SearchUsersUnderScope(ctx context.Context, limit, offset int, query string) (int64, []repository.SearchUsersUnderScopeRow, error) {
 	count, err := s.q.CountUsersSearchUnderScope(ctx, repository.CountUsersSearchUnderScopeParams{
 		Query: query,
@@ -73,6 +83,28 @@ func (s *Service) SearchUsersForSuperadmin(ctx context.Context, limit, offset in
 		Limit:  int32(limit),
 		Offset: int32(offset),
 		Query:  query,
+	})
+	if err != nil {
+		return 0, nil, err
+	}
+
+	return count, users, nil
+}
+
+func (s *Service) SearchByRole(ctx context.Context, limit, offset int, query, role_slug string) (int64, []repository.SearchByRoleRow, error) {
+	count, err := s.q.CountByRoleSearch(ctx, repository.CountByRoleSearchParams{
+		RoleSlug: role_slug,
+		Query: query,
+	})
+	if err != nil {
+		return 0, nil, err
+	}
+
+	users, err := s.q.SearchByRole(ctx, repository.SearchByRoleParams{
+		Limit:  int32(limit),
+		Offset: int32(offset),
+		Query:  query,
+		RoleSlug: role_slug,
 	})
 	if err != nil {
 		return 0, nil, err
