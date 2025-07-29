@@ -4,14 +4,26 @@ VALUES ($1, $2, $3, $4, $5, $6, $7)
 RETURNING *, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name;
 
 -- name: GetUserByEmail :one
-SELECT *, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
-FROM "user"
-WHERE email = $1 AND deleted_at IS NULL;
+SELECT u.*, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS full_name,
+    c.name AS city_name, sc.name AS subcity_name, k.name AS kebele_name,
+    r.name AS role_name, r.level_rank AS role_level_rank
+FROM "user" u
+LEFT JOIN role r ON r.slug = u.role_slug
+LEFT JOIN city c ON c.id = u.city_id
+LEFT JOIN subcity sc ON sc.id = u.subcity_id
+LEFT JOIN kebele k ON k.id = u.kebele_id
+WHERE u.email = $1 AND u.deleted_at IS NULL;
 
 -- name: GetUserByID :one
-SELECT *, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
-FROM "user"
-WHERE id = $1 AND deleted_at IS NULL;
+SELECT u.*, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS full_name,
+    c.name AS city_name, sc.name AS subcity_name, k.name AS kebele_name,
+    r.name AS role_name, r.level_rank AS role_level_rank
+FROM "user" u
+LEFT JOIN role r ON r.slug = u.role_slug
+LEFT JOIN city c ON c.id = u.city_id
+LEFT JOIN subcity sc ON sc.id = u.subcity_id
+LEFT JOIN kebele k ON k.id = u.kebele_id
+WHERE u.id = $1 AND u.deleted_at IS NULL;
 
 -- name: GetUserScope :one
 SELECT city_id, subcity_id, kebele_id FROM "user" WHERE id = $1;
@@ -37,10 +49,16 @@ SET deleted_at = NOW()
 WHERE id = $1;
 
 -- name: ListAllUsers :many
-SELECT *, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
-FROM "user"
-WHERE deleted_at IS NULL
-ORDER BY created_at ASC
+SELECT u.*, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS full_name,
+    c.name AS city_name, sc.name AS subcity_name, k.name AS kebele_name,
+    r.name AS role_name, r.level_rank AS role_level_rank
+FROM "user" u
+LEFT JOIN city c ON c.id = u.city_id
+LEFT JOIN subcity sc ON sc.id = u.subcity_id
+LEFT JOIN kebele k ON k.id = u.kebele_id
+LEFT JOIN role r ON r.slug = u.role_slug
+WHERE u.deleted_at IS NULL
+ORDER BY u.created_at ASC
 LIMIT  sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: CountListUsers :one
@@ -49,12 +67,18 @@ FROM "user"
 WHERE deleted_at IS NULL;
 
 -- name: SearchUsers :many
-SELECT *, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name,
+SELECT u.*, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS full_name,
+    c.name AS city_name, sc.name AS subcity_name, k.name AS kebele_name,
+    r.name AS role_name, r.level_rank AS role_level_rank,
     similarity(CONCAT_WS(' ', first_name, second_name, last_name), sqlc.arg('query')) AS sim
-FROM "user"
-WHERE deleted_at IS NULL AND
+FROM "user" u
+LEFT JOIN city c ON c.id = u.city_id
+LEFT JOIN subcity sc ON sc.id = u.subcity_id
+LEFT JOIN kebele k ON k.id = u.kebele_id
+LEFT JOIN role r ON r.slug = u.role_slug
+WHERE u.deleted_at IS NULL AND
     similarity(CONCAT_WS(' ', first_name, second_name, last_name), sqlc.arg('query')) > 0.2
-ORDER BY sim DESC, created_at DESC
+ORDER BY sim DESC, u.created_at DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: CountUsersSearch :one
