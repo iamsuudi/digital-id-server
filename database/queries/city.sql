@@ -13,8 +13,7 @@ RETURNING *;
 SELECT c.*, u.id as admin_id, 
     CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS admin_name
 FROM city c
-LEFT JOIN "user" u ON u.city_id = c.id
-LEFT JOIN role r ON r.slug = u.role_slug AND r.slug = 'admin'
+LEFT JOIN "user" u ON u.city_id = c.id AND u.role_slug = 'admin'
 WHERE c.id = $1 AND c.deleted_at IS NULL;
 
 -- name: ListCities :many
@@ -22,7 +21,6 @@ SELECT c.*, u.id as admin_id,
     CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS admin_name
 FROM city c
 LEFT JOIN "user" u ON u.city_id = c.id AND u.role_slug = 'admin'
--- LEFT JOIN role   r ON r.slug = u.role_slug AND r.slug = 'admin'
 WHERE c.deleted_at IS NULL
 ORDER BY c.created_at DESC
 LIMIT $1 OFFSET $2;

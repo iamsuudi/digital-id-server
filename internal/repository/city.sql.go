@@ -60,8 +60,7 @@ const getCity = `-- name: GetCity :one
 SELECT c.id, c.name, c.created_at, c.deleted_at, u.id as admin_id, 
     CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS admin_name
 FROM city c
-LEFT JOIN "user" u ON u.city_id = c.id
-LEFT JOIN role r ON r.slug = u.role_slug AND r.slug = 'admin'
+LEFT JOIN "user" u ON u.city_id = c.id AND u.role_slug = 'admin'
 WHERE c.id = $1 AND c.deleted_at IS NULL
 `
 
@@ -112,7 +111,6 @@ type ListCitiesRow struct {
 	AdminName string     `db:"admin_name" json:"admin_name"`
 }
 
-// LEFT JOIN role   r ON r.slug = u.role_slug AND r.slug = 'admin'
 func (q *Queries) ListCities(ctx context.Context, arg ListCitiesParams) ([]ListCitiesRow, error) {
 	rows, err := q.db.Query(ctx, listCities, arg.Limit, arg.Offset)
 	if err != nil {

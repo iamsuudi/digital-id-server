@@ -21,13 +21,10 @@ type Querier interface {
 	CountListCities(ctx context.Context) (int64, error)
 	CountListKebeles(ctx context.Context) (int64, error)
 	CountListSubcities(ctx context.Context) (int64, error)
-	CountListUsers(ctx context.Context) (int64, error)
-	// LEFT JOIN role r ON r.slug = u.role_slug
 	CountListUsersUnderScope(ctx context.Context, arg CountListUsersUnderScopeParams) (int64, error)
 	CountSearchKebeles(ctx context.Context, query string) (int64, error)
+	CountSearchUsersUnderScope(ctx context.Context, arg CountSearchUsersUnderScopeParams) (int64, error)
 	CountSubCitiesSearch(ctx context.Context, query string) (int64, error)
-	CountUsersSearch(ctx context.Context, query string) (int64, error)
-	CountUsersSearchUnderScope(ctx context.Context, arg CountUsersSearchUnderScopeParams) (int64, error)
 	CreateCity(ctx context.Context, name string) (City, error)
 	CreateKebele(ctx context.Context, arg CreateKebeleParams) (Kebele, error)
 	CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) (uuid.UUID, error)
@@ -49,9 +46,7 @@ type Querier interface {
 	GetUserScope(ctx context.Context, id uuid.UUID) (GetUserScopeRow, error)
 	GrantPermissionToRole(ctx context.Context, arg GrantPermissionToRoleParams) error
 	GrantUserPlacement(ctx context.Context, arg GrantUserPlacementParams) error
-	ListAllUsers(ctx context.Context, arg ListAllUsersParams) ([]ListAllUsersRow, error)
 	ListByRole(ctx context.Context, arg ListByRoleParams) ([]ListByRoleRow, error)
-	// LEFT JOIN role   r ON r.slug = u.role_slug AND r.slug = 'admin'
 	ListCities(ctx context.Context, arg ListCitiesParams) ([]ListCitiesRow, error)
 	ListKebeles(ctx context.Context, arg ListKebelesParams) ([]ListKebelesRow, error)
 	ListPermissionMatrixInScope(ctx context.Context, arg ListPermissionMatrixInScopeParams) ([]ListPermissionMatrixInScopeRow, error)
@@ -68,7 +63,6 @@ type Querier interface {
 	SearchCities(ctx context.Context, arg SearchCitiesParams) ([]SearchCitiesRow, error)
 	SearchKebeles(ctx context.Context, arg SearchKebelesParams) ([]SearchKebelesRow, error)
 	SearchSubCities(ctx context.Context, arg SearchSubCitiesParams) ([]SearchSubCitiesRow, error)
-	SearchUsers(ctx context.Context, arg SearchUsersParams) ([]SearchUsersRow, error)
 	SearchUsersUnderScope(ctx context.Context, arg SearchUsersUnderScopeParams) ([]SearchUsersUnderScopeRow, error)
 	SetUserPermissionOverride(ctx context.Context, arg SetUserPermissionOverrideParams) error
 	SoftDeleteUser(ctx context.Context, id uuid.UUID) error

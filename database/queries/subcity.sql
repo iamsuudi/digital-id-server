@@ -13,7 +13,7 @@ RETURNING *;
 SELECT s.*, c.name as city_name, u.id as manager_id, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS manager_name
 FROM subcity s
 LEFT JOIN city c ON c.id = s.city_id
-LEFT JOIN "user" u ON u.subcity_id = s.id
+LEFT JOIN "user" u ON u.subcity_id = s.id AND u.role_slug = 'manager'
 WHERE s.id = $1 AND s.deleted_at IS NULL;
 
 -- name: ListSubCities :many
