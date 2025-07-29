@@ -31,83 +31,83 @@ var Data = []City{
 	{
 		Name: "Adama",
 		SubCities: []SubCity{
-			{Name: "Adama Ketema-01", Kebeles: []Kebele{{Name: "01"}, {Name: "02"}, {Name: "03"}}},
-			{Name: "Adama Ketema-02", Kebeles: []Kebele{{Name: "04"}, {Name: "05"}, {Name: "06"}}},
-			{Name: "Adama Ketema-03", Kebeles: []Kebele{{Name: "07"}, {Name: "08"}}},
-			{Name: "Adama Ketema-04", Kebeles: []Kebele{{Name: "09"}, {Name: "10"}, {Name: "11"}}},
-			{Name: "Adama Ketema-05", Kebeles: []Kebele{{Name: "12"}, {Name: "13"}}},
+			{Name: "Adama Subcity-01", Kebeles: []Kebele{{Name: "Kebele 01"}, {Name: "Kebele 02"}, {Name: "Kebele 03"}}},
+			{Name: "Adama Subcity-02", Kebeles: []Kebele{{Name: "Kebele 01"}, {Name: "Kebele 02"}, {Name: "Kebele 03"}}},
+			{Name: "Adama Subcity-03", Kebeles: []Kebele{{Name: "Kebele 01"}, {Name: "Kebele 02"}}},
+			{Name: "Adama Subcity-04", Kebeles: []Kebele{{Name: "Kebele 01"}, {Name: "Kebele 02"}, {Name: "Kebele 03"}}},
+			{Name: "Adama Subcity-05", Kebeles: []Kebele{{Name: "Kebele 01"}, {Name: "Kebele 02"}}},
 		},
 	},
 	{
 		Name: "Jimma",
 		SubCities: []SubCity{
-			{Name: "Jimma Ketema-01", Kebeles: []Kebele{{Name: "Agaro Sefer"}, {Name: "Baker Sefer"}, {Name: "Merkato"}}},
-			{Name: "Jimma Ketema-02", Kebeles: []Kebele{{Name: "Higher 01"}, {Name: "Higher 02"}, {Name: "Higher 03"}}},
-			{Name: "Jimma Ketema-03", Kebeles: []Kebele{{Name: "Town 01"}, {Name: "Town 02"}}},
-			{Name: "Jimma Ketema-04", Kebeles: []Kebele{{Name: "Seka"}, {Name: "Mizan-Aman"}}},
+			{Name: "Jimma Subcity-01", Kebeles: []Kebele{{Name: "Agaro Sefer"}, {Name: "Baker Sefer"}, {Name: "Merkato"}}},
+			{Name: "Jimma Subcity-02", Kebeles: []Kebele{{Name: "Higher 01"}, {Name: "Higher 02"}, {Name: "Higher 03"}}},
+			{Name: "Jimma Subcity-03", Kebeles: []Kebele{{Name: "Town 01"}, {Name: "Town 02"}}},
+			{Name: "Jimma Subcity-04", Kebeles: []Kebele{{Name: "Seka"}, {Name: "Mizan-Aman"}}},
 		},
 	},
 	{
 		Name: "Shashamane",
 		SubCities: []SubCity{
-			{Name: "Shashemene Ketema-01", Kebeles: []Kebele{{Name: "01"}, {Name: "02"}}},
-			{Name: "Shashemene Ketema-02", Kebeles: []Kebele{{Name: "03"}, {Name: "04"}, {Name: "05"}}},
-			{Name: "Shashemene Ketema-03", Kebeles: []Kebele{{Name: "06"}, {Name: "07"}}},
-			{Name: "Shashemene Ketema-04", Kebeles: []Kebele{{Name: "08"}, {Name: "09"}}},
+			{Name: "Shashemene Subcity-01", Kebeles: []Kebele{{Name: "Kebele 01"}, {Name: "Kebele 02"}}},
+			{Name: "Shashemene Subcity-02", Kebeles: []Kebele{{Name: "Kebele 01"}, {Name: "Kebele 02"}, {Name: "Kebele 03"}}},
+			{Name: "Shashemene Subcity-03", Kebeles: []Kebele{{Name: "Kebele 01"}, {Name: "Kebele 02"}}},
+			{Name: "Shashemene Subcity-04", Kebeles: []Kebele{{Name: "Kebele 01"}, {Name: "Kebele 02"}}},
 		},
 	},
 	{
 		Name: "Bishoftu",
 		SubCities: []SubCity{
-			{Name: "Bishoftu Ketema-01", Kebeles: []Kebele{{Name: "01"}, {Name: "02"}, {Name: "03"}}},
-			{Name: "Bishoftu Ketema-02", Kebeles: []Kebele{{Name: "04"}, {Name: "05"}}},
-			{Name: "Bishoftu Ketema-03", Kebeles: []Kebele{{Name: "06"}, {Name: "07"}}},
+			{Name: "Bishoftu Subcity-01", Kebeles: []Kebele{{Name: "Kebele 01"}, {Name: "Kebele 02"}, {Name: "Kebele 03"}}},
+			{Name: "Bishoftu Subcity-02", Kebeles: []Kebele{{Name: "Kebele 01"}, {Name: "Kebele 02"}}},
+			{Name: "Bishoftu Subcity-03", Kebeles: []Kebele{{Name: "Kebele 01"}, {Name: "Kebele 02"}}},
 		},
 	},
 	{
 		Name: "Nekemte",
 		SubCities: []SubCity{
-			{Name: "Nekemte Ketema-01", Kebeles: []Kebele{{Name: "01"}, {Name: "02"}, {Name: "03"}}},
-			{Name: "Nekemte Ketema-02", Kebeles: []Kebele{{Name: "04"}, {Name: "05"}}},
-			{Name: "Nekemte Ketema-03", Kebeles: []Kebele{{Name: "06"}, {Name: "07"}}},
+			{Name: "Nekemte Subcity-01", Kebeles: []Kebele{{Name: "Kebele 01"}, {Name: "Kebele 02"}, {Name: "Kebele 03"}}},
+			{Name: "Nekemte Subcity-02", Kebeles: []Kebele{{Name: "Kebele 01"}, {Name: "Kebele 02"}}},
+			{Name: "Nekemte Subcity-03", Kebeles: []Kebele{{Name: "Kebele 01"}, {Name: "Kebele 02"}}},
 		},
 	},
 	{
 		Name: "Ambo",
 		SubCities: []SubCity{
-			{Name: "Ambo Ketema-01", Kebeles: []Kebele{{Name: "01"}, {Name: "02"}}},
-			{Name: "Ambo Ketema-02", Kebeles: []Kebele{{Name: "03"}, {Name: "04"}, {Name: "05"}}},
-			{Name: "Ambo Ketema-03", Kebeles: []Kebele{{Name: "06"}}},
+			{Name: "Ambo Subcity-01", Kebeles: []Kebele{{Name: "Kebele 01"}, {Name: "Kebele 02"}}},
+			{Name: "Ambo Subcity-02", Kebeles: []Kebele{{Name: "Kebele 01"}, {Name: "Kebele 02"}, {Name: "Kebele 03"}}},
+			{Name: "Ambo Subcity-03", Kebeles: []Kebele{{Name: "Kebele 01"}}},
 		},
 	},
 	{
 		Name: "Asella",
 		SubCities: []SubCity{
-			{Name: "Asella Ketema-01", Kebeles: []Kebele{{Name: "01"}, {Name: "02"}}},
-			{Name: "Asella Ketema-02", Kebeles: []Kebele{{Name: "03"}, {Name: "04"}}},
-			{Name: "Asella Ketema-03", Kebeles: []Kebele{{Name: "05"}, {Name: "06"}}},
+			{Name: "Asella Subcity-01", Kebeles: []Kebele{{Name: "Kebele 01"}, {Name: "Kebele 02"}}},
+			{Name: "Asella Subcity-02", Kebeles: []Kebele{{Name: "Kebele 01"}, {Name: "Kebele 02"}}},
+			{Name: "Asella Subcity-03", Kebeles: []Kebele{{Name: "Kebele 01"}, {Name: "Kebele 02"}}},
 		},
 	},
 	{
 		Name: "Burayu",
 		SubCities: []SubCity{
-			{Name: "Burayu Ketema-01", Kebeles: []Kebele{{Name: "01"}, {Name: "02"}, {Name: "03"}}},
-			{Name: "Burayu Ketema-02", Kebeles: []Kebele{{Name: "04"}, {Name: "05"}}},
+			{Name: "Burayu Subcity-01", Kebeles: []Kebele{{Name: "Kebele 01"}, {Name: "Kebele 02"}, {Name: "Kebele 03"}}},
+			{Name: "Burayu Subcity-02", Kebeles: []Kebele{{Name: "Kebele 01"}, {Name: "Kebele 02"}}},
 		},
 	},
 	{
 		Name: "Sebeta",
 		SubCities: []SubCity{
-			{Name: "Sebeta Ketema-01", Kebeles: []Kebele{{Name: "01"}, {Name: "02"}}},
-			{Name: "Sebeta Ketema-02", Kebeles: []Kebele{{Name: "03"}, {Name: "04"}, {Name: "05"}}},
-			{Name: "Sebeta Ketema-03", Kebeles: []Kebele{{Name: "06"}, {Name: "07"}}},
+			{Name: "Sebeta Subcity-01", Kebeles: []Kebele{{Name: "Kebele 01"}, {Name: "Kebele 02"}}},
+			{Name: "Sebeta Subcity-02", Kebeles: []Kebele{{Name: "Kebele 01"}, {Name: "Kebele 02"}, {Name: "Kebele 03"}}},
+			{Name: "Sebeta Subcity-03", Kebeles: []Kebele{{Name: "Kebele 01"}, {Name: "Kebele 02"}}},
 		},
 	},
 	{
 		Name: "Gimbi",
 		SubCities: []SubCity{
-			{Name: "Gimbi Ketema-01", Kebeles: []Kebele{{Name: "01"}, {Name: "02"}}},
-			{Name: "Gimbi Ketema-02", Kebeles: []Kebele{{Name: "03"}, {Name: "04"}}},
+			{Name: "Gimbi Subcity-01", Kebeles: []Kebele{{Name: "Kebele 01"}, {Name: "Kebele 02"}}},
+			{Name: "Gimbi Subcity-02", Kebeles: []Kebele{{Name: "Kebele 01"}, {Name: "Kebele 02"}}},
 		},
 	},
 }
@@ -121,22 +121,22 @@ func seedLocations(ctx context.Context, queries *repository.Queries) {
 			log.Fatalf("Failed to create city: %v", c.Name)
 		}
 		log.Printf("✅ City created: %s.", city.Name)
-		
+
 		for _, sc := range c.SubCities {
 			subCity, err := queries.CreateSubCity(ctx, repository.CreateSubCityParams{
-				Name: sc.Name,
+				Name:   sc.Name,
 				CityID: city.ID,
 			})
 			if err != nil {
 				log.Fatalf("Failed to create sub-city: %v", sc.Name)
 			}
 			log.Printf("✅ Sub-city created: %s.", subCity.Name)
-			
+
 			for _, k := range sc.Kebeles {
 				kebele, err := queries.CreateKebele(ctx, repository.CreateKebeleParams{
-					Name: k.Name,
+					Name:      k.Name,
 					SubcityID: &(subCity.ID),
-					CityID: city.ID,
+					CityID:    city.ID,
 				})
 				if err != nil {
 					log.Fatalf("Failed to create kebele: %v", k.Name)

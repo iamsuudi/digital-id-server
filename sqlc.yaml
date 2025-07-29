@@ -89,11 +89,25 @@ sql:
               type: "string"
               pointer: true
             nullable: true
-          - db_type: "numeric"
+          - db_type: "pg_catalog.numeric"
             go_type: "float64"
-          - db_type: "numeric"
+          - db_type: "pg_catalog.numeric"
             go_type:
               type: "float64"
+              pointer: true
+            nullable: true
+          - db_type: "pg_catalog.int4"
+            go_type: "int32"
+          - db_type: "pg_catalog.int4"
+            go_type:
+              type: "int32"
+              pointer: true
+            nullable: true
+          - db_type: "pg_catalog.int8"
+            go_type: "int64"
+          - db_type: "pg_catalog.int8"
+            go_type:
+              type: "int64"
               pointer: true
             nullable: true
           - db_type: "pg_catalog.timestamp"

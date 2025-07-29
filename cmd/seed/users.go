@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strconv"
 	"strings"
 	"time"
 
@@ -20,9 +19,9 @@ func CreateUsers() []types.UserRegisterInput {
 	next := func(role, city, sc, k string) types.UserRegisterInput {
 		id++
 		return types.UserRegisterInput{
-			FirstName:  fmt.Sprintf("%s-%s", city, sc),
-			SecondName: k,
-			LastName:   strconv.Itoa(id),
+			FirstName:  fmt.Sprintf("%s-%s", city, role),
+			SecondName: sc,
+			LastName:   k,
 			Email:      strings.ToLower(fmt.Sprintf("%s%d@oict.com", role, id)),
 			Phone:      fmt.Sprintf("+251911%06d", id),
 			Password:   fmt.Sprintf("password%d", id), // simple, unique password
