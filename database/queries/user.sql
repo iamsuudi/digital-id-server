@@ -33,15 +33,22 @@ UPDATE "user"
 SET role_slug = $2
 WHERE id = $1;
 
--- name: UpdateUserPlacement :exec
-WITH clear_old AS (
-    UPDATE "user"
-    SET city_id = NULL, subcity_id = NULL, kebele_id = NULL
-    WHERE city_id = $2
-)
-UPDATE "user" AS U
-SET city_id = $2, subcity_id = $3, kebele_id = $4
-WHERE u.id = $1;
+-- name: GrantUserPlacement :exec
+UPDATE "user"
+SET city_id = sqlc.narg('city_id'),
+    subcity_id = sqlc.narg('subcity_id'),
+    kebele_id = sqlc.narg('kebele_id')
+WHERE id = sqlc.arg('id');
+
+-- name: RevokeUserPlacement :exec
+UPDATE "user"
+SET city_id = NULL,
+    subcity_id = NULL,
+    kebele_id = NULL
+WHERE role_slug = sqlc.arg('role_slug')
+    AND (sqlc.narg('city_id')::uuid IS NULL OR city_id = sqlc.narg('city_id')::uuid)
+    AND (sqlc.narg('subcity_id')::uuid IS NULL OR subcity_id = sqlc.narg('subcity_id')::uuid)
+    AND (sqlc.narg('kebele_id')::uuid IS NULL OR kebele_id = sqlc.narg('kebele_id')::uuid);
 
 -- name: SoftDeleteUser :exec
 UPDATE "user"
@@ -127,7 +134,6 @@ WHERE deleted_at IS NULL AND
     (sqlc.arg('city_id')::uuid IS NULL OR u.city_id = sqlc.arg('city_id')::uuid) AND
     (sqlc.arg('subcity_id')::uuid IS NULL OR u.subcity_id = sqlc.arg('subcity_id')::uuid) AND
     (sqlc.arg('kebele_id')::uuid IS NULL OR u.kebele_id = sqlc.arg('kebele_id')::uuid);
-
 
 -- name: ListByRole :many
 SELECT *, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
