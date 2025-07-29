@@ -3,9 +3,10 @@ package user
 import (
 	"context"
 
+	"digital-id-server/internal/repository"
+
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"digital-id-server/internal/repository"
 )
 
 type Service struct {
@@ -25,11 +26,20 @@ func (s *Service) GetUserByEmail(ctx context.Context, email string) (repository.
 	return s.q.GetUserByEmail(ctx, email)
 }
 
-func (s *Service) GetAllUnderScope(ctx context.Context, limit, offset int, query string) (int64, []repository.ListUsersUnderScopeRow, error) {
-	count, _ := s.q.CountListUsersUnderScope(ctx, repository.CountListUsersUnderScopeParams{})
+func (s *Service) GetAllUnderScope(ctx context.Context, limit, offset int, query string, rank *int32, c_id, sc_id, k_id *uuid.UUID) (int64, []repository.ListUsersUnderScopeRow, error) {
+	count, err := s.q.CountListUsersUnderScope(ctx, repository.CountListUsersUnderScopeParams{
+		CityID:    c_id,
+		SubcityID: sc_id,
+		KebeleID:  k_id,
+		// LevelRank: *rank,
+	})
 	users, err := s.q.ListUsersUnderScope(ctx, repository.ListUsersUnderScopeParams{
-		Limit:  int32(limit),
-		Offset: int32(offset),
+		CityID:    c_id,
+		SubcityID: sc_id,
+		KebeleID:  k_id,
+		// LevelRank: *rank,
+		Limit:     int32(limit),
+		Offset:    int32(offset),
 	})
 	return count, users, err
 }
@@ -46,8 +56,8 @@ func (s *Service) GetAllForSuperadmin(ctx context.Context, limit, offset int, qu
 func (s *Service) GetByRole(ctx context.Context, limit, offset int, query, role_slug string) (int64, []repository.ListByRoleRow, error) {
 	count, _ := s.q.CountListByRole(ctx, role_slug)
 	users, err := s.q.ListByRole(ctx, repository.ListByRoleParams{
-		Limit:  int32(limit),
-		Offset: int32(offset),
+		Limit:    int32(limit),
+		Offset:   int32(offset),
 		RoleSlug: role_slug,
 	})
 	return count, users, err
@@ -94,16 +104,16 @@ func (s *Service) SearchUsersForSuperadmin(ctx context.Context, limit, offset in
 func (s *Service) SearchByRole(ctx context.Context, limit, offset int, query, role_slug string) (int64, []repository.SearchByRoleRow, error) {
 	count, err := s.q.CountByRoleSearch(ctx, repository.CountByRoleSearchParams{
 		RoleSlug: role_slug,
-		Query: query,
+		Query:    query,
 	})
 	if err != nil {
 		return 0, nil, err
 	}
 
 	users, err := s.q.SearchByRole(ctx, repository.SearchByRoleParams{
-		Limit:  int32(limit),
-		Offset: int32(offset),
-		Query:  query,
+		Limit:    int32(limit),
+		Offset:   int32(offset),
+		Query:    query,
 		RoleSlug: role_slug,
 	})
 	if err != nil {
@@ -111,4 +121,8 @@ func (s *Service) SearchByRole(ctx context.Context, limit, offset int, query, ro
 	}
 
 	return count, users, nil
+}
+
+func (s *Service) GetEffectivePermissions(ctx context.Context, id uuid.UUID) ([]repository.GetEffectivePermissionsForUserRow, error) {
+	return s.q.GetEffectivePermissionsForUser(ctx, id)
 }

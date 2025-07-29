@@ -4,8 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 
+	"digital-id-server/internal/cache"
 	"digital-id-server/internal/repository"
 	"digital-id-server/shared/utils"
 
@@ -15,51 +17,55 @@ import (
 )
 
 type Handler struct {
-	service *Service
+	service   *Service
+	cache *cache.Cache
 }
 
-func NewHandler(s *Service) *Handler {
-	return &Handler{service: s}
+func NewHandler(s *Service, c *cache.Cache) *Handler {
+	return &Handler{service: s, cache: c}
+}
+
+func (h *Handler) RequirePermission(permissions ...string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		str, _ := c.Get("user_id")
+		id, _ := str.(uuid.UUID)
+
+		perms, err := h.cache.GetPerms(c, id)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "permission"})
+			return
+		}
+
+		for _, reqPerm := range permissions {
+			if !slices.ContainsFunc(perms, func(p repository.GetEffectivePermissionsForUserRow) bool {
+				return p.Name == reqPerm
+			}) {
+				c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Insufficient permission"})
+				return
+			}
+		}
+		c.Next()
+	}
 }
 
 func (h *Handler) GetUser(c *gin.Context) {
-	by := c.Query("by")
-	value := c.Query("value")
-
-	switch by {
-	case "id":
-		id, err := uuid.Parse(value)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
-			return
-		}
-
-		user, err := h.service.GetUserById(c.Request.Context(), id)
-		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
-				c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-			} else {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch user"})
-			}
-			return
-		}
-		c.JSON(http.StatusOK, user)
-
-	case "email":
-		user, err := h.service.GetUserByEmail(c.Request.Context(), value)
-		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
-				c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-			} else {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch user"})
-			}
-			return
-		}
-		c.JSON(http.StatusOK, user)
-
-	default:
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Query ?by= must be 'id', 'email' or 'role'"})
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
 	}
+
+	user, err := h.service.GetUserById(c.Request.Context(), id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch user"})
+		}
+		return
+	}
+	c.JSON(http.StatusOK, user)
 }
 
 func (h *Handler) GetAll(c *gin.Context) {
@@ -74,7 +80,11 @@ func (h *Handler) GetAll(c *gin.Context) {
 	}
 
 	if strings.TrimSpace(query) == "" {
-		count, users, err := h.service.GetAllUnderScope(c.Request.Context(), limit, offset, query)
+		str, _ := c.Get("user_id")
+		id, _ := str.(uuid.UUID)
+		user, _ := h.cache.GetUser(c, id)
+		count, users, err := h.service.GetAllUnderScope(c.Request.Context(), limit, offset, query, user.RoleLevelRank, user.CityID, user.SubcityID, user.KebeleID)
+			fmt.Println(*user.RoleLevelRank)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch users"})
 			return

@@ -5,9 +5,10 @@ import (
 	"net/http"
 	"time"
 
+	"digital-id-server/shared/types"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"digital-id-server/shared/types"
 )
 
 type Handler struct {
@@ -52,7 +53,7 @@ func (h *Handler) Login(c *gin.Context) {
 	}
 
 	// Set access token (JWT)
-	c.SetCookie("oict_jwt", accessToken, 86400, "/", "", true, true) // 1 day
+	c.SetCookie("oict_jwt", accessToken, 5*60*60, "/", "", true, true) // 1 day
 	// Set refresh token securely
 	c.SetCookie("oict_refresh_token", refreshToken, 604800, "/", "", true, true) // 7 days
 
