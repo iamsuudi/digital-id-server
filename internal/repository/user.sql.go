@@ -59,19 +59,21 @@ func (q *Queries) CountListUsers(ctx context.Context) (int64, error) {
 
 const countListUsersUnderScope = `-- name: CountListUsersUnderScope :one
 SELECT COUNT(*)
-FROM "user" u
+FROM "user"
 WHERE deleted_at IS NULL AND
-    ($1::uuid IS NULL OR u.city_id = $1::uuid) AND
-    ($2::uuid IS NULL OR u.subcity_id = $2::uuid) AND
-    ($3::uuid IS NULL OR u.kebele_id = $3::uuid)
+    -- sqlc.arg('level_rank') < r.level_rank AND
+    ($1::uuid IS NULL OR city_id = $1::uuid) AND
+    ($2::uuid IS NULL OR subcity_id = $2::uuid) AND
+    ($3::uuid IS NULL OR kebele_id = $3::uuid)
 `
 
 type CountListUsersUnderScopeParams struct {
-	CityID    uuid.UUID `db:"city_id" json:"city_id"`
-	SubcityID uuid.UUID `db:"subcity_id" json:"subcity_id"`
-	KebeleID  uuid.UUID `db:"kebele_id" json:"kebele_id"`
+	CityID    *uuid.UUID `db:"city_id" json:"city_id"`
+	SubcityID *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	KebeleID  *uuid.UUID `db:"kebele_id" json:"kebele_id"`
 }
 
+// LEFT JOIN role r ON r.slug = u.role_slug
 func (q *Queries) CountListUsersUnderScope(ctx context.Context, arg CountListUsersUnderScopeParams) (int64, error) {
 	row := q.db.QueryRow(ctx, countListUsersUnderScope, arg.CityID, arg.SubcityID, arg.KebeleID)
 	var count int64
@@ -298,6 +300,11 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (GetUserByIDRow
 		&i.CreatedAt,
 		&i.DeletedAt,
 		&i.FullName,
+		&i.CityName,
+		&i.SubcityName,
+		&i.KebeleName,
+		&i.RoleName,
+		&i.RoleLevelRank,
 	)
 	return i, err
 }
@@ -317,6 +324,31 @@ func (q *Queries) GetUserScope(ctx context.Context, id uuid.UUID) (GetUserScopeR
 	var i GetUserScopeRow
 	err := row.Scan(&i.CityID, &i.SubcityID, &i.KebeleID)
 	return i, err
+}
+
+const grantUserPlacement = `-- name: GrantUserPlacement :exec
+UPDATE "user"
+SET city_id = $1,
+    subcity_id = $2,
+    kebele_id = $3
+WHERE id = $4
+`
+
+type GrantUserPlacementParams struct {
+	CityID    *uuid.UUID `db:"city_id" json:"city_id"`
+	SubcityID *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	KebeleID  *uuid.UUID `db:"kebele_id" json:"kebele_id"`
+	ID        uuid.UUID  `db:"id" json:"id"`
+}
+
+func (q *Queries) GrantUserPlacement(ctx context.Context, arg GrantUserPlacementParams) error {
+	_, err := q.db.Exec(ctx, grantUserPlacement,
+		arg.CityID,
+		arg.SubcityID,
+		arg.KebeleID,
+		arg.ID,
+	)
+	return err
 }
 
 const listAllUsers = `-- name: ListAllUsers :many
@@ -467,23 +499,25 @@ func (q *Queries) ListByRole(ctx context.Context, arg ListByRoleParams) ([]ListB
 }
 
 const listUsersUnderScope = `-- name: ListUsersUnderScope :many
-SELECT u.id, u.first_name, u.second_name, u.last_name, u.email, u.phone, u.password_hash, u.city_id, u.subcity_id, u.kebele_id, u.role_slug, u.created_at, u.deleted_at, r.name AS role, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
+SELECT u.id, u.first_name, u.second_name, u.last_name, u.email, u.phone, u.password_hash, u.city_id, u.subcity_id, u.kebele_id, u.role_slug, u.created_at, u.deleted_at, r.name AS role_name, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS full_name
 FROM "user" u
-JOIN role r ON r.slug = u.role_slug
+LEFT JOIN role r ON r.slug = u.role_slug
 WHERE deleted_at IS NULL AND
+    -- sqlc.arg('my_id') <> u.id AND
+    -- sqlc.arg('level_rank') < r.level_rank AND
     ($1::uuid IS NULL OR u.city_id = $1::uuid) AND
     ($2::uuid IS NULL OR u.subcity_id = $2::uuid) AND
     ($3::uuid IS NULL OR u.kebele_id = $3::uuid)
-ORDER BY u.id
+ORDER BY u.created_at
 LIMIT $5 OFFSET $4
 `
 
 type ListUsersUnderScopeParams struct {
-	CityID    uuid.UUID `db:"city_id" json:"city_id"`
-	SubcityID uuid.UUID `db:"subcity_id" json:"subcity_id"`
-	KebeleID  uuid.UUID `db:"kebele_id" json:"kebele_id"`
-	Offset    int32     `db:"offset" json:"offset"`
-	Limit     int32     `db:"limit" json:"limit"`
+	CityID    *uuid.UUID `db:"city_id" json:"city_id"`
+	SubcityID *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	KebeleID  *uuid.UUID `db:"kebele_id" json:"kebele_id"`
+	Offset    int32      `db:"offset" json:"offset"`
+	Limit     int32      `db:"limit" json:"limit"`
 }
 
 type ListUsersUnderScopeRow struct {
@@ -500,7 +534,7 @@ type ListUsersUnderScopeRow struct {
 	RoleSlug     string     `db:"role_slug" json:"role_slug"`
 	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
-	Role         string     `db:"role" json:"role"`
+	RoleName     *string    `db:"role_name" json:"role_name"`
 	FullName     string     `db:"full_name" json:"full_name"`
 }
 
@@ -533,7 +567,7 @@ func (q *Queries) ListUsersUnderScope(ctx context.Context, arg ListUsersUnderSco
 			&i.RoleSlug,
 			&i.CreatedAt,
 			&i.DeletedAt,
-			&i.Role,
+			&i.RoleName,
 			&i.FullName,
 		); err != nil {
 			return nil, err
@@ -544,6 +578,34 @@ func (q *Queries) ListUsersUnderScope(ctx context.Context, arg ListUsersUnderSco
 		return nil, err
 	}
 	return items, nil
+}
+
+const revokeUserPlacement = `-- name: RevokeUserPlacement :exec
+UPDATE "user"
+SET city_id = NULL,
+    subcity_id = NULL,
+    kebele_id = NULL
+WHERE role_slug = $1
+    AND ($2::uuid IS NULL OR city_id = $2::uuid)
+    AND ($3::uuid IS NULL OR subcity_id = $3::uuid)
+    AND ($4::uuid IS NULL OR kebele_id = $4::uuid)
+`
+
+type RevokeUserPlacementParams struct {
+	RoleSlug  string     `db:"role_slug" json:"role_slug"`
+	CityID    *uuid.UUID `db:"city_id" json:"city_id"`
+	SubcityID *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	KebeleID  *uuid.UUID `db:"kebele_id" json:"kebele_id"`
+}
+
+func (q *Queries) RevokeUserPlacement(ctx context.Context, arg RevokeUserPlacementParams) error {
+	_, err := q.db.Exec(ctx, revokeUserPlacement,
+		arg.RoleSlug,
+		arg.CityID,
+		arg.SubcityID,
+		arg.KebeleID,
+	)
+	return err
 }
 
 const searchByRole = `-- name: SearchByRole :many
@@ -810,34 +872,6 @@ WHERE id = $1
 
 func (q *Queries) SoftDeleteUser(ctx context.Context, id uuid.UUID) error {
 	_, err := q.db.Exec(ctx, softDeleteUser, id)
-	return err
-}
-
-const updateUserPlacement = `-- name: UpdateUserPlacement :exec
-WITH clear_old AS (
-    UPDATE "user"
-    SET city_id = NULL, subcity_id = NULL, kebele_id = NULL
-    WHERE city_id = $2
-)
-UPDATE "user" AS U
-SET city_id = $2, subcity_id = $3, kebele_id = $4
-WHERE u.id = $1
-`
-
-type UpdateUserPlacementParams struct {
-	ID        uuid.UUID  `db:"id" json:"id"`
-	CityID    *uuid.UUID `db:"city_id" json:"city_id"`
-	SubcityID *uuid.UUID `db:"subcity_id" json:"subcity_id"`
-	KebeleID  *uuid.UUID `db:"kebele_id" json:"kebele_id"`
-}
-
-func (q *Queries) UpdateUserPlacement(ctx context.Context, arg UpdateUserPlacementParams) error {
-	_, err := q.db.Exec(ctx, updateUserPlacement,
-		arg.ID,
-		arg.CityID,
-		arg.SubcityID,
-		arg.KebeleID,
-	)
 	return err
 }
 

@@ -22,6 +22,7 @@ type Querier interface {
 	CountListKebeles(ctx context.Context) (int64, error)
 	CountListSubcities(ctx context.Context) (int64, error)
 	CountListUsers(ctx context.Context) (int64, error)
+	// LEFT JOIN role r ON r.slug = u.role_slug
 	CountListUsersUnderScope(ctx context.Context, arg CountListUsersUnderScopeParams) (int64, error)
 	CountSearchKebeles(ctx context.Context, query string) (int64, error)
 	CountSubCitiesSearch(ctx context.Context, query string) (int64, error)
@@ -38,7 +39,7 @@ type Querier interface {
 	GetAssignablePermissionsForActor(ctx context.Context, id uuid.UUID) ([]Permission, error)
 	GetCity(ctx context.Context, id uuid.UUID) (GetCityRow, error)
 	GetCurrentUserMaxRoleLevel(ctx context.Context, id uuid.UUID) (int32, error)
-	GetEffectivePermissionsForUser(ctx context.Context, roleSlug string) ([]GetEffectivePermissionsForUserRow, error)
+	GetEffectivePermissionsForUser(ctx context.Context, id uuid.UUID) ([]GetEffectivePermissionsForUserRow, error)
 	GetKebele(ctx context.Context, id uuid.UUID) (GetKebeleRow, error)
 	GetRefreshToken(ctx context.Context, token string) (RefreshTokens, error)
 	GetRoleTree(ctx context.Context, slug string) ([]GetRoleTreeRow, error)
@@ -47,8 +48,10 @@ type Querier interface {
 	GetUserByID(ctx context.Context, id uuid.UUID) (GetUserByIDRow, error)
 	GetUserScope(ctx context.Context, id uuid.UUID) (GetUserScopeRow, error)
 	GrantPermissionToRole(ctx context.Context, arg GrantPermissionToRoleParams) error
+	GrantUserPlacement(ctx context.Context, arg GrantUserPlacementParams) error
 	ListAllUsers(ctx context.Context, arg ListAllUsersParams) ([]ListAllUsersRow, error)
 	ListByRole(ctx context.Context, arg ListByRoleParams) ([]ListByRoleRow, error)
+	// LEFT JOIN role   r ON r.slug = u.role_slug AND r.slug = 'admin'
 	ListCities(ctx context.Context, arg ListCitiesParams) ([]ListCitiesRow, error)
 	ListKebeles(ctx context.Context, arg ListKebelesParams) ([]ListKebelesRow, error)
 	ListPermissionMatrixInScope(ctx context.Context, arg ListPermissionMatrixInScopeParams) ([]ListPermissionMatrixInScopeRow, error)
@@ -60,6 +63,7 @@ type Querier interface {
 	ListUsersUnderScope(ctx context.Context, arg ListUsersUnderScopeParams) ([]ListUsersUnderScopeRow, error)
 	RemoveUserPermissionOverride(ctx context.Context, arg RemoveUserPermissionOverrideParams) error
 	RevokePermissionFromRole(ctx context.Context, arg RevokePermissionFromRoleParams) error
+	RevokeUserPlacement(ctx context.Context, arg RevokeUserPlacementParams) error
 	SearchByRole(ctx context.Context, arg SearchByRoleParams) ([]SearchByRoleRow, error)
 	SearchCities(ctx context.Context, arg SearchCitiesParams) ([]SearchCitiesRow, error)
 	SearchKebeles(ctx context.Context, arg SearchKebelesParams) ([]SearchKebelesRow, error)
@@ -71,7 +75,6 @@ type Querier interface {
 	UpdateCity(ctx context.Context, arg UpdateCityParams) (City, error)
 	UpdateKebele(ctx context.Context, arg UpdateKebeleParams) (Kebele, error)
 	UpdateSubCity(ctx context.Context, arg UpdateSubCityParams) (Subcity, error)
-	UpdateUserPlacement(ctx context.Context, arg UpdateUserPlacementParams) error
 	UpdateUserRole(ctx context.Context, arg UpdateUserRoleParams) error
 }
 
