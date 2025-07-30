@@ -15,16 +15,16 @@ type Querier interface {
 	// returns true if the actor’s role is strictly more powerful than target_role
 	CanActorManipulateRole(ctx context.Context, arg CanActorManipulateRoleParams) (bool, error)
 	CanActorTouchTarget(ctx context.Context, arg CanActorTouchTargetParams) (bool, error)
-	CountByRoleSearch(ctx context.Context, arg CountByRoleSearchParams) (int64, error)
-	CountCitiesSearch(ctx context.Context, query string) (int64, error)
-	CountListByRole(ctx context.Context, roleSlug string) (int64, error)
 	CountListCities(ctx context.Context) (int64, error)
 	CountListKebeles(ctx context.Context) (int64, error)
 	CountListSubcities(ctx context.Context) (int64, error)
+	CountListUsersByRole(ctx context.Context, roleSlug string) (int64, error)
 	CountListUsersUnderScope(ctx context.Context, arg CountListUsersUnderScopeParams) (int64, error)
+	CountSearchCities(ctx context.Context, query string) (int64, error)
 	CountSearchKebeles(ctx context.Context, query string) (int64, error)
+	CountSearchSubCities(ctx context.Context, query string) (int64, error)
+	CountSearchUsersByRole(ctx context.Context, arg CountSearchUsersByRoleParams) (int64, error)
 	CountSearchUsersUnderScope(ctx context.Context, arg CountSearchUsersUnderScopeParams) (int64, error)
-	CountSubCitiesSearch(ctx context.Context, query string) (int64, error)
 	CreateCity(ctx context.Context, name string) (City, error)
 	CreateKebele(ctx context.Context, arg CreateKebeleParams) (Kebele, error)
 	CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) (uuid.UUID, error)
@@ -32,7 +32,6 @@ type Querier interface {
 	CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error)
 	DeleteRefreshToken(ctx context.Context, token string) error
 	DeleteRefreshTokensByUser(ctx context.Context, userID uuid.UUID) error
-	// returns every permission the actor can legally manipulate
 	GetAssignablePermissionsForActor(ctx context.Context, id uuid.UUID) ([]Permission, error)
 	GetCity(ctx context.Context, id uuid.UUID) (GetCityRow, error)
 	GetCurrentUserMaxRoleLevel(ctx context.Context, id uuid.UUID) (int32, error)
@@ -46,7 +45,6 @@ type Querier interface {
 	GetUserScope(ctx context.Context, id uuid.UUID) (GetUserScopeRow, error)
 	GrantPermissionToRole(ctx context.Context, arg GrantPermissionToRoleParams) error
 	GrantUserPlacement(ctx context.Context, arg GrantUserPlacementParams) error
-	ListByRole(ctx context.Context, arg ListByRoleParams) ([]ListByRoleRow, error)
 	ListCities(ctx context.Context, arg ListCitiesParams) ([]ListCitiesRow, error)
 	ListKebeles(ctx context.Context, arg ListKebelesParams) ([]ListKebelesRow, error)
 	ListPermissionMatrixInScope(ctx context.Context, arg ListPermissionMatrixInScopeParams) ([]ListPermissionMatrixInScopeRow, error)
@@ -55,14 +53,15 @@ type Querier interface {
 	ListRolePermissions(ctx context.Context) ([]ListRolePermissionsRow, error)
 	ListRoles(ctx context.Context) ([]Role, error)
 	ListSubCities(ctx context.Context, arg ListSubCitiesParams) ([]ListSubCitiesRow, error)
+	ListUsersByRole(ctx context.Context, arg ListUsersByRoleParams) ([]ListUsersByRoleRow, error)
 	ListUsersUnderScope(ctx context.Context, arg ListUsersUnderScopeParams) ([]ListUsersUnderScopeRow, error)
 	RemoveUserPermissionOverride(ctx context.Context, arg RemoveUserPermissionOverrideParams) error
 	RevokePermissionFromRole(ctx context.Context, arg RevokePermissionFromRoleParams) error
 	RevokeUserPlacement(ctx context.Context, arg RevokeUserPlacementParams) error
-	SearchByRole(ctx context.Context, arg SearchByRoleParams) ([]SearchByRoleRow, error)
 	SearchCities(ctx context.Context, arg SearchCitiesParams) ([]SearchCitiesRow, error)
 	SearchKebeles(ctx context.Context, arg SearchKebelesParams) ([]SearchKebelesRow, error)
 	SearchSubCities(ctx context.Context, arg SearchSubCitiesParams) ([]SearchSubCitiesRow, error)
+	SearchUsersByRole(ctx context.Context, arg SearchUsersByRoleParams) ([]SearchUsersByRoleRow, error)
 	SearchUsersUnderScope(ctx context.Context, arg SearchUsersUnderScopeParams) ([]SearchUsersUnderScopeRow, error)
 	SetUserPermissionOverride(ctx context.Context, arg SetUserPermissionOverrideParams) error
 	SoftDeleteUser(ctx context.Context, id uuid.UUID) error

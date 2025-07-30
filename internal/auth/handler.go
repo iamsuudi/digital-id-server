@@ -53,9 +53,9 @@ func (h *Handler) Login(c *gin.Context) {
 	}
 
 	// Set access token (JWT)
-	c.SetCookie("oict_jwt", accessToken, 5*60*60, "/", "", true, true) // 1 day
+	c.SetCookie("oict_jwt", accessToken, 15*60*60, "/", "", true, true) // 15 minutes
 	// Set refresh token securely
-	c.SetCookie("oict_refresh_token", refreshToken, 604800, "/", "", true, true) // 7 days
+	c.SetCookie("oict_refresh_token", refreshToken, 7*24*60*60, "/", "", true, true) // 7 days
 
 	c.JSON(http.StatusOK, user)
 }
@@ -95,13 +95,16 @@ func (h *Handler) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	newToken, err := h.Service.RefreshAccessToken(c.Request.Context(), rt)
+	newAccessToken, newRefreshToken, err := h.Service.RefreshAccessToken(c.Request.Context(), rt)
 	if err != nil {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Invalid or expired refresh token"})
 		return
 	}
 
-	c.SetCookie("oict_jwt", newToken, 86400, "/", "", true, true) // 1 day
+	// Set access token (JWT)
+	c.SetCookie("oict_jwt", newAccessToken, 15*60*60, "/", "", true, true) // 15 minutes
+	// Set refresh token securely
+	c.SetCookie("oict_refresh_token", newRefreshToken, 7*24*60*60, "/", "", true, true) // 7 days
 
 	c.JSON(http.StatusOK, gin.H{"message": "Token refreshed"})
 }

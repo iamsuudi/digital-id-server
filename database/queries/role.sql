@@ -20,7 +20,6 @@ JOIN role r ON r.slug = u.role_slug
 WHERE u.id = $1;
 
 -- name: GetAssignablePermissionsForActor :many
--- returns every permission the actor can legally manipulate
 SELECT p.name, p.label, p.description
 FROM permission p
 WHERE EXISTS (

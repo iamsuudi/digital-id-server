@@ -34,21 +34,6 @@ func (h *Handler) GetRolesTree(c *gin.Context) {
 	c.JSON(http.StatusOK, rolesTree)
 }
 
-func (h *Handler) GetRoles(c *gin.Context) {
-	roles, err := h.service.GetRoles(c)
-
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Roles not found"})
-		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch roles"})
-		}
-		return
-	}
-
-	c.JSON(http.StatusOK, roles)
-}
-
 func (h *Handler) GetRolesPermissions(c *gin.Context) {
 	permissions, err := h.service.GetRolesPermissions(c)
 
@@ -63,21 +48,6 @@ func (h *Handler) GetRolesPermissions(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, permissions)
-}
-
-func (h *Handler) GetMyRoleLevelRank(c *gin.Context) {
-	raw, _ := c.Get("user_id")
-	id, _ := raw.(uuid.UUID)
-
-	rank, err := h.service.GetMyRoleLevelRank(c, id)
-
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Rank not found"})
-		}
-	}
-
-	c.JSON(http.StatusOK, rank)
 }
 
 func (h *Handler) UpdateRolePermission(c *gin.Context) {

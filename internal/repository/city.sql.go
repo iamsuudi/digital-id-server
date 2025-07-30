@@ -12,19 +12,6 @@ import (
 	"github.com/google/uuid"
 )
 
-const countCitiesSearch = `-- name: CountCitiesSearch :one
-SELECT COUNT(*)
-FROM city
-WHERE deleted_at IS NULL AND similarity(name, $1) > 0.2
-`
-
-func (q *Queries) CountCitiesSearch(ctx context.Context, query string) (int64, error) {
-	row := q.db.QueryRow(ctx, countCitiesSearch, query)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
-}
-
 const countListCities = `-- name: CountListCities :one
 SELECT COUNT(*)
 FROM city
@@ -33,6 +20,19 @@ WHERE deleted_at IS NULL
 
 func (q *Queries) CountListCities(ctx context.Context) (int64, error) {
 	row := q.db.QueryRow(ctx, countListCities)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countSearchCities = `-- name: CountSearchCities :one
+SELECT COUNT(*)
+FROM city
+WHERE deleted_at IS NULL AND similarity(name, $1) > 0.2
+`
+
+func (q *Queries) CountSearchCities(ctx context.Context, query string) (int64, error) {
+	row := q.db.QueryRow(ctx, countSearchCities, query)
 	var count int64
 	err := row.Scan(&count)
 	return count, err

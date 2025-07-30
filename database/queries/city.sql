@@ -39,7 +39,7 @@ WHERE c.deleted_at IS NULL AND similarity(c.name, sqlc.arg('query')) > 0.2
 ORDER BY sim DESC, c.created_at DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
--- name: CountCitiesSearch :one
+-- name: CountSearchCities :one
 SELECT COUNT(*)
 FROM city
 WHERE deleted_at IS NULL AND similarity(name, sqlc.arg('query')) > 0.2;

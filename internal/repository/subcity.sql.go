@@ -25,15 +25,15 @@ func (q *Queries) CountListSubcities(ctx context.Context) (int64, error) {
 	return count, err
 }
 
-const countSubCitiesSearch = `-- name: CountSubCitiesSearch :one
+const countSearchSubCities = `-- name: CountSearchSubCities :one
 SELECT COUNT(*)
 FROM subcity
 WHERE deleted_at IS NULL AND
     similarity(CONCAT_WS(' ', name), $1) > 0.2
 `
 
-func (q *Queries) CountSubCitiesSearch(ctx context.Context, query string) (int64, error) {
-	row := q.db.QueryRow(ctx, countSubCitiesSearch, query)
+func (q *Queries) CountSearchSubCities(ctx context.Context, query string) (int64, error) {
+	row := q.db.QueryRow(ctx, countSearchSubCities, query)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
