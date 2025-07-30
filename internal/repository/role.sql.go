@@ -46,6 +46,41 @@ func (q *Queries) GetAssignablePermissionsForActor(ctx context.Context, id uuid.
 	return items, nil
 }
 
+const getAssignableRolesForActor = `-- name: GetAssignableRolesForActor :many
+SELECT slug, name, level_rank
+FROM role
+WHERE level_rank > (
+        SELECT r.level_rank FROM role r WHERE r.slug = $1
+)
+ORDER BY level_rank
+`
+
+type GetAssignableRolesForActorRow struct {
+	Slug      string `db:"slug" json:"slug"`
+	Name      string `db:"name" json:"name"`
+	LevelRank int32  `db:"level_rank" json:"level_rank"`
+}
+
+func (q *Queries) GetAssignableRolesForActor(ctx context.Context, slug string) ([]GetAssignableRolesForActorRow, error) {
+	rows, err := q.db.Query(ctx, getAssignableRolesForActor, slug)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetAssignableRolesForActorRow{}
+	for rows.Next() {
+		var i GetAssignableRolesForActorRow
+		if err := rows.Scan(&i.Slug, &i.Name, &i.LevelRank); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getCurrentUserMaxRoleLevel = `-- name: GetCurrentUserMaxRoleLevel :one
 SELECT r.level_rank
 FROM "user" u
@@ -58,51 +93,6 @@ func (q *Queries) GetCurrentUserMaxRoleLevel(ctx context.Context, id uuid.UUID) 
 	var level_rank int32
 	err := row.Scan(&level_rank)
 	return level_rank, err
-}
-
-const getRoleTree = `-- name: GetRoleTree :many
-WITH RECURSIVE tree AS (
-    SELECT slug, name, parent_role_slug, level_rank
-    FROM role
-    WHERE role.slug = $1
-    UNION
-    SELECT r.slug, r.name, r.parent_role_slug, r.level_rank
-    FROM role r
-    JOIN tree t ON r.parent_role_slug = t.slug
-)
-SELECT slug, name, parent_role_slug, level_rank FROM tree ORDER BY level_rank
-`
-
-type GetRoleTreeRow struct {
-	Slug           string  `db:"slug" json:"slug"`
-	Name           string  `db:"name" json:"name"`
-	ParentRoleSlug *string `db:"parent_role_slug" json:"parent_role_slug"`
-	LevelRank      int32   `db:"level_rank" json:"level_rank"`
-}
-
-func (q *Queries) GetRoleTree(ctx context.Context, slug string) ([]GetRoleTreeRow, error) {
-	rows, err := q.db.Query(ctx, getRoleTree, slug)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []GetRoleTreeRow{}
-	for rows.Next() {
-		var i GetRoleTreeRow
-		if err := rows.Scan(
-			&i.Slug,
-			&i.Name,
-			&i.ParentRoleSlug,
-			&i.LevelRank,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
 }
 
 const listPermissionMatrixInScope = `-- name: ListPermissionMatrixInScope :many

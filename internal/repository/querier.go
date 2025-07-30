@@ -33,12 +33,12 @@ type Querier interface {
 	DeleteRefreshToken(ctx context.Context, token string) error
 	DeleteRefreshTokensByUser(ctx context.Context, userID uuid.UUID) error
 	GetAssignablePermissionsForActor(ctx context.Context, id uuid.UUID) ([]Permission, error)
+	GetAssignableRolesForActor(ctx context.Context, slug string) ([]GetAssignableRolesForActorRow, error)
 	GetCity(ctx context.Context, id uuid.UUID) (GetCityRow, error)
 	GetCurrentUserMaxRoleLevel(ctx context.Context, id uuid.UUID) (int32, error)
 	GetEffectivePermissionsForUser(ctx context.Context, id uuid.UUID) ([]GetEffectivePermissionsForUserRow, error)
 	GetKebele(ctx context.Context, id uuid.UUID) (GetKebeleRow, error)
 	GetRefreshToken(ctx context.Context, token string) (RefreshTokens, error)
-	GetRoleTree(ctx context.Context, slug string) ([]GetRoleTreeRow, error)
 	GetSubCity(ctx context.Context, id uuid.UUID) (GetSubCityRow, error)
 	GetUserByEmail(ctx context.Context, email string) (GetUserByEmailRow, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (GetUserByIDRow, error)

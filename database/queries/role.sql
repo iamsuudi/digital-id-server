@@ -1,17 +1,13 @@
 -- name: ListRoles :many
 SELECT * FROM role ORDER BY level_rank;
 
--- name: GetRoleTree :many
-WITH RECURSIVE tree AS (
-    SELECT slug, name, parent_role_slug, level_rank
-    FROM role
-    WHERE role.slug = $1
-    UNION
-    SELECT r.slug, r.name, r.parent_role_slug, r.level_rank
-    FROM role r
-    JOIN tree t ON r.parent_role_slug = t.slug
+-- name: GetAssignableRolesForActor :many
+SELECT slug, name, level_rank
+FROM role
+WHERE level_rank > (
+        SELECT r.level_rank FROM role r WHERE r.slug = $1
 )
-SELECT * FROM tree ORDER BY level_rank;
+ORDER BY level_rank;
 
 -- name: GetCurrentUserMaxRoleLevel :one
 SELECT r.level_rank
