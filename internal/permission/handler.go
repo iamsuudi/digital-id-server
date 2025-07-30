@@ -22,7 +22,7 @@ func (h *Handler) GetAllPermissions(c *gin.Context) {
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Permission not found"})
+			c.JSON(http.StatusNotFound, gin.H{"error": "Permissions not found"})
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch permissions"})
 		}
@@ -40,7 +40,7 @@ func (h *Handler) GetAssignablePermissions(c *gin.Context) {
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Permission not found"})
+			c.JSON(http.StatusNotFound, gin.H{"error": "Permissions not found"})
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch permissions"})
 		}

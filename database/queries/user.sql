@@ -108,19 +108,19 @@ WHERE deleted_at IS NULL AND
     (sqlc.narg('subcity_id')::uuid IS NULL OR subcity_id = sqlc.narg('subcity_id')::uuid) AND
     (sqlc.narg('kebele_id')::uuid IS NULL OR kebele_id = sqlc.narg('kebele_id')::uuid);
 
--- name: ListByRole :many
+-- name: ListUsersByRole :many
 SELECT *, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
 FROM "user"
 WHERE role_slug = sqlc.arg('role_slug') AND deleted_at IS NULL
 ORDER BY created_at ASC
 LIMIT  sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
--- name: CountListByRole :one
+-- name: CountListUsersByRole :one
 SELECT COUNT(*)
 FROM "user"
 WHERE role_slug = sqlc.arg('role_slug') AND deleted_at IS NULL;
 
--- name: SearchByRole :many
+-- name: SearchUsersByRole :many
 SELECT *, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name,
     similarity(CONCAT_WS(' ', first_name, second_name, last_name), sqlc.arg('query')) AS sim
 FROM "user"
@@ -129,7 +129,7 @@ WHERE role_slug = sqlc.arg('role_slug') AND deleted_at IS NULL AND
 ORDER BY sim DESC, created_at DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
--- name: CountByRoleSearch :one
+-- name: CountSearchUsersByRole :one
 SELECT COUNT(*)
 FROM "user"
 WHERE role_slug = sqlc.arg('role_slug') AND deleted_at IS NULL AND

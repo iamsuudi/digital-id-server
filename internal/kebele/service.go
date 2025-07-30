@@ -75,7 +75,7 @@ func (s *Service) GetKebele(ctx context.Context, id uuid.UUID) (repository.GetKe
 	return s.q.GetKebele(ctx, id)
 }
 
-func (s *Service) GetAll(ctx context.Context, limit, offset int) (int64, []repository.ListKebelesRow, error) {
+func (s *Service) GetKebeles(ctx context.Context, limit, offset int) (int64, []repository.ListKebelesRow, error) {
 	count, err := s.q.CountListSubcities(ctx)
 	if err != nil {
 		return 0, nil, err

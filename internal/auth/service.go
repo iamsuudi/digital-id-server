@@ -71,20 +71,20 @@ func (s *Service) StoreRefreshToken(ctx context.Context, userID uuid.UUID, token
 }
 
 // RefreshAccessToken validates a refresh token and returns a new JWT.
-func (s *Service) RefreshAccessToken(ctx context.Context, token string) (string, error) {
+func (s *Service) RefreshAccessToken(ctx context.Context, token string) (string, string, error) {
 	rt, err := s.q.GetRefreshToken(ctx, token)
 	if err != nil || time.Now().After(rt.ExpiresAt) {
-		return "", errors.New("invalid or expired refresh token")
+		return "", "",errors.New("invalid or expired refresh token")
 	}
 
 	user, err := s.q.GetUserByID(ctx, rt.UserID)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	newJWT, err := GenerateJWT(user.ID, user.RoleSlug)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	// Rotate refresh token (optional, but more secure)
@@ -99,10 +99,10 @@ func (s *Service) RefreshAccessToken(ctx context.Context, token string) (string,
 		ExpiresAt: expiresAt,
 	})
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	return newJWT, nil
+	return newJWT, newRefreshToken, nil
 }
 
 // DeleteRefreshToken removes a refresh token from the database.

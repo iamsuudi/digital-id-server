@@ -1,21 +1,19 @@
 package auth
 
 import (
+	"digital-id-server/internal/repository"
+
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"digital-id-server/internal/repository"
 )
 
-func RegisterRoutes(rg *gin.RouterGroup, dbConn *pgxpool.Pool, dbQueries *repository.Queries) {
-	service := NewService(dbConn, dbQueries)
+func RegisterRoutes(rg *gin.RouterGroup, db *pgxpool.Pool, q *repository.Queries) {
+	service := NewService(db, q)
 	handler := NewHandler(service)
 
-	authGroup := rg.Group("/auth")
-	{
-		authGroup.POST("/login", handler.Login)
-		authGroup.POST("/logout", handler.Logout)
-		authGroup.POST("/register", handler.RegisterUser)
-		authGroup.POST("/refresh", handler.RefreshToken)
-		authGroup.GET("/me", Authenticate(), handler.Me)
-	}
+	rg.POST("/login", handler.Login)
+	rg.POST("/logout", handler.Logout)
+	rg.POST("/register", handler.RegisterUser)
+	rg.POST("/refresh", handler.RefreshToken)
+	rg.GET("/me", Authenticate(), handler.Me)
 }

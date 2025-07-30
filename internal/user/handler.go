@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"slices"
 	"strings"
 
 	"digital-id-server/internal/cache"
@@ -23,29 +22,6 @@ type Handler struct {
 
 func NewHandler(s *Service, c *cache.Cache) *Handler {
 	return &Handler{service: s, cache: c}
-}
-
-func (h *Handler) RequirePermission(permissions ...string) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		str, _ := c.Get("user_id")
-		id, _ := str.(uuid.UUID)
-
-		perms, err := h.cache.GetPerms(c, id)
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "permission"})
-			return
-		}
-
-		for _, reqPerm := range permissions {
-			if !slices.ContainsFunc(perms, func(p repository.GetEffectivePermissionsForUserRow) bool {
-				return p.Name == reqPerm
-			}) {
-				c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Insufficient permission"})
-				return
-			}
-		}
-		c.Next()
-	}
 }
 
 func (h *Handler) GetUser(c *gin.Context) {
@@ -69,20 +45,12 @@ func (h *Handler) GetUser(c *gin.Context) {
 }
 
 func (h *Handler) GetUsers(c *gin.Context) {
-	limit, offset, query, limitErr, pageErr := utils.PaginationHelper(c)
-	if limitErr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid rows per page"})
-		return
-	}
-	if pageErr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page number"})
-		return
-	}
+	limit, offset, query := utils.PaginationHelper(c)
 
 	str, _ := c.Get("user_id")
 	id, _ := str.(uuid.UUID)
 	user, _ := h.cache.GetUser(c, id)
-	
+
 	if strings.TrimSpace(query) == "" {
 		count, users, err := h.service.ListUsersUnderScope(c.Request.Context(), limit, offset, query, user.RoleLevelRank, user.CityID, user.SubcityID, user.KebeleID)
 		if err != nil {
@@ -117,26 +85,18 @@ func (h *Handler) GetUsers(c *gin.Context) {
 	}
 }
 
-func (h *Handler) GetByRole(c *gin.Context) {
-	limit, offset, query, limitErr, pageErr := utils.PaginationHelper(c)
+func (h *Handler) GetUsersByRole(c *gin.Context) {
+	limit, offset, query := utils.PaginationHelper(c)
 	role_slug := c.Query("role_slug")
-	if limitErr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid rows per page"})
-		return
-	}
-	if pageErr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page number"})
-		return
-	}
 
 	if strings.TrimSpace(query) == "" {
-		count, users, err := h.service.GetByRole(c.Request.Context(), limit, offset, query, role_slug)
+		count, users, err := h.service.ListUsersByRole(c.Request.Context(), limit, offset, query, role_slug)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch users"})
 			return
 		}
 		if users == nil {
-			users = []repository.ListByRoleRow{}
+			users = []repository.ListUsersByRoleRow{}
 		}
 
 		c.JSON(http.StatusOK, gin.H{
@@ -144,14 +104,14 @@ func (h *Handler) GetByRole(c *gin.Context) {
 			"count": count,
 		})
 	} else {
-		count, users, err := h.service.SearchByRole(c, limit, offset, query, role_slug)
+		count, users, err := h.service.SearchUsersByRole(c, limit, offset, query, role_slug)
 		if err != nil {
 			fmt.Print("super:", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to search users"})
 			return
 		}
 		if users == nil {
-			users = []repository.SearchByRoleRow{}
+			users = []repository.SearchUsersByRoleRow{}
 		}
 
 		c.JSON(http.StatusOK, gin.H{

@@ -7,15 +7,15 @@ import (
 	"digital-id-server/internal/repository"
 )
 
-func RegisterRoutes(rg *gin.RouterGroup, dbConn *pgxpool.Pool, dbQueries *repository.Queries) {
-	service := NewService(dbConn, dbQueries)
+func RegisterRoutes(rg *gin.RouterGroup, db *pgxpool.Pool, q *repository.Queries) {
+	service := NewService(db, q)
 	handler := NewHandler(service)
 
-	group := rg.Group("/kebeles", auth.Authenticate())
+	r := rg.Group("/kebeles", auth.Authenticate())
 	{
-		group.POST("/create", handler.CreateKebele)
-		group.GET("/:id", handler.GetKebele)
-		group.PUT("/:id", handler.UpdateKebele)
-		group.GET("/", handler.GetAll)
+		r.POST("/create", handler.CreateKebele)
+		r.GET("/:id", handler.GetKebele)
+		r.PUT("/:id", handler.UpdateKebele)
+		r.GET("/", handler.GetKebeles)
 	}
 }

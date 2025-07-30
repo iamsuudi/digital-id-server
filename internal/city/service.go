@@ -73,7 +73,7 @@ func (s *Service) GetCity(ctx context.Context, id uuid.UUID) (repository.GetCity
 	return s.q.GetCity(ctx, id)
 }
 
-func (s *Service) GetAll(ctx context.Context, limit, offset int) (int64, []repository.ListCitiesRow, error) {
+func (s *Service) GetCities(ctx context.Context, limit, offset int) (int64, []repository.ListCitiesRow, error) {
 	count, err := s.q.CountListCities(ctx)
 	if err != nil {
 		fmt.Println(err)
@@ -93,7 +93,7 @@ func (s *Service) GetAll(ctx context.Context, limit, offset int) (int64, []repos
 }
 
 func (s *Service) SearchCities(ctx context.Context, limit, offset int, query string) (int64, []repository.SearchCitiesRow, error) {
-	count, err := s.q.CountCitiesSearch(ctx, query)
+	count, err := s.q.CountSearchCities(ctx, query)
 	if err != nil {
 		return 0, nil, err
 	}

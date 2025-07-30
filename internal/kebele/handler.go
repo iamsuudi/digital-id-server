@@ -86,19 +86,11 @@ func (h *Handler) GetKebele(c *gin.Context) {
 	c.JSON(http.StatusOK, subcity)
 }
 
-func (h *Handler) GetAll(c *gin.Context) {
-	limit, offset, query, limitErr, pageErr := utils.PaginationHelper(c)
-	if limitErr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid rows per page"})
-		return
-	}
-	if pageErr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page number"})
-		return
-	}
+func (h *Handler) GetKebeles(c *gin.Context) {
+	limit, offset, query := utils.PaginationHelper(c)
 
 	if strings.TrimSpace(query) == "" {
-		count, kebeles, err := h.service.GetAll(c.Request.Context(), limit, offset)
+		count, kebeles, err := h.service.GetKebeles(c.Request.Context(), limit, offset)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch kebeles"})
 			return

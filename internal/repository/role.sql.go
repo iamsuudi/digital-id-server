@@ -26,7 +26,6 @@ WHERE EXISTS (
 ORDER BY p.name
 `
 
-// returns every permission the actor can legally manipulate
 func (q *Queries) GetAssignablePermissionsForActor(ctx context.Context, id uuid.UUID) ([]Permission, error) {
 	rows, err := q.db.Query(ctx, getAssignablePermissionsForActor, id)
 	if err != nil {

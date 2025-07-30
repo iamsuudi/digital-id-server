@@ -76,7 +76,7 @@ func (s *Service) GetSubCity(ctx context.Context, id uuid.UUID) (repository.GetS
 	return s.q.GetSubCity(ctx, id)
 }
 
-func (s *Service) GetAll(ctx context.Context, limit, offset int) (int64, []repository.ListSubCitiesRow, error) {
+func (s *Service) GetSubCities(ctx context.Context, limit, offset int) (int64, []repository.ListSubCitiesRow, error) {
 	count, err := s.q.CountListSubcities(ctx)
 	if err != nil {
 		return 0, nil, err
@@ -94,7 +94,7 @@ func (s *Service) GetAll(ctx context.Context, limit, offset int) (int64, []repos
 }
 
 func (s *Service) SearchSubCities(ctx context.Context, limit, offset int, query string) (int64, []repository.SearchSubCitiesRow, error) {
-	count, err := s.q.CountSubCitiesSearch(ctx, query)
+	count, err := s.q.CountSearchSubCities(ctx, query)
 	if err != nil {
 		return 0, nil, err
 	}

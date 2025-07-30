@@ -3,7 +3,10 @@ package cache
 import (
 	"context"
 	"digital-id-server/internal/repository"
+	"net/http"
+	"slices"
 
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
@@ -32,4 +35,27 @@ func (c *Cache) GetPerms(ctx context.Context, id uuid.UUID) ([]repository.GetEff
 	c.data.perms[key] = list
 	c.mu.Unlock()
 	return list, nil
+}
+
+func(c *Cache) RequirePerms(required ...string) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		raw, _ := ctx.Get("user_id")
+		id, _ := raw.(uuid.UUID)
+		
+		perms, err := c.GetPerms(ctx, id)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Permissions unavailable"})
+			return
+		}
+
+		for _, reqPerm := range required {
+			if !slices.ContainsFunc(perms, func(p repository.GetEffectivePermissionsForUserRow) bool {
+				return p.Name == reqPerm
+			}) {
+				ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions"})
+				return
+			}
+		}
+		ctx.Next()
+	}
 }

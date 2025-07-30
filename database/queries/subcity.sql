@@ -41,7 +41,7 @@ WHERE sb.deleted_at IS NULL AND
 ORDER BY sim DESC, sb.created_at DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
--- name: CountSubCitiesSearch :one
+-- name: CountSearchSubCities :one
 SELECT COUNT(*)
 FROM subcity
 WHERE deleted_at IS NULL AND

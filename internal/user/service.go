@@ -42,14 +42,23 @@ func (s *Service) ListUsersUnderScope(ctx context.Context, limit, offset int, qu
 	return count, users, err
 }
 
-func (s *Service) GetByRole(ctx context.Context, limit, offset int, query, role_slug string) (int64, []repository.ListByRoleRow, error) {
-	count, _ := s.q.CountListByRole(ctx, role_slug)
-	users, err := s.q.ListByRole(ctx, repository.ListByRoleParams{
+func (s *Service) ListUsersByRole(ctx context.Context, limit, offset int, query, role_slug string) (int64, []repository.ListUsersByRoleRow, error) {
+	count, err := s.q.CountListUsersByRole(ctx, role_slug)
+	if err != nil {
+		return 0, nil, err
+	}
+	if count == 0 {
+		return 0, nil, nil
+	}
+	users, err := s.q.ListUsersByRole(ctx, repository.ListUsersByRoleParams{
 		Limit:    int32(limit),
 		Offset:   int32(offset),
 		RoleSlug: role_slug,
 	})
-	return count, users, err
+	if err != nil {
+		return 0, nil, err
+	}
+	return count, users, nil
 }
 
 func (s *Service) SearchUsersUnderScope(ctx context.Context, limit, offset int, query string, rank *int32, c_id, sc_id, k_id *uuid.UUID) (int64, []repository.SearchUsersUnderScopeRow, error) {
@@ -62,6 +71,9 @@ func (s *Service) SearchUsersUnderScope(ctx context.Context, limit, offset int, 
 	if err != nil {
 		return 0, nil, err
 	}
+	if count == 0 {
+		return 0, nil, nil
+	}
 
 	users, err := s.q.SearchUsersUnderScope(ctx, repository.SearchUsersUnderScopeParams{
 		Limit:  int32(limit),
@@ -72,14 +84,14 @@ func (s *Service) SearchUsersUnderScope(ctx context.Context, limit, offset int, 
 		KebeleID:  k_id,
 	})
 	if err != nil {
-		return 0, nil, err
+		return count, nil, err
 	}
 
 	return count, users, nil
 }
 
-func (s *Service) SearchByRole(ctx context.Context, limit, offset int, query, role_slug string) (int64, []repository.SearchByRoleRow, error) {
-	count, err := s.q.CountByRoleSearch(ctx, repository.CountByRoleSearchParams{
+func (s *Service) SearchUsersByRole(ctx context.Context, limit, offset int, query, role_slug string) (int64, []repository.SearchUsersByRoleRow, error) {
+	count, err := s.q.CountSearchUsersByRole(ctx, repository.CountSearchUsersByRoleParams{
 		RoleSlug: role_slug,
 		Query:    query,
 	})
@@ -87,7 +99,7 @@ func (s *Service) SearchByRole(ctx context.Context, limit, offset int, query, ro
 		return 0, nil, err
 	}
 
-	users, err := s.q.SearchByRole(ctx, repository.SearchByRoleParams{
+	users, err := s.q.SearchUsersByRole(ctx, repository.SearchUsersByRoleParams{
 		Limit:    int32(limit),
 		Offset:   int32(offset),
 		Query:    query,

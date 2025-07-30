@@ -12,33 +12,14 @@ import (
 	"github.com/google/uuid"
 )
 
-const countByRoleSearch = `-- name: CountByRoleSearch :one
-SELECT COUNT(*)
-FROM "user"
-WHERE role_slug = $1 AND deleted_at IS NULL AND
-    similarity(CONCAT_WS(' ', first_name, second_name, last_name), $2) > 0.2
-`
-
-type CountByRoleSearchParams struct {
-	RoleSlug string `db:"role_slug" json:"role_slug"`
-	Query    string `db:"query" json:"query"`
-}
-
-func (q *Queries) CountByRoleSearch(ctx context.Context, arg CountByRoleSearchParams) (int64, error) {
-	row := q.db.QueryRow(ctx, countByRoleSearch, arg.RoleSlug, arg.Query)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
-}
-
-const countListByRole = `-- name: CountListByRole :one
+const countListUsersByRole = `-- name: CountListUsersByRole :one
 SELECT COUNT(*)
 FROM "user"
 WHERE role_slug = $1 AND deleted_at IS NULL
 `
 
-func (q *Queries) CountListByRole(ctx context.Context, roleSlug string) (int64, error) {
-	row := q.db.QueryRow(ctx, countListByRole, roleSlug)
+func (q *Queries) CountListUsersByRole(ctx context.Context, roleSlug string) (int64, error) {
+	row := q.db.QueryRow(ctx, countListUsersByRole, roleSlug)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -62,6 +43,25 @@ type CountListUsersUnderScopeParams struct {
 
 func (q *Queries) CountListUsersUnderScope(ctx context.Context, arg CountListUsersUnderScopeParams) (int64, error) {
 	row := q.db.QueryRow(ctx, countListUsersUnderScope, arg.CityID, arg.SubcityID, arg.KebeleID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countSearchUsersByRole = `-- name: CountSearchUsersByRole :one
+SELECT COUNT(*)
+FROM "user"
+WHERE role_slug = $1 AND deleted_at IS NULL AND
+    similarity(CONCAT_WS(' ', first_name, second_name, last_name), $2) > 0.2
+`
+
+type CountSearchUsersByRoleParams struct {
+	RoleSlug string `db:"role_slug" json:"role_slug"`
+	Query    string `db:"query" json:"query"`
+}
+
+func (q *Queries) CountSearchUsersByRole(ctx context.Context, arg CountSearchUsersByRoleParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countSearchUsersByRole, arg.RoleSlug, arg.Query)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -323,7 +323,7 @@ func (q *Queries) GrantUserPlacement(ctx context.Context, arg GrantUserPlacement
 	return err
 }
 
-const listByRole = `-- name: ListByRole :many
+const listUsersByRole = `-- name: ListUsersByRole :many
 SELECT id, first_name, second_name, last_name, email, phone, password_hash, city_id, subcity_id, kebele_id, role_slug, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
 FROM "user"
 WHERE role_slug = $1 AND deleted_at IS NULL
@@ -331,13 +331,13 @@ ORDER BY created_at ASC
 LIMIT  $3 OFFSET $2
 `
 
-type ListByRoleParams struct {
+type ListUsersByRoleParams struct {
 	RoleSlug string `db:"role_slug" json:"role_slug"`
 	Offset   int32  `db:"offset" json:"offset"`
 	Limit    int32  `db:"limit" json:"limit"`
 }
 
-type ListByRoleRow struct {
+type ListUsersByRoleRow struct {
 	ID           uuid.UUID  `db:"id" json:"id"`
 	FirstName    string     `db:"first_name" json:"first_name"`
 	SecondName   string     `db:"second_name" json:"second_name"`
@@ -354,15 +354,15 @@ type ListByRoleRow struct {
 	FullName     string     `db:"full_name" json:"full_name"`
 }
 
-func (q *Queries) ListByRole(ctx context.Context, arg ListByRoleParams) ([]ListByRoleRow, error) {
-	rows, err := q.db.Query(ctx, listByRole, arg.RoleSlug, arg.Offset, arg.Limit)
+func (q *Queries) ListUsersByRole(ctx context.Context, arg ListUsersByRoleParams) ([]ListUsersByRoleRow, error) {
+	rows, err := q.db.Query(ctx, listUsersByRole, arg.RoleSlug, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []ListByRoleRow{}
+	items := []ListUsersByRoleRow{}
 	for rows.Next() {
-		var i ListByRoleRow
+		var i ListUsersByRoleRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.FirstName,
@@ -513,7 +513,7 @@ func (q *Queries) RevokeUserPlacement(ctx context.Context, arg RevokeUserPlaceme
 	return err
 }
 
-const searchByRole = `-- name: SearchByRole :many
+const searchUsersByRole = `-- name: SearchUsersByRole :many
 SELECT id, first_name, second_name, last_name, email, phone, password_hash, city_id, subcity_id, kebele_id, role_slug, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name,
     similarity(CONCAT_WS(' ', first_name, second_name, last_name), $1) AS sim
 FROM "user"
@@ -523,14 +523,14 @@ ORDER BY sim DESC, created_at DESC
 LIMIT $4 OFFSET $3
 `
 
-type SearchByRoleParams struct {
+type SearchUsersByRoleParams struct {
 	Query    string `db:"query" json:"query"`
 	RoleSlug string `db:"role_slug" json:"role_slug"`
 	Offset   int32  `db:"offset" json:"offset"`
 	Limit    int32  `db:"limit" json:"limit"`
 }
 
-type SearchByRoleRow struct {
+type SearchUsersByRoleRow struct {
 	ID           uuid.UUID  `db:"id" json:"id"`
 	FirstName    string     `db:"first_name" json:"first_name"`
 	SecondName   string     `db:"second_name" json:"second_name"`
@@ -548,8 +548,8 @@ type SearchByRoleRow struct {
 	Sim          float32    `db:"sim" json:"sim"`
 }
 
-func (q *Queries) SearchByRole(ctx context.Context, arg SearchByRoleParams) ([]SearchByRoleRow, error) {
-	rows, err := q.db.Query(ctx, searchByRole,
+func (q *Queries) SearchUsersByRole(ctx context.Context, arg SearchUsersByRoleParams) ([]SearchUsersByRoleRow, error) {
+	rows, err := q.db.Query(ctx, searchUsersByRole,
 		arg.Query,
 		arg.RoleSlug,
 		arg.Offset,
@@ -559,9 +559,9 @@ func (q *Queries) SearchByRole(ctx context.Context, arg SearchByRoleParams) ([]S
 		return nil, err
 	}
 	defer rows.Close()
-	items := []SearchByRoleRow{}
+	items := []SearchUsersByRoleRow{}
 	for rows.Next() {
-		var i SearchByRoleRow
+		var i SearchUsersByRoleRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.FirstName,

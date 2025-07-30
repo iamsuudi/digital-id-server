@@ -17,20 +17,12 @@ func NewService(dbConn *pgxpool.Pool, dbQueries *repository.Queries) *Service {
 	return &Service{db: dbConn, q: dbQueries}
 }
 
-func (s *Service) GetRoles(ctx context.Context) ([]repository.Role, error) {
-	return s.q.ListRoles(ctx)
-}
-
 func (s *Service) GetRolesTree(ctx context.Context, role string) ([]repository.GetRoleTreeRow, error) {
 	return s.q.GetRoleTree(ctx, role)
 }
 
 func (s *Service) GetRolesPermissions(ctx context.Context) ([]repository.ListRolePermissionsRow, error) {
 	return s.q.ListRolePermissions(ctx)
-}
-
-func (s *Service) GetMyRoleLevelRank(ctx context.Context, id uuid.UUID) (int32, error) {
-	return s.q.GetCurrentUserMaxRoleLevel(ctx, id)
 }
 
 func (s *Service) CanManipulateRole(ctx context.Context, id uuid.UUID, role_slug string) (bool, error) {

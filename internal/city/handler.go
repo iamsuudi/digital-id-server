@@ -86,19 +86,11 @@ func (h *Handler) GetCity(c *gin.Context) {
 	c.JSON(http.StatusOK, city)
 }
 
-func (h *Handler) GetAll(c *gin.Context) {
-	limit, offset, query, limitErr, pageErr := utils.PaginationHelper(c)
-	if limitErr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid rows per page"})
-		return
-	}
-	if pageErr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page number"})
-		return
-	}
+func (h *Handler) GetCities(c *gin.Context) {
+	limit, offset, query := utils.PaginationHelper(c)
 
 	if strings.TrimSpace(query) == "" {
-		count, cities, err := h.service.GetAll(c.Request.Context(), limit, offset)
+		count, cities, err := h.service.GetCities(c.Request.Context(), limit, offset)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch cities"})
 			return
