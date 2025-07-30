@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"slices"
 	"strings"
 
 	"digital-id-server/internal/cache"
@@ -23,29 +22,6 @@ type Handler struct {
 
 func NewHandler(s *Service, c *cache.Cache) *Handler {
 	return &Handler{service: s, cache: c}
-}
-
-func (h *Handler) RequirePermission(permissions ...string) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		str, _ := c.Get("user_id")
-		id, _ := str.(uuid.UUID)
-
-		perms, err := h.cache.GetPerms(c, id)
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "permission"})
-			return
-		}
-
-		for _, reqPerm := range permissions {
-			if !slices.ContainsFunc(perms, func(p repository.GetEffectivePermissionsForUserRow) bool {
-				return p.Name == reqPerm
-			}) {
-				c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Insufficient permission"})
-				return
-			}
-		}
-		c.Next()
-	}
 }
 
 func (h *Handler) GetUser(c *gin.Context) {
@@ -82,7 +58,7 @@ func (h *Handler) GetUsers(c *gin.Context) {
 	str, _ := c.Get("user_id")
 	id, _ := str.(uuid.UUID)
 	user, _ := h.cache.GetUser(c, id)
-	
+
 	if strings.TrimSpace(query) == "" {
 		count, users, err := h.service.ListUsersUnderScope(c.Request.Context(), limit, offset, query, user.RoleLevelRank, user.CityID, user.SubcityID, user.KebeleID)
 		if err != nil {

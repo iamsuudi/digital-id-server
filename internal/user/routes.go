@@ -15,7 +15,7 @@ func RegisterRoutes(rg *gin.RouterGroup, db *pgxpool.Pool, q *repository.Queries
 
 	r := rg.Group("/users", auth.Authenticate())
 	{
-		r.GET("/", handler.RequirePermission("can_edit_price"), handler.GetUsers)
+		r.GET("/", cache.RequirePlacement(), handler.GetUsers)
 		r.GET("/role", handler.GetByRole)
 		r.GET("/:id", handler.GetUser)
 	}
