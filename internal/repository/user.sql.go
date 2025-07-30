@@ -44,32 +44,20 @@ func (q *Queries) CountListByRole(ctx context.Context, roleSlug string) (int64, 
 	return count, err
 }
 
-const countListUsers = `-- name: CountListUsers :one
-SELECT COUNT(*)
-FROM "user"
-WHERE deleted_at IS NULL
-`
-
-func (q *Queries) CountListUsers(ctx context.Context) (int64, error) {
-	row := q.db.QueryRow(ctx, countListUsers)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
-}
-
 const countListUsersUnderScope = `-- name: CountListUsersUnderScope :one
 SELECT COUNT(*)
-FROM "user" u
+FROM "user"
 WHERE deleted_at IS NULL AND
-    ($1::uuid IS NULL OR u.city_id = $1::uuid) AND
-    ($2::uuid IS NULL OR u.subcity_id = $2::uuid) AND
-    ($3::uuid IS NULL OR u.kebele_id = $3::uuid)
+    -- sqlc.arg('level_rank') < r.level_rank AND
+    ($1::uuid IS NULL OR city_id = $1::uuid) AND
+    ($2::uuid IS NULL OR subcity_id = $2::uuid) AND
+    ($3::uuid IS NULL OR kebele_id = $3::uuid)
 `
 
 type CountListUsersUnderScopeParams struct {
-	CityID    uuid.UUID `db:"city_id" json:"city_id"`
-	SubcityID uuid.UUID `db:"subcity_id" json:"subcity_id"`
-	KebeleID  uuid.UUID `db:"kebele_id" json:"kebele_id"`
+	CityID    *uuid.UUID `db:"city_id" json:"city_id"`
+	SubcityID *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	KebeleID  *uuid.UUID `db:"kebele_id" json:"kebele_id"`
 }
 
 func (q *Queries) CountListUsersUnderScope(ctx context.Context, arg CountListUsersUnderScopeParams) (int64, error) {
@@ -79,39 +67,25 @@ func (q *Queries) CountListUsersUnderScope(ctx context.Context, arg CountListUse
 	return count, err
 }
 
-const countUsersSearch = `-- name: CountUsersSearch :one
+const countSearchUsersUnderScope = `-- name: CountSearchUsersUnderScope :one
 SELECT COUNT(*)
 FROM "user"
 WHERE deleted_at IS NULL AND
-    similarity(CONCAT_WS(' ', first_name, second_name, last_name), $1) > 0.2
-`
-
-func (q *Queries) CountUsersSearch(ctx context.Context, query string) (int64, error) {
-	row := q.db.QueryRow(ctx, countUsersSearch, query)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
-}
-
-const countUsersSearchUnderScope = `-- name: CountUsersSearchUnderScope :one
-SELECT COUNT(*)
-FROM "user" u
-WHERE deleted_at IS NULL AND
     similarity(CONCAT_WS(' ', first_name, second_name, last_name), $1) > 0.2 AND
-    ($2::uuid IS NULL OR u.city_id = $2::uuid) AND
-    ($3::uuid IS NULL OR u.subcity_id = $3::uuid) AND
-    ($4::uuid IS NULL OR u.kebele_id = $4::uuid)
+    ($2::uuid IS NULL OR city_id = $2::uuid) AND
+    ($3::uuid IS NULL OR subcity_id = $3::uuid) AND
+    ($4::uuid IS NULL OR kebele_id = $4::uuid)
 `
 
-type CountUsersSearchUnderScopeParams struct {
-	Query     string    `db:"query" json:"query"`
-	CityID    uuid.UUID `db:"city_id" json:"city_id"`
-	SubcityID uuid.UUID `db:"subcity_id" json:"subcity_id"`
-	KebeleID  uuid.UUID `db:"kebele_id" json:"kebele_id"`
+type CountSearchUsersUnderScopeParams struct {
+	Query     string     `db:"query" json:"query"`
+	CityID    *uuid.UUID `db:"city_id" json:"city_id"`
+	SubcityID *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	KebeleID  *uuid.UUID `db:"kebele_id" json:"kebele_id"`
 }
 
-func (q *Queries) CountUsersSearchUnderScope(ctx context.Context, arg CountUsersSearchUnderScopeParams) (int64, error) {
-	row := q.db.QueryRow(ctx, countUsersSearchUnderScope,
+func (q *Queries) CountSearchUsersUnderScope(ctx context.Context, arg CountSearchUsersUnderScopeParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countSearchUsersUnderScope,
 		arg.Query,
 		arg.CityID,
 		arg.SubcityID,
@@ -186,26 +160,37 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateU
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, first_name, second_name, last_name, email, phone, password_hash, city_id, subcity_id, kebele_id, role_slug, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
-FROM "user"
-WHERE email = $1 AND deleted_at IS NULL
+SELECT u.id, u.first_name, u.second_name, u.last_name, u.email, u.phone, u.password_hash, u.city_id, u.subcity_id, u.kebele_id, u.role_slug, u.created_at, u.deleted_at, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS full_name,
+    c.name AS city_name, sc.name AS subcity_name, k.name AS kebele_name,
+    r.name AS role_name, r.level_rank AS role_level_rank
+FROM "user" u
+LEFT JOIN role r ON r.slug = u.role_slug
+LEFT JOIN city c ON c.id = u.city_id
+LEFT JOIN subcity sc ON sc.id = u.subcity_id
+LEFT JOIN kebele k ON k.id = u.kebele_id
+WHERE u.email = $1 AND u.deleted_at IS NULL
 `
 
 type GetUserByEmailRow struct {
-	ID           uuid.UUID  `db:"id" json:"id"`
-	FirstName    string     `db:"first_name" json:"first_name"`
-	SecondName   string     `db:"second_name" json:"second_name"`
-	LastName     string     `db:"last_name" json:"last_name"`
-	Email        string     `db:"email" json:"email"`
-	Phone        string     `db:"phone" json:"phone"`
-	PasswordHash string     `db:"password_hash" json:"password_hash"`
-	CityID       *uuid.UUID `db:"city_id" json:"city_id"`
-	SubcityID    *uuid.UUID `db:"subcity_id" json:"subcity_id"`
-	KebeleID     *uuid.UUID `db:"kebele_id" json:"kebele_id"`
-	RoleSlug     string     `db:"role_slug" json:"role_slug"`
-	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
-	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
-	FullName     string     `db:"full_name" json:"full_name"`
+	ID            uuid.UUID  `db:"id" json:"id"`
+	FirstName     string     `db:"first_name" json:"first_name"`
+	SecondName    string     `db:"second_name" json:"second_name"`
+	LastName      string     `db:"last_name" json:"last_name"`
+	Email         string     `db:"email" json:"email"`
+	Phone         string     `db:"phone" json:"phone"`
+	PasswordHash  string     `db:"password_hash" json:"password_hash"`
+	CityID        *uuid.UUID `db:"city_id" json:"city_id"`
+	SubcityID     *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	KebeleID      *uuid.UUID `db:"kebele_id" json:"kebele_id"`
+	RoleSlug      string     `db:"role_slug" json:"role_slug"`
+	CreatedAt     time.Time  `db:"created_at" json:"created_at"`
+	DeletedAt     *time.Time `db:"deleted_at" json:"deleted_at"`
+	FullName      string     `db:"full_name" json:"full_name"`
+	CityName      *string    `db:"city_name" json:"city_name"`
+	SubcityName   *string    `db:"subcity_name" json:"subcity_name"`
+	KebeleName    *string    `db:"kebele_name" json:"kebele_name"`
+	RoleName      *string    `db:"role_name" json:"role_name"`
+	RoleLevelRank *int32     `db:"role_level_rank" json:"role_level_rank"`
 }
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEmailRow, error) {
@@ -226,31 +211,47 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEm
 		&i.CreatedAt,
 		&i.DeletedAt,
 		&i.FullName,
+		&i.CityName,
+		&i.SubcityName,
+		&i.KebeleName,
+		&i.RoleName,
+		&i.RoleLevelRank,
 	)
 	return i, err
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, first_name, second_name, last_name, email, phone, password_hash, city_id, subcity_id, kebele_id, role_slug, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
-FROM "user"
-WHERE id = $1 AND deleted_at IS NULL
+SELECT u.id, u.first_name, u.second_name, u.last_name, u.email, u.phone, u.password_hash, u.city_id, u.subcity_id, u.kebele_id, u.role_slug, u.created_at, u.deleted_at, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS full_name,
+    c.name AS city_name, sc.name AS subcity_name, k.name AS kebele_name,
+    r.name AS role_name, r.level_rank AS role_level_rank
+FROM "user" u
+LEFT JOIN role r ON r.slug = u.role_slug
+LEFT JOIN city c ON c.id = u.city_id
+LEFT JOIN subcity sc ON sc.id = u.subcity_id
+LEFT JOIN kebele k ON k.id = u.kebele_id
+WHERE u.id = $1 AND u.deleted_at IS NULL
 `
 
 type GetUserByIDRow struct {
-	ID           uuid.UUID  `db:"id" json:"id"`
-	FirstName    string     `db:"first_name" json:"first_name"`
-	SecondName   string     `db:"second_name" json:"second_name"`
-	LastName     string     `db:"last_name" json:"last_name"`
-	Email        string     `db:"email" json:"email"`
-	Phone        string     `db:"phone" json:"phone"`
-	PasswordHash string     `db:"password_hash" json:"password_hash"`
-	CityID       *uuid.UUID `db:"city_id" json:"city_id"`
-	SubcityID    *uuid.UUID `db:"subcity_id" json:"subcity_id"`
-	KebeleID     *uuid.UUID `db:"kebele_id" json:"kebele_id"`
-	RoleSlug     string     `db:"role_slug" json:"role_slug"`
-	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
-	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
-	FullName     string     `db:"full_name" json:"full_name"`
+	ID            uuid.UUID  `db:"id" json:"id"`
+	FirstName     string     `db:"first_name" json:"first_name"`
+	SecondName    string     `db:"second_name" json:"second_name"`
+	LastName      string     `db:"last_name" json:"last_name"`
+	Email         string     `db:"email" json:"email"`
+	Phone         string     `db:"phone" json:"phone"`
+	PasswordHash  string     `db:"password_hash" json:"password_hash"`
+	CityID        *uuid.UUID `db:"city_id" json:"city_id"`
+	SubcityID     *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	KebeleID      *uuid.UUID `db:"kebele_id" json:"kebele_id"`
+	RoleSlug      string     `db:"role_slug" json:"role_slug"`
+	CreatedAt     time.Time  `db:"created_at" json:"created_at"`
+	DeletedAt     *time.Time `db:"deleted_at" json:"deleted_at"`
+	FullName      string     `db:"full_name" json:"full_name"`
+	CityName      *string    `db:"city_name" json:"city_name"`
+	SubcityName   *string    `db:"subcity_name" json:"subcity_name"`
+	KebeleName    *string    `db:"kebele_name" json:"kebele_name"`
+	RoleName      *string    `db:"role_name" json:"role_name"`
+	RoleLevelRank *int32     `db:"role_level_rank" json:"role_level_rank"`
 }
 
 func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (GetUserByIDRow, error) {
@@ -271,6 +272,11 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (GetUserByIDRow
 		&i.CreatedAt,
 		&i.DeletedAt,
 		&i.FullName,
+		&i.CityName,
+		&i.SubcityName,
+		&i.KebeleName,
+		&i.RoleName,
+		&i.RoleLevelRank,
 	)
 	return i, err
 }
@@ -292,69 +298,29 @@ func (q *Queries) GetUserScope(ctx context.Context, id uuid.UUID) (GetUserScopeR
 	return i, err
 }
 
-const listAllUsers = `-- name: ListAllUsers :many
-SELECT id, first_name, second_name, last_name, email, phone, password_hash, city_id, subcity_id, kebele_id, role_slug, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
-FROM "user"
-WHERE deleted_at IS NULL
-ORDER BY created_at ASC
-LIMIT  $2 OFFSET $1
+const grantUserPlacement = `-- name: GrantUserPlacement :exec
+UPDATE "user"
+SET city_id = $1,
+    subcity_id = $2,
+    kebele_id = $3
+WHERE id = $4
 `
 
-type ListAllUsersParams struct {
-	Offset int32 `db:"offset" json:"offset"`
-	Limit  int32 `db:"limit" json:"limit"`
+type GrantUserPlacementParams struct {
+	CityID    *uuid.UUID `db:"city_id" json:"city_id"`
+	SubcityID *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	KebeleID  *uuid.UUID `db:"kebele_id" json:"kebele_id"`
+	ID        uuid.UUID  `db:"id" json:"id"`
 }
 
-type ListAllUsersRow struct {
-	ID           uuid.UUID  `db:"id" json:"id"`
-	FirstName    string     `db:"first_name" json:"first_name"`
-	SecondName   string     `db:"second_name" json:"second_name"`
-	LastName     string     `db:"last_name" json:"last_name"`
-	Email        string     `db:"email" json:"email"`
-	Phone        string     `db:"phone" json:"phone"`
-	PasswordHash string     `db:"password_hash" json:"password_hash"`
-	CityID       *uuid.UUID `db:"city_id" json:"city_id"`
-	SubcityID    *uuid.UUID `db:"subcity_id" json:"subcity_id"`
-	KebeleID     *uuid.UUID `db:"kebele_id" json:"kebele_id"`
-	RoleSlug     string     `db:"role_slug" json:"role_slug"`
-	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
-	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
-	FullName     string     `db:"full_name" json:"full_name"`
-}
-
-func (q *Queries) ListAllUsers(ctx context.Context, arg ListAllUsersParams) ([]ListAllUsersRow, error) {
-	rows, err := q.db.Query(ctx, listAllUsers, arg.Offset, arg.Limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ListAllUsersRow{}
-	for rows.Next() {
-		var i ListAllUsersRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.FirstName,
-			&i.SecondName,
-			&i.LastName,
-			&i.Email,
-			&i.Phone,
-			&i.PasswordHash,
-			&i.CityID,
-			&i.SubcityID,
-			&i.KebeleID,
-			&i.RoleSlug,
-			&i.CreatedAt,
-			&i.DeletedAt,
-			&i.FullName,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+func (q *Queries) GrantUserPlacement(ctx context.Context, arg GrantUserPlacementParams) error {
+	_, err := q.db.Exec(ctx, grantUserPlacement,
+		arg.CityID,
+		arg.SubcityID,
+		arg.KebeleID,
+		arg.ID,
+	)
+	return err
 }
 
 const listByRole = `-- name: ListByRole :many
@@ -424,41 +390,52 @@ func (q *Queries) ListByRole(ctx context.Context, arg ListByRoleParams) ([]ListB
 }
 
 const listUsersUnderScope = `-- name: ListUsersUnderScope :many
-SELECT u.id, u.first_name, u.second_name, u.last_name, u.email, u.phone, u.password_hash, u.city_id, u.subcity_id, u.kebele_id, u.role_slug, u.created_at, u.deleted_at, r.name AS role, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
+SELECT u.id, u.first_name, u.second_name, u.last_name, u.email, u.phone, u.password_hash, u.city_id, u.subcity_id, u.kebele_id, u.role_slug, u.created_at, u.deleted_at, r.name AS role_name, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS full_name,
+    c.name AS city_name, sc.name AS subcity_name, k.name AS kebele_name,
+    r.name AS role_name, r.level_rank AS role_level_rank
 FROM "user" u
-JOIN role r ON r.slug = u.role_slug
-WHERE deleted_at IS NULL AND
+LEFT JOIN city c ON c.id = u.city_id
+LEFT JOIN subcity sc ON sc.id = u.subcity_id
+LEFT JOIN kebele k ON k.id = u.kebele_id
+LEFT JOIN role r ON r.slug = u.role_slug
+WHERE u.deleted_at IS NULL AND
+    -- sqlc.arg('my_id') <> u.id AND
     ($1::uuid IS NULL OR u.city_id = $1::uuid) AND
     ($2::uuid IS NULL OR u.subcity_id = $2::uuid) AND
     ($3::uuid IS NULL OR u.kebele_id = $3::uuid)
-ORDER BY u.id
+ORDER BY u.created_at ASC
 LIMIT $5 OFFSET $4
 `
 
 type ListUsersUnderScopeParams struct {
-	CityID    uuid.UUID `db:"city_id" json:"city_id"`
-	SubcityID uuid.UUID `db:"subcity_id" json:"subcity_id"`
-	KebeleID  uuid.UUID `db:"kebele_id" json:"kebele_id"`
-	Offset    int32     `db:"offset" json:"offset"`
-	Limit     int32     `db:"limit" json:"limit"`
+	CityID    *uuid.UUID `db:"city_id" json:"city_id"`
+	SubcityID *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	KebeleID  *uuid.UUID `db:"kebele_id" json:"kebele_id"`
+	Offset    int32      `db:"offset" json:"offset"`
+	Limit     int32      `db:"limit" json:"limit"`
 }
 
 type ListUsersUnderScopeRow struct {
-	ID           uuid.UUID  `db:"id" json:"id"`
-	FirstName    string     `db:"first_name" json:"first_name"`
-	SecondName   string     `db:"second_name" json:"second_name"`
-	LastName     string     `db:"last_name" json:"last_name"`
-	Email        string     `db:"email" json:"email"`
-	Phone        string     `db:"phone" json:"phone"`
-	PasswordHash string     `db:"password_hash" json:"password_hash"`
-	CityID       *uuid.UUID `db:"city_id" json:"city_id"`
-	SubcityID    *uuid.UUID `db:"subcity_id" json:"subcity_id"`
-	KebeleID     *uuid.UUID `db:"kebele_id" json:"kebele_id"`
-	RoleSlug     string     `db:"role_slug" json:"role_slug"`
-	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
-	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
-	Role         string     `db:"role" json:"role"`
-	FullName     string     `db:"full_name" json:"full_name"`
+	ID            uuid.UUID  `db:"id" json:"id"`
+	FirstName     string     `db:"first_name" json:"first_name"`
+	SecondName    string     `db:"second_name" json:"second_name"`
+	LastName      string     `db:"last_name" json:"last_name"`
+	Email         string     `db:"email" json:"email"`
+	Phone         string     `db:"phone" json:"phone"`
+	PasswordHash  string     `db:"password_hash" json:"password_hash"`
+	CityID        *uuid.UUID `db:"city_id" json:"city_id"`
+	SubcityID     *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	KebeleID      *uuid.UUID `db:"kebele_id" json:"kebele_id"`
+	RoleSlug      string     `db:"role_slug" json:"role_slug"`
+	CreatedAt     time.Time  `db:"created_at" json:"created_at"`
+	DeletedAt     *time.Time `db:"deleted_at" json:"deleted_at"`
+	RoleName      *string    `db:"role_name" json:"role_name"`
+	FullName      string     `db:"full_name" json:"full_name"`
+	CityName      *string    `db:"city_name" json:"city_name"`
+	SubcityName   *string    `db:"subcity_name" json:"subcity_name"`
+	KebeleName    *string    `db:"kebele_name" json:"kebele_name"`
+	RoleName_2    *string    `db:"role_name_2" json:"role_name_2"`
+	RoleLevelRank *int32     `db:"role_level_rank" json:"role_level_rank"`
 }
 
 func (q *Queries) ListUsersUnderScope(ctx context.Context, arg ListUsersUnderScopeParams) ([]ListUsersUnderScopeRow, error) {
@@ -490,8 +467,13 @@ func (q *Queries) ListUsersUnderScope(ctx context.Context, arg ListUsersUnderSco
 			&i.RoleSlug,
 			&i.CreatedAt,
 			&i.DeletedAt,
-			&i.Role,
+			&i.RoleName,
 			&i.FullName,
+			&i.CityName,
+			&i.SubcityName,
+			&i.KebeleName,
+			&i.RoleName_2,
+			&i.RoleLevelRank,
 		); err != nil {
 			return nil, err
 		}
@@ -501,6 +483,34 @@ func (q *Queries) ListUsersUnderScope(ctx context.Context, arg ListUsersUnderSco
 		return nil, err
 	}
 	return items, nil
+}
+
+const revokeUserPlacement = `-- name: RevokeUserPlacement :exec
+UPDATE "user"
+SET city_id = NULL,
+    subcity_id = NULL,
+    kebele_id = NULL
+WHERE role_slug = $1
+    AND ($2::uuid IS NULL OR city_id = $2::uuid)
+    AND ($3::uuid IS NULL OR subcity_id = $3::uuid)
+    AND ($4::uuid IS NULL OR kebele_id = $4::uuid)
+`
+
+type RevokeUserPlacementParams struct {
+	RoleSlug  string     `db:"role_slug" json:"role_slug"`
+	CityID    *uuid.UUID `db:"city_id" json:"city_id"`
+	SubcityID *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	KebeleID  *uuid.UUID `db:"kebele_id" json:"kebele_id"`
+}
+
+func (q *Queries) RevokeUserPlacement(ctx context.Context, arg RevokeUserPlacementParams) error {
+	_, err := q.db.Exec(ctx, revokeUserPlacement,
+		arg.RoleSlug,
+		arg.CityID,
+		arg.SubcityID,
+		arg.KebeleID,
+	)
+	return err
 }
 
 const searchByRole = `-- name: SearchByRole :many
@@ -579,97 +589,32 @@ func (q *Queries) SearchByRole(ctx context.Context, arg SearchByRoleParams) ([]S
 	return items, nil
 }
 
-const searchUsers = `-- name: SearchUsers :many
-SELECT id, first_name, second_name, last_name, email, phone, password_hash, city_id, subcity_id, kebele_id, role_slug, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name,
-    similarity(CONCAT_WS(' ', first_name, second_name, last_name), $1) AS sim
-FROM "user"
-WHERE deleted_at IS NULL AND
-    similarity(CONCAT_WS(' ', first_name, second_name, last_name), $1) > 0.2
-ORDER BY sim DESC, created_at DESC
-LIMIT $3 OFFSET $2
-`
-
-type SearchUsersParams struct {
-	Query  string `db:"query" json:"query"`
-	Offset int32  `db:"offset" json:"offset"`
-	Limit  int32  `db:"limit" json:"limit"`
-}
-
-type SearchUsersRow struct {
-	ID           uuid.UUID  `db:"id" json:"id"`
-	FirstName    string     `db:"first_name" json:"first_name"`
-	SecondName   string     `db:"second_name" json:"second_name"`
-	LastName     string     `db:"last_name" json:"last_name"`
-	Email        string     `db:"email" json:"email"`
-	Phone        string     `db:"phone" json:"phone"`
-	PasswordHash string     `db:"password_hash" json:"password_hash"`
-	CityID       *uuid.UUID `db:"city_id" json:"city_id"`
-	SubcityID    *uuid.UUID `db:"subcity_id" json:"subcity_id"`
-	KebeleID     *uuid.UUID `db:"kebele_id" json:"kebele_id"`
-	RoleSlug     string     `db:"role_slug" json:"role_slug"`
-	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
-	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
-	FullName     string     `db:"full_name" json:"full_name"`
-	Sim          float32    `db:"sim" json:"sim"`
-}
-
-func (q *Queries) SearchUsers(ctx context.Context, arg SearchUsersParams) ([]SearchUsersRow, error) {
-	rows, err := q.db.Query(ctx, searchUsers, arg.Query, arg.Offset, arg.Limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []SearchUsersRow{}
-	for rows.Next() {
-		var i SearchUsersRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.FirstName,
-			&i.SecondName,
-			&i.LastName,
-			&i.Email,
-			&i.Phone,
-			&i.PasswordHash,
-			&i.CityID,
-			&i.SubcityID,
-			&i.KebeleID,
-			&i.RoleSlug,
-			&i.CreatedAt,
-			&i.DeletedAt,
-			&i.FullName,
-			&i.Sim,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const searchUsersUnderScope = `-- name: SearchUsersUnderScope :many
-SELECT id, first_name, second_name, last_name, email, phone, password_hash, city_id, subcity_id, kebele_id, role_slug, created_at, deleted_at, slug, name, parent_role_slug, level_rank, r.name, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name,
-    similarity(CONCAT_WS(' ', first_name, second_name, last_name), $1) AS sim
+SELECT u.id, first_name, second_name, last_name, email, phone, password_hash, u.city_id, u.subcity_id, kebele_id, role_slug, u.created_at, u.deleted_at, c.id, c.name, c.created_at, c.deleted_at, sc.id, sc.name, sc.city_id, sc.created_at, sc.deleted_at, k.id, k.name, k.subcity_id, k.city_id, k.created_at, k.deleted_at, slug, r.name, parent_role_slug, level_rank, r.name, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS full_name,
+    c.name AS city_name, sc.name AS subcity_name, k.name AS kebele_name,
+    r.name AS role_name, r.level_rank AS role_level_rank,
+    similarity(CONCAT_WS(' ', u.first_name, u.second_name, u.last_name), $1) AS sim
 FROM "user" u
-JOIN role r ON r.slug = u.role_slug
-WHERE deleted_at IS NULL AND
-    similarity(CONCAT_WS(' ', first_name, second_name, last_name), $1) > 0.2 AND
+LEFT JOIN city c ON c.id = u.city_id
+LEFT JOIN subcity sc ON sc.id = u.subcity_id
+LEFT JOIN kebele k ON k.id = u.kebele_id
+LEFT JOIN role r ON r.slug = u.role_slug
+WHERE u.deleted_at IS NULL AND
+    similarity(CONCAT_WS(' ', u.first_name, u.second_name, u.last_name), $1) > 0.2 AND
     ($2::uuid IS NULL OR u.city_id = $2::uuid) AND
     ($3::uuid IS NULL OR u.subcity_id = $3::uuid) AND
     ($4::uuid IS NULL OR u.kebele_id = $4::uuid)
-ORDER BY sim DESC, created_at DESC
+ORDER BY sim DESC, u.created_at ASC
 LIMIT $6 OFFSET $5
 `
 
 type SearchUsersUnderScopeParams struct {
-	Query     string    `db:"query" json:"query"`
-	CityID    uuid.UUID `db:"city_id" json:"city_id"`
-	SubcityID uuid.UUID `db:"subcity_id" json:"subcity_id"`
-	KebeleID  uuid.UUID `db:"kebele_id" json:"kebele_id"`
-	Offset    int32     `db:"offset" json:"offset"`
-	Limit     int32     `db:"limit" json:"limit"`
+	Query     string     `db:"query" json:"query"`
+	CityID    *uuid.UUID `db:"city_id" json:"city_id"`
+	SubcityID *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	KebeleID  *uuid.UUID `db:"kebele_id" json:"kebele_id"`
+	Offset    int32      `db:"offset" json:"offset"`
+	Limit     int32      `db:"limit" json:"limit"`
 }
 
 type SearchUsersUnderScopeRow struct {
@@ -686,12 +631,32 @@ type SearchUsersUnderScopeRow struct {
 	RoleSlug       string     `db:"role_slug" json:"role_slug"`
 	CreatedAt      time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt      *time.Time `db:"deleted_at" json:"deleted_at"`
-	Slug           string     `db:"slug" json:"slug"`
-	Name           string     `db:"name" json:"name"`
+	ID_2           *uuid.UUID `db:"id_2" json:"id_2"`
+	Name           *string    `db:"name" json:"name"`
+	CreatedAt_2    *time.Time `db:"created_at_2" json:"created_at_2"`
+	DeletedAt_2    *time.Time `db:"deleted_at_2" json:"deleted_at_2"`
+	ID_3           *uuid.UUID `db:"id_3" json:"id_3"`
+	Name_2         *string    `db:"name_2" json:"name_2"`
+	CityID_2       *uuid.UUID `db:"city_id_2" json:"city_id_2"`
+	CreatedAt_3    *time.Time `db:"created_at_3" json:"created_at_3"`
+	DeletedAt_3    *time.Time `db:"deleted_at_3" json:"deleted_at_3"`
+	ID_4           *uuid.UUID `db:"id_4" json:"id_4"`
+	Name_3         *string    `db:"name_3" json:"name_3"`
+	SubcityID_2    *uuid.UUID `db:"subcity_id_2" json:"subcity_id_2"`
+	CityID_3       *uuid.UUID `db:"city_id_3" json:"city_id_3"`
+	CreatedAt_4    *time.Time `db:"created_at_4" json:"created_at_4"`
+	DeletedAt_4    *time.Time `db:"deleted_at_4" json:"deleted_at_4"`
+	Slug           *string    `db:"slug" json:"slug"`
+	Name_4         *string    `db:"name_4" json:"name_4"`
 	ParentRoleSlug *string    `db:"parent_role_slug" json:"parent_role_slug"`
-	LevelRank      int32      `db:"level_rank" json:"level_rank"`
-	Name_2         string     `db:"name_2" json:"name_2"`
+	LevelRank      *int32     `db:"level_rank" json:"level_rank"`
+	Name_5         *string    `db:"name_5" json:"name_5"`
 	FullName       string     `db:"full_name" json:"full_name"`
+	CityName       *string    `db:"city_name" json:"city_name"`
+	SubcityName    *string    `db:"subcity_name" json:"subcity_name"`
+	KebeleName     *string    `db:"kebele_name" json:"kebele_name"`
+	RoleName       *string    `db:"role_name" json:"role_name"`
+	RoleLevelRank  *int32     `db:"role_level_rank" json:"role_level_rank"`
 	Sim            float32    `db:"sim" json:"sim"`
 }
 
@@ -725,12 +690,32 @@ func (q *Queries) SearchUsersUnderScope(ctx context.Context, arg SearchUsersUnde
 			&i.RoleSlug,
 			&i.CreatedAt,
 			&i.DeletedAt,
-			&i.Slug,
+			&i.ID_2,
 			&i.Name,
+			&i.CreatedAt_2,
+			&i.DeletedAt_2,
+			&i.ID_3,
+			&i.Name_2,
+			&i.CityID_2,
+			&i.CreatedAt_3,
+			&i.DeletedAt_3,
+			&i.ID_4,
+			&i.Name_3,
+			&i.SubcityID_2,
+			&i.CityID_3,
+			&i.CreatedAt_4,
+			&i.DeletedAt_4,
+			&i.Slug,
+			&i.Name_4,
 			&i.ParentRoleSlug,
 			&i.LevelRank,
-			&i.Name_2,
+			&i.Name_5,
 			&i.FullName,
+			&i.CityName,
+			&i.SubcityName,
+			&i.KebeleName,
+			&i.RoleName,
+			&i.RoleLevelRank,
 			&i.Sim,
 		); err != nil {
 			return nil, err
@@ -751,34 +736,6 @@ WHERE id = $1
 
 func (q *Queries) SoftDeleteUser(ctx context.Context, id uuid.UUID) error {
 	_, err := q.db.Exec(ctx, softDeleteUser, id)
-	return err
-}
-
-const updateUserPlacement = `-- name: UpdateUserPlacement :exec
-WITH clear_old AS (
-    UPDATE "user"
-    SET city_id = NULL, subcity_id = NULL, kebele_id = NULL
-    WHERE city_id = $2
-)
-UPDATE "user" AS U
-SET city_id = $2, subcity_id = $3, kebele_id = $4
-WHERE u.id = $1
-`
-
-type UpdateUserPlacementParams struct {
-	ID        uuid.UUID  `db:"id" json:"id"`
-	CityID    *uuid.UUID `db:"city_id" json:"city_id"`
-	SubcityID *uuid.UUID `db:"subcity_id" json:"subcity_id"`
-	KebeleID  *uuid.UUID `db:"kebele_id" json:"kebele_id"`
-}
-
-func (q *Queries) UpdateUserPlacement(ctx context.Context, arg UpdateUserPlacementParams) error {
-	_, err := q.db.Exec(ctx, updateUserPlacement,
-		arg.ID,
-		arg.CityID,
-		arg.SubcityID,
-		arg.KebeleID,
-	)
 	return err
 }
 

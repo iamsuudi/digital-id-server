@@ -15,8 +15,7 @@ import (
 const countCitiesSearch = `-- name: CountCitiesSearch :one
 SELECT COUNT(*)
 FROM city
-WHERE deleted_at IS NULL AND
-    similarity(name, $1) > 0.2
+WHERE deleted_at IS NULL AND similarity(name, $1) > 0.2
 `
 
 func (q *Queries) CountCitiesSearch(ctx context.Context, query string) (int64, error) {
@@ -58,9 +57,10 @@ func (q *Queries) CreateCity(ctx context.Context, name string) (City, error) {
 }
 
 const getCity = `-- name: GetCity :one
-SELECT c.id, c.name, c.created_at, c.deleted_at, u.id as admin_id, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS admin_name
+SELECT c.id, c.name, c.created_at, c.deleted_at, u.id as admin_id, 
+    CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS admin_name
 FROM city c
-LEFT JOIN "user" u ON u.city_id = c.id
+LEFT JOIN "user" u ON u.city_id = c.id AND u.role_slug = 'admin'
 WHERE c.id = $1 AND c.deleted_at IS NULL
 `
 
@@ -88,9 +88,10 @@ func (q *Queries) GetCity(ctx context.Context, id uuid.UUID) (GetCityRow, error)
 }
 
 const listCities = `-- name: ListCities :many
-SELECT c.id, c.name, c.created_at, c.deleted_at, u.id as admin_id, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS admin_name
+SELECT c.id, c.name, c.created_at, c.deleted_at, u.id as admin_id, 
+    CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS admin_name
 FROM city c
-LEFT JOIN "user" u ON u.city_id = c.id
+LEFT JOIN "user" u ON u.city_id = c.id AND u.role_slug = 'admin'
 WHERE c.deleted_at IS NULL
 ORDER BY c.created_at DESC
 LIMIT $1 OFFSET $2
@@ -138,12 +139,11 @@ func (q *Queries) ListCities(ctx context.Context, arg ListCitiesParams) ([]ListC
 }
 
 const searchCities = `-- name: SearchCities :many
-SELECT c.id, name, c.created_at, c.deleted_at, u.id, first_name, second_name, last_name, email, phone, password_hash, city_id, subcity_id, kebele_id, role_slug, u.created_at, u.deleted_at, u.id as admin_id, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS admin_name,
-    similarity(c.name, $1) AS sim
+SELECT c.id, name, c.created_at, c.deleted_at, u.id, first_name, second_name, last_name, email, phone, password_hash, city_id, subcity_id, kebele_id, role_slug, u.created_at, u.deleted_at, u.id as admin_id, similarity(c.name, $1) AS sim,
+    CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS admin_name
 FROM city c
-LEFT JOIN "user" u ON u.city_id = c.id
-WHERE c.deleted_at IS NULL AND
-    similarity(c.name, $1) > 0.2
+LEFT JOIN "user" u ON u.city_id = c.id AND u.role_slug = 'admin'
+WHERE c.deleted_at IS NULL AND similarity(c.name, $1) > 0.2
 ORDER BY sim DESC, c.created_at DESC
 LIMIT $3 OFFSET $2
 `
@@ -173,8 +173,8 @@ type SearchCitiesRow struct {
 	CreatedAt_2  *time.Time `db:"created_at_2" json:"created_at_2"`
 	DeletedAt_2  *time.Time `db:"deleted_at_2" json:"deleted_at_2"`
 	AdminID      *uuid.UUID `db:"admin_id" json:"admin_id"`
-	AdminName    string     `db:"admin_name" json:"admin_name"`
 	Sim          float32    `db:"sim" json:"sim"`
+	AdminName    string     `db:"admin_name" json:"admin_name"`
 }
 
 func (q *Queries) SearchCities(ctx context.Context, arg SearchCitiesParams) ([]SearchCitiesRow, error) {
@@ -205,8 +205,8 @@ func (q *Queries) SearchCities(ctx context.Context, arg SearchCitiesParams) ([]S
 			&i.CreatedAt_2,
 			&i.DeletedAt_2,
 			&i.AdminID,
-			&i.AdminName,
 			&i.Sim,
+			&i.AdminName,
 		); err != nil {
 			return nil, err
 		}

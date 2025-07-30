@@ -67,7 +67,7 @@ const getSubCity = `-- name: GetSubCity :one
 SELECT s.id, s.name, s.city_id, s.created_at, s.deleted_at, c.name as city_name, u.id as manager_id, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS manager_name
 FROM subcity s
 LEFT JOIN city c ON c.id = s.city_id
-LEFT JOIN "user" u ON u.subcity_id = s.id
+LEFT JOIN "user" u ON u.subcity_id = s.id AND u.role_slug = 'manager'
 WHERE s.id = $1 AND s.deleted_at IS NULL
 `
 
@@ -102,7 +102,7 @@ const listSubCities = `-- name: ListSubCities :many
 SELECT s.id, s.name, s.city_id, s.created_at, s.deleted_at, c.name as city_name, u.id as manager_id, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS manager_name
 FROM subcity s
 LEFT JOIN city c ON c.id = s.city_id
-LEFT JOIN "user" u ON u.subcity_id = s.id
+LEFT JOIN "user" u ON u.subcity_id = s.id AND u.role_slug = 'manager'
 WHERE s.deleted_at IS NULL
 ORDER BY s.created_at DESC
 LIMIT $1 OFFSET $2
@@ -155,12 +155,12 @@ func (q *Queries) ListSubCities(ctx context.Context, arg ListSubCitiesParams) ([
 
 const searchSubCities = `-- name: SearchSubCities :many
 SELECT sb.id, sb.name, sb.city_id, sb.created_at, sb.deleted_at, c.id, c.name, c.created_at, c.deleted_at, u.id, first_name, second_name, last_name, email, phone, password_hash, u.city_id, subcity_id, kebele_id, role_slug, u.created_at, u.deleted_at, c.name as city_name, u.id as manager_id, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS manager_name,
-    similarity(CONCAT_WS(' ', sb.name), $1) AS sim
+    similarity(CONCAT_WS(' ', sb.name, c.name), $1) AS sim
 FROM subcity sb
 JOIN city c ON c.id = sb.city_id
-LEFT JOIN "user" u ON u.subcity_id = sb.id
+LEFT JOIN "user" u ON u.subcity_id = sb.id AND u.role_slug = 'manager'
 WHERE sb.deleted_at IS NULL AND
-    similarity(CONCAT_WS(' ', sb.name), $1) > 0.2
+    similarity(CONCAT_WS(' ', sb.name, c.name), $1) > 0.2
 ORDER BY sim DESC, sb.created_at DESC
 LIMIT $3 OFFSET $2
 `

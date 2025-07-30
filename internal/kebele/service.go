@@ -45,9 +45,19 @@ func (s *Service) UpdateKebele(ctx context.Context, id uuid.UUID, input types.Ke
 	if err != nil {
 		return err
 	}
+	
+	err = qtx.RevokeUserPlacement(ctx, repository.RevokeUserPlacementParams{
+		CityID:    &input.CityID,
+		SubcityID: input.SubCityID,
+		KebeleID:  &id,
+		RoleSlug: "executive",
+	})
+	if err != nil {
+		return err
+	}
 
 	if input.ExecutiveID != nil {
-		err := qtx.UpdateUserPlacement(ctx, repository.UpdateUserPlacementParams{
+		err = qtx.GrantUserPlacement(ctx, repository.GrantUserPlacementParams{
 			ID:        *input.ExecutiveID,
 			CityID:    &input.CityID,
 			SubcityID: input.SubCityID,

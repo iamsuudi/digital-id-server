@@ -7,17 +7,17 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const getEffectivePermissionsForUser = `-- name: GetEffectivePermissionsForUser :many
 WITH RECURSIVE role_tree AS (
-    -- start from user’s role
+    -- start from the user’s role
     SELECT r.slug, r.level_rank
     FROM role r
-    WHERE r.slug = (SELECT role_slug FROM "user" u WHERE u.role_slug = $1)
+    WHERE r.slug = (SELECT role_slug FROM "user" WHERE id = $1)
     UNION
     SELECT r.slug, r.level_rank
     FROM role r
@@ -55,8 +55,8 @@ type GetEffectivePermissionsForUserRow struct {
 	Overridden  interface{} `db:"overridden" json:"overridden"`
 }
 
-func (q *Queries) GetEffectivePermissionsForUser(ctx context.Context, roleSlug string) ([]GetEffectivePermissionsForUserRow, error) {
-	rows, err := q.db.Query(ctx, getEffectivePermissionsForUser, roleSlug)
+func (q *Queries) GetEffectivePermissionsForUser(ctx context.Context, id uuid.UUID) ([]GetEffectivePermissionsForUserRow, error) {
+	rows, err := q.db.Query(ctx, getEffectivePermissionsForUser, id)
 	if err != nil {
 		return nil, err
 	}
@@ -105,10 +105,10 @@ ORDER BY permission_name
 `
 
 type ListPermissionOverridesForUserRow struct {
-	PermissionName string             `db:"permission_name" json:"permission_name"`
-	IsGranted      bool               `db:"is_granted" json:"is_granted"`
-	GrantedBy      *uuid.UUID         `db:"granted_by" json:"granted_by"`
-	GrantedAt      pgtype.Timestamptz `db:"granted_at" json:"granted_at"`
+	PermissionName string     `db:"permission_name" json:"permission_name"`
+	IsGranted      bool       `db:"is_granted" json:"is_granted"`
+	GrantedBy      *uuid.UUID `db:"granted_by" json:"granted_by"`
+	GrantedAt      time.Time  `db:"granted_at" json:"granted_at"`
 }
 
 func (q *Queries) ListPermissionOverridesForUser(ctx context.Context, userID uuid.UUID) ([]ListPermissionOverridesForUserRow, error) {

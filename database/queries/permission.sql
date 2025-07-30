@@ -12,10 +12,10 @@ WHERE role_slug = $1 AND permission_name = $2;
 
 -- name: GetEffectivePermissionsForUser :many
 WITH RECURSIVE role_tree AS (
-    -- start from user’s role
+    -- start from the user’s role
     SELECT r.slug, r.level_rank
     FROM role r
-    WHERE r.slug = (SELECT role_slug FROM "user" u WHERE u.role_slug = $1)
+    WHERE r.slug = (SELECT role_slug FROM "user" WHERE id = $1)
     UNION
     SELECT r.slug, r.level_rank
     FROM role r

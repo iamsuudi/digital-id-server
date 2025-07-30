@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type DocumentStatus string
@@ -332,13 +331,13 @@ type Address struct {
 }
 
 type AuditLog struct {
-	ID         uuid.UUID          `db:"id" json:"id"`
-	ActorID    *uuid.UUID         `db:"actor_id" json:"actor_id"`
-	ActionType string             `db:"action_type" json:"action_type"`
-	ObjectType string             `db:"object_type" json:"object_type"`
-	ObjectID   pgtype.Int8        `db:"object_id" json:"object_id"`
-	DiffJson   []byte             `db:"diff_json" json:"diff_json"`
-	Ts         pgtype.Timestamptz `db:"ts" json:"ts"`
+	ID         uuid.UUID  `db:"id" json:"id"`
+	ActorID    *uuid.UUID `db:"actor_id" json:"actor_id"`
+	ActionType string     `db:"action_type" json:"action_type"`
+	ObjectType string     `db:"object_type" json:"object_type"`
+	ObjectID   *int64     `db:"object_id" json:"object_id"`
+	DiffJson   []byte     `db:"diff_json" json:"diff_json"`
+	Ts         time.Time  `db:"ts" json:"ts"`
 }
 
 type Biometric struct {
@@ -411,15 +410,15 @@ type Kebele struct {
 }
 
 type Payment struct {
-	ID          uuid.UUID      `db:"id" json:"id"`
-	ResidentID  uuid.UUID      `db:"resident_id" json:"resident_id"`
-	Amount      pgtype.Numeric `db:"amount" json:"amount"`
-	Description string         `db:"description" json:"description"`
-	Status      string         `db:"status" json:"status"`
-	Reference   string         `db:"reference" json:"reference"`
-	Method      string         `db:"method" json:"method"`
-	CreatedAt   time.Time      `db:"created_at" json:"created_at"`
-	DeletedAt   *time.Time     `db:"deleted_at" json:"deleted_at"`
+	ID          uuid.UUID  `db:"id" json:"id"`
+	ResidentID  uuid.UUID  `db:"resident_id" json:"resident_id"`
+	Amount      float64    `db:"amount" json:"amount"`
+	Description string     `db:"description" json:"description"`
+	Status      string     `db:"status" json:"status"`
+	Reference   string     `db:"reference" json:"reference"`
+	Method      string     `db:"method" json:"method"`
+	CreatedAt   time.Time  `db:"created_at" json:"created_at"`
+	DeletedAt   *time.Time `db:"deleted_at" json:"deleted_at"`
 }
 
 type Permission struct {
@@ -493,9 +492,9 @@ type User struct {
 }
 
 type UserPermissionOverride struct {
-	UserID         uuid.UUID          `db:"user_id" json:"user_id"`
-	PermissionName string             `db:"permission_name" json:"permission_name"`
-	IsGranted      bool               `db:"is_granted" json:"is_granted"`
-	GrantedBy      *uuid.UUID         `db:"granted_by" json:"granted_by"`
-	GrantedAt      pgtype.Timestamptz `db:"granted_at" json:"granted_at"`
+	UserID         uuid.UUID  `db:"user_id" json:"user_id"`
+	PermissionName string     `db:"permission_name" json:"permission_name"`
+	IsGranted      bool       `db:"is_granted" json:"is_granted"`
+	GrantedBy      *uuid.UUID `db:"granted_by" json:"granted_by"`
+	GrantedAt      time.Time  `db:"granted_at" json:"granted_at"`
 }

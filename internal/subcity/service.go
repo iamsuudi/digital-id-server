@@ -2,6 +2,7 @@ package subcity
 
 import (
 	"context"
+	"fmt"
 
 	"digital-id-server/internal/repository"
 	"digital-id-server/shared/types"
@@ -44,14 +45,26 @@ func (s *Service) UpdateSubCity(ctx context.Context, id uuid.UUID, input types.S
 		return err
 	}
 
+	err = qtx.RevokeUserPlacement(ctx, repository.RevokeUserPlacementParams{
+		CityID:    &input.CityID,
+		SubcityID: &id,
+		KebeleID:  nil,
+		RoleSlug: "manager",
+	})
+	if err != nil {
+		fmt.Println("failed to revoke", err)
+		return err
+	}
+
 	if input.ManagerID != nil {
-		err := qtx.UpdateUserPlacement(ctx, repository.UpdateUserPlacementParams{
+		err := qtx.GrantUserPlacement(ctx, repository.GrantUserPlacementParams{
 			ID:        *input.ManagerID,
 			CityID:    &input.CityID,
 			SubcityID: &id,
 			KebeleID:  nil,
 		})
 		if err != nil {
+			fmt.Println("failed to grant", err)
 			return err
 		}
 	}

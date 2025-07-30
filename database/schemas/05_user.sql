@@ -22,12 +22,6 @@ CREATE TABLE "user" (
 
     created_at    TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at    TIMESTAMP(3)
-    
-    -- CHECK (
-    --     (city_id IS NOT NULL)::int +
-    --     (subcity_id IS NOT NULL)::int +
-    --     (kebele_id IS NOT NULL)::int = 1
-    -- )
 );
 
 -- 4. permissions -------------------------------------------------
@@ -73,9 +67,9 @@ ON CONFLICT DO NOTHING;
 CREATE TABLE user_permission_override (
     user_id         UUID        REFERENCES "user"(id)    ON DELETE CASCADE,
     permission_name TEXT        REFERENCES permission(name) ON DELETE CASCADE,
-    is_granted      boolean NOT NULL,      -- true = force-grant, false = force-revoke
+    is_granted      BOOLEAN     NOT NULL,      -- true = force-grant, false = force-revoke
     granted_by      UUID        REFERENCES "user"(id) ON DELETE SET NULL,
-    granted_at      timestamptz NOT NULL DEFAULT now(),
+    granted_at      TIMESTAMP(3) NOT NULL DEFAULT now(),
     PRIMARY KEY (user_id, permission_name)
 );
 
@@ -85,9 +79,9 @@ CREATE TABLE audit_log (
     actor_id    UUID REFERENCES "user"(id) ON DELETE SET NULL,
     action_type TEXT NOT NULL,
     object_type TEXT NOT NULL,
-    object_id   bigint,
-    diff_json   jsonb,
-    ts          timestamptz NOT NULL DEFAULT now()
+    object_id   BIGINT,
+    diff_json   JSONB,
+    ts          TIMESTAMP(3) NOT NULL DEFAULT now()
 );
 
 -- 9. useful indexes ---------------------------------------------

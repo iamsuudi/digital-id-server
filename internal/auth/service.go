@@ -26,11 +26,11 @@ func NewService(dbConn *pgxpool.Pool, dbQueries repository.Querier) *Service {
 func (s *Service) Authenticate(ctx context.Context, email, password string) (*repository.GetUserByEmailRow, error) {
 	user, err := s.q.GetUserByEmail(ctx, email)
 	if err != nil {
-		return nil, errors.New("invalid email or password")
+		return nil, errors.New("invalid email")
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
-		return nil, errors.New("invalid email or password")
+		return nil, errors.New("invalid password")
 	}
 
 	return &user, nil
@@ -110,10 +110,10 @@ func (s *Service) DeleteRefreshToken(ctx context.Context, token string) error {
 	return s.q.DeleteRefreshToken(ctx, token)
 }
 
-func (s *Service) GetUserByID(ctx context.Context, userID uuid.UUID) (*repository.GetUserByIDRow, error) {
+func (s *Service) GetUserByID(ctx context.Context, userID uuid.UUID) (repository.GetUserByIDRow, error) {
 	user, err := s.q.GetUserByID(ctx, userID)
 	if err != nil {
-		return nil, err
+		return repository.GetUserByIDRow{}, err
 	}
-	return &user, nil
+	return user, nil
 }

@@ -29,7 +29,7 @@ const countSearchKebeles = `-- name: CountSearchKebeles :one
 SELECT COUNT(*)
 FROM kebele
 WHERE deleted_at IS NULL AND
-    similarity(CONCAT_WS(' ', name), $1) > 0.2
+    similarity(name, $1) > 0.2
 `
 
 func (q *Queries) CountSearchKebeles(ctx context.Context, query string) (int64, error) {
@@ -66,12 +66,12 @@ func (q *Queries) CreateKebele(ctx context.Context, arg CreateKebeleParams) (Keb
 }
 
 const getKebele = `-- name: GetKebele :one
-SELECT k.id, k.name, k.subcity_id, k.city_id, k.created_at, k.deleted_at, c.name as city_name, sc.name as subcity_name, u.id as executive_id, 
+SELECT k.id, k.name, k.subcity_id, k.city_id, k.created_at, k.deleted_at, c.name as city_name, sc.name as subcity_name, u.id as executive_id,
     CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS executive_name
 FROM kebele k
 LEFT JOIN city c ON c.id = k.city_id
 LEFT JOIN subcity sc ON sc.id = k.subcity_id
-LEFT JOIN "user" u ON u.kebele_id = k.id
+LEFT JOIN "user" u ON u.kebele_id = k.id AND u.role_slug = 'executive'
 WHERE k.id = $1 AND k.deleted_at IS NULL
 `
 
@@ -112,7 +112,7 @@ SELECT k.id, k.name, k.subcity_id, k.city_id, k.created_at, k.deleted_at, c.name
 FROM kebele k
 LEFT JOIN city c ON c.id = k.city_id
 LEFT JOIN subcity sc ON sc.id = k.subcity_id
-LEFT JOIN "user" u ON u.kebele_id = k.id
+LEFT JOIN "user" u ON u.kebele_id = k.id AND u.role_slug = 'executive'
 WHERE k.deleted_at IS NULL
 ORDER BY k.created_at DESC
 LIMIT $1 OFFSET $2
@@ -170,13 +170,13 @@ func (q *Queries) ListKebeles(ctx context.Context, arg ListKebelesParams) ([]Lis
 const searchKebeles = `-- name: SearchKebeles :many
 SELECT k.id, k.name, k.subcity_id, k.city_id, k.created_at, k.deleted_at, c.name as city_name, sc.name as subcity_name, u.id as executive_id,
     CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS executive_name,
-    similarity(CONCAT_WS(' ', c.name), $1) AS sim
+    similarity(CONCAT_WS(' ', k.name, sc.name, c.name), $1) AS sim
 FROM kebele k
 LEFT JOIN city c ON c.id = k.city_id
 LEFT JOIN subcity sc ON sc.id = k.subcity_id
 LEFT JOIN "user" u ON u.kebele_id = k.id
 WHERE k.deleted_at IS NULL AND
-    similarity(CONCAT_WS(' ', k.name), $1) > 0.2
+    similarity(CONCAT_WS(' ', k.name, sc.name, c.name), $1) > 0.2
 ORDER BY sim DESC, k.created_at DESC
 LIMIT $3 OFFSET $2
 `
