@@ -59,3 +59,37 @@ SELECT permission_name, is_granted, granted_by, granted_at
 FROM user_permission_override
 WHERE user_id = $1
 ORDER BY permission_name;
+
+-- name: GetUniversalPermissionMatrixForUser :many
+SELECT
+    p.name,
+    p.label,
+    p.description,
+
+    -- 1. does the TARGET ROLE itself have the permission?
+    EXISTS (
+        SELECT 1
+        FROM role_permission trp
+        WHERE trp.role_slug = sqlc.arg('target_role_slug')
+          AND trp.permission_name = p.name
+    ) AS effective,
+
+    -- 2. user-level override for this permission
+    COALESCE(
+        (SELECT o.is_granted
+         FROM user_permission_override o
+         WHERE o.user_id = sqlc.arg('target_user_id')
+           AND o.permission_name = p.name),
+        NULL
+    ) AS overridden,
+
+    -- 3. does the ACTOR ROLE itself have the permission?
+    EXISTS (
+        SELECT 1
+        FROM role_permission arp
+        WHERE arp.role_slug = sqlc.arg('actor_role_slug')
+          AND arp.permission_name = p.name
+    ) AS grantable
+
+FROM permission p
+ORDER BY p.name;

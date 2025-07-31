@@ -81,20 +81,6 @@ func (q *Queries) GetAssignableRolesForActor(ctx context.Context, slug string) (
 	return items, nil
 }
 
-const getCurrentUserMaxRoleLevel = `-- name: GetCurrentUserMaxRoleLevel :one
-SELECT r.level_rank
-FROM "user" u
-JOIN role r ON r.slug = u.role_slug
-WHERE u.id = $1
-`
-
-func (q *Queries) GetCurrentUserMaxRoleLevel(ctx context.Context, id uuid.UUID) (int32, error) {
-	row := q.db.QueryRow(ctx, getCurrentUserMaxRoleLevel, id)
-	var level_rank int32
-	err := row.Scan(&level_rank)
-	return level_rank, err
-}
-
 const listPermissionMatrixInScope = `-- name: ListPermissionMatrixInScope :many
 WITH scope_users AS (
     SELECT u.id, u.email, r.slug AS role_slug, r.name AS role_name

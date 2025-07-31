@@ -81,6 +81,83 @@ func (q *Queries) GetEffectivePermissionsForUser(ctx context.Context, id uuid.UU
 	return items, nil
 }
 
+const getUniversalPermissionMatrixForUser = `-- name: GetUniversalPermissionMatrixForUser :many
+SELECT
+    p.name,
+    p.label,
+    p.description,
+
+    -- 1. does the TARGET ROLE itself have the permission?
+    EXISTS (
+        SELECT 1
+        FROM role_permission trp
+        WHERE trp.role_slug = $1
+          AND trp.permission_name = p.name
+    ) AS effective,
+
+    -- 2. user-level override for this permission
+    COALESCE(
+        (SELECT o.is_granted
+         FROM user_permission_override o
+         WHERE o.user_id = $2
+           AND o.permission_name = p.name),
+        NULL
+    ) AS overridden,
+
+    -- 3. does the ACTOR ROLE itself have the permission?
+    EXISTS (
+        SELECT 1
+        FROM role_permission arp
+        WHERE arp.role_slug = $3
+          AND arp.permission_name = p.name
+    ) AS grantable
+
+FROM permission p
+ORDER BY p.name
+`
+
+type GetUniversalPermissionMatrixForUserParams struct {
+	TargetRoleSlug string    `db:"target_role_slug" json:"target_role_slug"`
+	TargetUserID   uuid.UUID `db:"target_user_id" json:"target_user_id"`
+	ActorRoleSlug  string    `db:"actor_role_slug" json:"actor_role_slug"`
+}
+
+type GetUniversalPermissionMatrixForUserRow struct {
+	Name        string      `db:"name" json:"name"`
+	Label       string      `db:"label" json:"label"`
+	Description *string     `db:"description" json:"description"`
+	Effective   bool        `db:"effective" json:"effective"`
+	Overridden  interface{} `db:"overridden" json:"overridden"`
+	Grantable   bool        `db:"grantable" json:"grantable"`
+}
+
+func (q *Queries) GetUniversalPermissionMatrixForUser(ctx context.Context, arg GetUniversalPermissionMatrixForUserParams) ([]GetUniversalPermissionMatrixForUserRow, error) {
+	rows, err := q.db.Query(ctx, getUniversalPermissionMatrixForUser, arg.TargetRoleSlug, arg.TargetUserID, arg.ActorRoleSlug)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetUniversalPermissionMatrixForUserRow{}
+	for rows.Next() {
+		var i GetUniversalPermissionMatrixForUserRow
+		if err := rows.Scan(
+			&i.Name,
+			&i.Label,
+			&i.Description,
+			&i.Effective,
+			&i.Overridden,
+			&i.Grantable,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const grantPermissionToRole = `-- name: GrantPermissionToRole :exec
 INSERT INTO role_permission (role_slug, permission_name)
 VALUES ($1, $2)

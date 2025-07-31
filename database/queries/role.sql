@@ -9,12 +9,6 @@ WHERE level_rank > (
 )
 ORDER BY level_rank;
 
--- name: GetCurrentUserMaxRoleLevel :one
-SELECT r.level_rank
-FROM "user" u
-JOIN role r ON r.slug = u.role_slug
-WHERE u.id = $1;
-
 -- name: GetAssignablePermissionsForActor :many
 SELECT p.name, p.label, p.description
 FROM permission p

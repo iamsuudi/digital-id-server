@@ -35,10 +35,10 @@ func main() {
 	cache := cache.New(aService, uService)
 
 	auth.RegisterRoutes(r.Group("/api/v1/auth"), db, q)
-	city.RegisterRoutes(r.Group("/api/v1"), db, q)
+	city.RegisterRoutes(r.Group("/api/v1/"), db, q)
 	user.RegisterRoutes(r.Group("/api/v1"), db, q, cache)
 	role.RegisterRoutes(r.Group("/api/v1"), db, q)
-	permission.RegisterRoutes(r.Group("/api/v1"), db, q)
+	permission.RegisterRoutes(r.Group("/api/v1"), db, q, cache)
 	subcity.RegisterRoutes(r.Group("/api/v1"), db, q)
 	kebele.RegisterRoutes(r.Group("/api/v1"), db, q)
 

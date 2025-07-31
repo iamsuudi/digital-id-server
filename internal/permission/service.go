@@ -21,6 +21,30 @@ func (s *Service) GetAllPermissions(ctx context.Context) ([]repository.Permissio
 	return s.q.ListPermissions(ctx)
 }
 
-func (s *Service) GetAssignablePermissions(ctx context.Context, userID uuid.UUID) ([]repository.Permission, error) {
-	return s.q.GetAssignablePermissionsForActor(ctx, userID)
+func (s *Service) GetAssignablePermissionsForActor(ctx context.Context, id uuid.UUID) ([]repository.Permission, error) {
+	return s.q.GetAssignablePermissionsForActor(ctx, id)
+}
+
+func (s *Service) GetUniversalPermissionsForUser(ctx context.Context, actor, target string, id uuid.UUID) ([]repository.GetUniversalPermissionMatrixForUserRow, error) {
+	return s.q.GetUniversalPermissionMatrixForUser(ctx, repository.GetUniversalPermissionMatrixForUserParams{
+		ActorRoleSlug: actor,
+		TargetRoleSlug: target,
+		TargetUserID: id,
+	})
+}
+
+func (s *Service) OverrideUserPermission(ctx context.Context, actor, target uuid.UUID, permission string, granted bool) error {
+	return s.q.SetUserPermissionOverride(ctx, repository.SetUserPermissionOverrideParams{
+		UserID: target,
+		GrantedBy: &actor,
+		IsGranted: granted,
+		PermissionName: permission,
+	})
+}
+
+func (s *Service) RemoveUserPermissionOverride(ctx context.Context, target uuid.UUID, permission string) error {
+	return s.q.RemoveUserPermissionOverride(ctx, repository.RemoveUserPermissionOverrideParams{
+		UserID: target,
+		PermissionName: permission,
+	})
 }
