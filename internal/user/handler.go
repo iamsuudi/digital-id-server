@@ -123,7 +123,7 @@ func (h *Handler) GetUsersByRole(c *gin.Context) {
 
 func (h *Handler) UpdateUserRole(c *gin.Context) {
 	raw := c.Param("id")
-	id, err := uuid.Parse(raw)
+	targetId, err := uuid.Parse(raw)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
 		return
@@ -137,8 +137,15 @@ func (h *Handler) UpdateUserRole(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
+	
+	str, _ := c.Get("user_id")
+	actorId, _ := str.(uuid.UUID)
+	if (targetId == actorId) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You can't update your own role"})
+		return
+	}
 
-	err = h.service.UpdateUserRole(c, id, input.Role)
+	err = h.service.UpdateUserRole(c, targetId, input.Role)
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user role"})
