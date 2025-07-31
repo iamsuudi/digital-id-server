@@ -27,22 +27,29 @@ func (q *Queries) CountListUsersByRole(ctx context.Context, roleSlug string) (in
 
 const countListUsersUnderScope = `-- name: CountListUsersUnderScope :one
 SELECT COUNT(*)
-FROM "user"
+FROM "user" u
+JOIN role r ON  r.slug = u.role_slug
 WHERE deleted_at IS NULL AND
-    -- sqlc.arg('level_rank') < r.level_rank AND
-    ($1::uuid IS NULL OR city_id = $1::uuid) AND
-    ($2::uuid IS NULL OR subcity_id = $2::uuid) AND
-    ($3::uuid IS NULL OR kebele_id = $3::uuid)
+    $1 < r.level_rank AND
+    ($2::uuid IS NULL OR u.city_id = $2::uuid) AND
+    ($3::uuid IS NULL OR u.subcity_id = $3::uuid) AND
+    ($4::uuid IS NULL OR u.kebele_id = $4::uuid)
 `
 
 type CountListUsersUnderScopeParams struct {
+	Rank      int32      `db:"rank" json:"rank"`
 	CityID    *uuid.UUID `db:"city_id" json:"city_id"`
 	SubcityID *uuid.UUID `db:"subcity_id" json:"subcity_id"`
 	KebeleID  *uuid.UUID `db:"kebele_id" json:"kebele_id"`
 }
 
 func (q *Queries) CountListUsersUnderScope(ctx context.Context, arg CountListUsersUnderScopeParams) (int64, error) {
-	row := q.db.QueryRow(ctx, countListUsersUnderScope, arg.CityID, arg.SubcityID, arg.KebeleID)
+	row := q.db.QueryRow(ctx, countListUsersUnderScope,
+		arg.Rank,
+		arg.CityID,
+		arg.SubcityID,
+		arg.KebeleID,
+	)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -69,15 +76,18 @@ func (q *Queries) CountSearchUsersByRole(ctx context.Context, arg CountSearchUse
 
 const countSearchUsersUnderScope = `-- name: CountSearchUsersUnderScope :one
 SELECT COUNT(*)
-FROM "user"
+FROM "user" u
+JOIN role r ON r.slug = u.role_slug
 WHERE deleted_at IS NULL AND
-    similarity(CONCAT_WS(' ', first_name, second_name, last_name), $1) > 0.2 AND
-    ($2::uuid IS NULL OR city_id = $2::uuid) AND
-    ($3::uuid IS NULL OR subcity_id = $3::uuid) AND
-    ($4::uuid IS NULL OR kebele_id = $4::uuid)
+    $1 < r.level_rank AND
+    similarity(CONCAT_WS(' ', u.first_name, u.second_name, u.last_name), $2) > 0.2 AND
+    ($3::uuid IS NULL OR u.city_id = $3::uuid) AND
+    ($4::uuid IS NULL OR u.subcity_id = $4::uuid) AND
+    ($5::uuid IS NULL OR u.kebele_id = $5::uuid)
 `
 
 type CountSearchUsersUnderScopeParams struct {
+	Rank      int32      `db:"rank" json:"rank"`
 	Query     string     `db:"query" json:"query"`
 	CityID    *uuid.UUID `db:"city_id" json:"city_id"`
 	SubcityID *uuid.UUID `db:"subcity_id" json:"subcity_id"`
@@ -86,6 +96,7 @@ type CountSearchUsersUnderScopeParams struct {
 
 func (q *Queries) CountSearchUsersUnderScope(ctx context.Context, arg CountSearchUsersUnderScopeParams) (int64, error) {
 	row := q.db.QueryRow(ctx, countSearchUsersUnderScope,
+		arg.Rank,
 		arg.Query,
 		arg.CityID,
 		arg.SubcityID,
@@ -394,20 +405,21 @@ SELECT u.id, u.first_name, u.second_name, u.last_name, u.email, u.phone, u.passw
     c.name AS city_name, sc.name AS subcity_name, k.name AS kebele_name,
     r.name AS role_name, r.level_rank AS role_level_rank
 FROM "user" u
+JOIN role r ON r.slug = u.role_slug
 LEFT JOIN city c ON c.id = u.city_id
 LEFT JOIN subcity sc ON sc.id = u.subcity_id
 LEFT JOIN kebele k ON k.id = u.kebele_id
-LEFT JOIN role r ON r.slug = u.role_slug
 WHERE u.deleted_at IS NULL AND
-    -- sqlc.arg('my_id') <> u.id AND
-    ($1::uuid IS NULL OR u.city_id = $1::uuid) AND
-    ($2::uuid IS NULL OR u.subcity_id = $2::uuid) AND
-    ($3::uuid IS NULL OR u.kebele_id = $3::uuid)
+    $1 < r.level_rank AND
+    ($2::uuid IS NULL OR u.city_id = $2::uuid) AND
+    ($3::uuid IS NULL OR u.subcity_id = $3::uuid) AND
+    ($4::uuid IS NULL OR u.kebele_id = $4::uuid)
 ORDER BY u.created_at ASC
-LIMIT $5 OFFSET $4
+LIMIT $6 OFFSET $5
 `
 
 type ListUsersUnderScopeParams struct {
+	Rank      int32      `db:"rank" json:"rank"`
 	CityID    *uuid.UUID `db:"city_id" json:"city_id"`
 	SubcityID *uuid.UUID `db:"subcity_id" json:"subcity_id"`
 	KebeleID  *uuid.UUID `db:"kebele_id" json:"kebele_id"`
@@ -429,17 +441,18 @@ type ListUsersUnderScopeRow struct {
 	RoleSlug      string     `db:"role_slug" json:"role_slug"`
 	CreatedAt     time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt     *time.Time `db:"deleted_at" json:"deleted_at"`
-	RoleName      *string    `db:"role_name" json:"role_name"`
+	RoleName      string     `db:"role_name" json:"role_name"`
 	FullName      string     `db:"full_name" json:"full_name"`
 	CityName      *string    `db:"city_name" json:"city_name"`
 	SubcityName   *string    `db:"subcity_name" json:"subcity_name"`
 	KebeleName    *string    `db:"kebele_name" json:"kebele_name"`
-	RoleName_2    *string    `db:"role_name_2" json:"role_name_2"`
-	RoleLevelRank *int32     `db:"role_level_rank" json:"role_level_rank"`
+	RoleName_2    string     `db:"role_name_2" json:"role_name_2"`
+	RoleLevelRank int32      `db:"role_level_rank" json:"role_level_rank"`
 }
 
 func (q *Queries) ListUsersUnderScope(ctx context.Context, arg ListUsersUnderScopeParams) ([]ListUsersUnderScopeRow, error) {
 	rows, err := q.db.Query(ctx, listUsersUnderScope,
+		arg.Rank,
 		arg.CityID,
 		arg.SubcityID,
 		arg.KebeleID,
@@ -590,26 +603,28 @@ func (q *Queries) SearchUsersByRole(ctx context.Context, arg SearchUsersByRolePa
 }
 
 const searchUsersUnderScope = `-- name: SearchUsersUnderScope :many
-SELECT u.id, first_name, second_name, last_name, email, phone, password_hash, u.city_id, u.subcity_id, kebele_id, role_slug, u.created_at, u.deleted_at, c.id, c.name, c.created_at, c.deleted_at, sc.id, sc.name, sc.city_id, sc.created_at, sc.deleted_at, k.id, k.name, k.subcity_id, k.city_id, k.created_at, k.deleted_at, slug, r.name, parent_role_slug, level_rank, r.name, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS full_name,
+SELECT u.id, first_name, second_name, last_name, email, phone, password_hash, u.city_id, u.subcity_id, kebele_id, role_slug, u.created_at, u.deleted_at, slug, r.name, parent_role_slug, level_rank, c.id, c.name, c.created_at, c.deleted_at, sc.id, sc.name, sc.city_id, sc.created_at, sc.deleted_at, k.id, k.name, k.subcity_id, k.city_id, k.created_at, k.deleted_at, r.name, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS full_name,
     c.name AS city_name, sc.name AS subcity_name, k.name AS kebele_name,
     r.name AS role_name, r.level_rank AS role_level_rank,
     similarity(CONCAT_WS(' ', u.first_name, u.second_name, u.last_name), $1) AS sim
 FROM "user" u
+JOIN role r ON r.slug = u.role_slug
 LEFT JOIN city c ON c.id = u.city_id
 LEFT JOIN subcity sc ON sc.id = u.subcity_id
 LEFT JOIN kebele k ON k.id = u.kebele_id
-LEFT JOIN role r ON r.slug = u.role_slug
 WHERE u.deleted_at IS NULL AND
+    $2 < r.level_rank AND
     similarity(CONCAT_WS(' ', u.first_name, u.second_name, u.last_name), $1) > 0.2 AND
-    ($2::uuid IS NULL OR u.city_id = $2::uuid) AND
-    ($3::uuid IS NULL OR u.subcity_id = $3::uuid) AND
-    ($4::uuid IS NULL OR u.kebele_id = $4::uuid)
+    ($3::uuid IS NULL OR u.city_id = $3::uuid) AND
+    ($4::uuid IS NULL OR u.subcity_id = $4::uuid) AND
+    ($5::uuid IS NULL OR u.kebele_id = $5::uuid)
 ORDER BY sim DESC, u.created_at ASC
-LIMIT $6 OFFSET $5
+LIMIT $7 OFFSET $6
 `
 
 type SearchUsersUnderScopeParams struct {
 	Query     string     `db:"query" json:"query"`
+	Rank      int32      `db:"rank" json:"rank"`
 	CityID    *uuid.UUID `db:"city_id" json:"city_id"`
 	SubcityID *uuid.UUID `db:"subcity_id" json:"subcity_id"`
 	KebeleID  *uuid.UUID `db:"kebele_id" json:"kebele_id"`
@@ -631,38 +646,39 @@ type SearchUsersUnderScopeRow struct {
 	RoleSlug       string     `db:"role_slug" json:"role_slug"`
 	CreatedAt      time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt      *time.Time `db:"deleted_at" json:"deleted_at"`
+	Slug           string     `db:"slug" json:"slug"`
+	Name           string     `db:"name" json:"name"`
+	ParentRoleSlug *string    `db:"parent_role_slug" json:"parent_role_slug"`
+	LevelRank      int32      `db:"level_rank" json:"level_rank"`
 	ID_2           *uuid.UUID `db:"id_2" json:"id_2"`
-	Name           *string    `db:"name" json:"name"`
+	Name_2         *string    `db:"name_2" json:"name_2"`
 	CreatedAt_2    *time.Time `db:"created_at_2" json:"created_at_2"`
 	DeletedAt_2    *time.Time `db:"deleted_at_2" json:"deleted_at_2"`
 	ID_3           *uuid.UUID `db:"id_3" json:"id_3"`
-	Name_2         *string    `db:"name_2" json:"name_2"`
+	Name_3         *string    `db:"name_3" json:"name_3"`
 	CityID_2       *uuid.UUID `db:"city_id_2" json:"city_id_2"`
 	CreatedAt_3    *time.Time `db:"created_at_3" json:"created_at_3"`
 	DeletedAt_3    *time.Time `db:"deleted_at_3" json:"deleted_at_3"`
 	ID_4           *uuid.UUID `db:"id_4" json:"id_4"`
-	Name_3         *string    `db:"name_3" json:"name_3"`
+	Name_4         *string    `db:"name_4" json:"name_4"`
 	SubcityID_2    *uuid.UUID `db:"subcity_id_2" json:"subcity_id_2"`
 	CityID_3       *uuid.UUID `db:"city_id_3" json:"city_id_3"`
 	CreatedAt_4    *time.Time `db:"created_at_4" json:"created_at_4"`
 	DeletedAt_4    *time.Time `db:"deleted_at_4" json:"deleted_at_4"`
-	Slug           *string    `db:"slug" json:"slug"`
-	Name_4         *string    `db:"name_4" json:"name_4"`
-	ParentRoleSlug *string    `db:"parent_role_slug" json:"parent_role_slug"`
-	LevelRank      *int32     `db:"level_rank" json:"level_rank"`
-	Name_5         *string    `db:"name_5" json:"name_5"`
+	Name_5         string     `db:"name_5" json:"name_5"`
 	FullName       string     `db:"full_name" json:"full_name"`
 	CityName       *string    `db:"city_name" json:"city_name"`
 	SubcityName    *string    `db:"subcity_name" json:"subcity_name"`
 	KebeleName     *string    `db:"kebele_name" json:"kebele_name"`
-	RoleName       *string    `db:"role_name" json:"role_name"`
-	RoleLevelRank  *int32     `db:"role_level_rank" json:"role_level_rank"`
+	RoleName       string     `db:"role_name" json:"role_name"`
+	RoleLevelRank  int32      `db:"role_level_rank" json:"role_level_rank"`
 	Sim            float32    `db:"sim" json:"sim"`
 }
 
 func (q *Queries) SearchUsersUnderScope(ctx context.Context, arg SearchUsersUnderScopeParams) ([]SearchUsersUnderScopeRow, error) {
 	rows, err := q.db.Query(ctx, searchUsersUnderScope,
 		arg.Query,
+		arg.Rank,
 		arg.CityID,
 		arg.SubcityID,
 		arg.KebeleID,
@@ -690,25 +706,25 @@ func (q *Queries) SearchUsersUnderScope(ctx context.Context, arg SearchUsersUnde
 			&i.RoleSlug,
 			&i.CreatedAt,
 			&i.DeletedAt,
-			&i.ID_2,
+			&i.Slug,
 			&i.Name,
+			&i.ParentRoleSlug,
+			&i.LevelRank,
+			&i.ID_2,
+			&i.Name_2,
 			&i.CreatedAt_2,
 			&i.DeletedAt_2,
 			&i.ID_3,
-			&i.Name_2,
+			&i.Name_3,
 			&i.CityID_2,
 			&i.CreatedAt_3,
 			&i.DeletedAt_3,
 			&i.ID_4,
-			&i.Name_3,
+			&i.Name_4,
 			&i.SubcityID_2,
 			&i.CityID_3,
 			&i.CreatedAt_4,
 			&i.DeletedAt_4,
-			&i.Slug,
-			&i.Name_4,
-			&i.ParentRoleSlug,
-			&i.LevelRank,
 			&i.Name_5,
 			&i.FullName,
 			&i.CityName,

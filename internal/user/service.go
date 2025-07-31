@@ -26,16 +26,24 @@ func (s *Service) GetUserByEmail(ctx context.Context, email string) (repository.
 	return s.q.GetUserByEmail(ctx, email)
 }
 
-func (s *Service) ListUsersUnderScope(ctx context.Context, limit, offset int, query string, rank *int32, c_id, sc_id, k_id *uuid.UUID) (int64, []repository.ListUsersUnderScopeRow, error) {
+func (s *Service) ListUsersUnderScope(ctx context.Context, limit, offset int, query string, myRank *int32, city, subcity, kebele *uuid.UUID) (int64, []repository.ListUsersUnderScopeRow, error) {
 	count, err := s.q.CountListUsersUnderScope(ctx, repository.CountListUsersUnderScopeParams{
-		CityID:    c_id,
-		SubcityID: sc_id,
-		KebeleID:  k_id,
+		Rank:      *myRank,
+		CityID:    city,
+		SubcityID: subcity,
+		KebeleID:  kebele,
 	})
+	if err != nil {
+		return 0, nil, err
+	}
+	if count == 0 {
+		return 0, nil, nil
+	}
 	users, err := s.q.ListUsersUnderScope(ctx, repository.ListUsersUnderScopeParams{
-		CityID:    c_id,
-		SubcityID: sc_id,
-		KebeleID:  k_id,
+		Rank:      *myRank,
+		CityID:    city,
+		SubcityID: subcity,
+		KebeleID:  kebele,
 		Limit:     int32(limit),
 		Offset:    int32(offset),
 	})
@@ -61,12 +69,13 @@ func (s *Service) ListUsersByRole(ctx context.Context, limit, offset int, query,
 	return count, users, nil
 }
 
-func (s *Service) SearchUsersUnderScope(ctx context.Context, limit, offset int, query string, rank *int32, c_id, sc_id, k_id *uuid.UUID) (int64, []repository.SearchUsersUnderScopeRow, error) {
+func (s *Service) SearchUsersUnderScope(ctx context.Context, limit, offset int, query string, myRank *int32, city, subcity, kebele *uuid.UUID) (int64, []repository.SearchUsersUnderScopeRow, error) {
 	count, err := s.q.CountSearchUsersUnderScope(ctx, repository.CountSearchUsersUnderScopeParams{
-		Query: query,
-		CityID:    c_id,
-		SubcityID: sc_id,
-		KebeleID:  k_id,
+		Rank:      *myRank,
+		Query:     query,
+		CityID:    city,
+		SubcityID: subcity,
+		KebeleID:  kebele,
 	})
 	if err != nil {
 		return 0, nil, err
@@ -76,12 +85,13 @@ func (s *Service) SearchUsersUnderScope(ctx context.Context, limit, offset int, 
 	}
 
 	users, err := s.q.SearchUsersUnderScope(ctx, repository.SearchUsersUnderScopeParams{
-		Limit:  int32(limit),
-		Offset: int32(offset),
-		Query:  query,
-		CityID:    c_id,
-		SubcityID: sc_id,
-		KebeleID:  k_id,
+		Rank:      *myRank,
+		Limit:     int32(limit),
+		Offset:    int32(offset),
+		Query:     query,
+		CityID:    city,
+		SubcityID: subcity,
+		KebeleID:  kebele,
 	})
 	if err != nil {
 		return count, nil, err
@@ -118,18 +128,18 @@ func (s *Service) GetEffectivePermissions(ctx context.Context, id uuid.UUID) ([]
 
 func (s *Service) UpdateUserRole(ctx context.Context, id uuid.UUID, role string) error {
 	return s.q.UpdateUserRole(ctx, repository.UpdateUserRoleParams{
-		ID: id,
+		ID:       id,
 		RoleSlug: role,
 	})
 }
 
 func (s *Service) UpdateUserInfo(ctx context.Context, id uuid.UUID, first, second, last, email, phone string) error {
 	return s.q.UpdateUserInfo(ctx, repository.UpdateUserInfoParams{
-		ID: id,
-		FirstName: first,
+		ID:         id,
+		FirstName:  first,
 		SecondName: second,
-		LastName: last,
-		Email: email,
-		Phone: phone,
+		LastName:   last,
+		Email:      email,
+		Phone:      phone,
 	})
 }

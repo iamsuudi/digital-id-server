@@ -65,12 +65,12 @@ SELECT u.*, r.name AS role_name, CONCAT_WS(' ', u.first_name, u.second_name, u.l
     c.name AS city_name, sc.name AS subcity_name, k.name AS kebele_name,
     r.name AS role_name, r.level_rank AS role_level_rank
 FROM "user" u
+JOIN role r ON r.slug = u.role_slug
 LEFT JOIN city c ON c.id = u.city_id
 LEFT JOIN subcity sc ON sc.id = u.subcity_id
 LEFT JOIN kebele k ON k.id = u.kebele_id
-LEFT JOIN role r ON r.slug = u.role_slug
 WHERE u.deleted_at IS NULL AND
-    -- sqlc.arg('my_id') <> u.id AND
+    sqlc.arg('rank') < r.level_rank AND
     (sqlc.narg('city_id')::uuid IS NULL OR u.city_id = sqlc.narg('city_id')::uuid) AND
     (sqlc.narg('subcity_id')::uuid IS NULL OR u.subcity_id = sqlc.narg('subcity_id')::uuid) AND
     (sqlc.narg('kebele_id')::uuid IS NULL OR u.kebele_id = sqlc.narg('kebele_id')::uuid)
@@ -79,12 +79,13 @@ LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: CountListUsersUnderScope :one
 SELECT COUNT(*)
-FROM "user"
+FROM "user" u
+JOIN role r ON  r.slug = u.role_slug
 WHERE deleted_at IS NULL AND
-    -- sqlc.arg('level_rank') < r.level_rank AND
-    (sqlc.narg('city_id')::uuid IS NULL OR city_id = sqlc.narg('city_id')::uuid) AND
-    (sqlc.narg('subcity_id')::uuid IS NULL OR subcity_id = sqlc.narg('subcity_id')::uuid) AND
-    (sqlc.narg('kebele_id')::uuid IS NULL OR kebele_id = sqlc.narg('kebele_id')::uuid);
+    sqlc.arg('rank') < r.level_rank AND
+    (sqlc.narg('city_id')::uuid IS NULL OR u.city_id = sqlc.narg('city_id')::uuid) AND
+    (sqlc.narg('subcity_id')::uuid IS NULL OR u.subcity_id = sqlc.narg('subcity_id')::uuid) AND
+    (sqlc.narg('kebele_id')::uuid IS NULL OR u.kebele_id = sqlc.narg('kebele_id')::uuid);
 
 -- name: SearchUsersUnderScope :many
 SELECT *, r.name, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS full_name,
@@ -92,11 +93,12 @@ SELECT *, r.name, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS fu
     r.name AS role_name, r.level_rank AS role_level_rank,
     similarity(CONCAT_WS(' ', u.first_name, u.second_name, u.last_name), sqlc.arg('query')) AS sim
 FROM "user" u
+JOIN role r ON r.slug = u.role_slug
 LEFT JOIN city c ON c.id = u.city_id
 LEFT JOIN subcity sc ON sc.id = u.subcity_id
 LEFT JOIN kebele k ON k.id = u.kebele_id
-LEFT JOIN role r ON r.slug = u.role_slug
 WHERE u.deleted_at IS NULL AND
+    sqlc.arg('rank') < r.level_rank AND
     similarity(CONCAT_WS(' ', u.first_name, u.second_name, u.last_name), sqlc.arg('query')) > 0.2 AND
     (sqlc.narg('city_id')::uuid IS NULL OR u.city_id = sqlc.narg('city_id')::uuid) AND
     (sqlc.narg('subcity_id')::uuid IS NULL OR u.subcity_id = sqlc.narg('subcity_id')::uuid) AND
@@ -106,12 +108,14 @@ LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: CountSearchUsersUnderScope :one
 SELECT COUNT(*)
-FROM "user"
+FROM "user" u
+JOIN role r ON r.slug = u.role_slug
 WHERE deleted_at IS NULL AND
-    similarity(CONCAT_WS(' ', first_name, second_name, last_name), sqlc.arg('query')) > 0.2 AND
-    (sqlc.narg('city_id')::uuid IS NULL OR city_id = sqlc.narg('city_id')::uuid) AND
-    (sqlc.narg('subcity_id')::uuid IS NULL OR subcity_id = sqlc.narg('subcity_id')::uuid) AND
-    (sqlc.narg('kebele_id')::uuid IS NULL OR kebele_id = sqlc.narg('kebele_id')::uuid);
+    sqlc.arg('rank') < r.level_rank AND
+    similarity(CONCAT_WS(' ', u.first_name, u.second_name, u.last_name), sqlc.arg('query')) > 0.2 AND
+    (sqlc.narg('city_id')::uuid IS NULL OR u.city_id = sqlc.narg('city_id')::uuid) AND
+    (sqlc.narg('subcity_id')::uuid IS NULL OR u.subcity_id = sqlc.narg('subcity_id')::uuid) AND
+    (sqlc.narg('kebele_id')::uuid IS NULL OR u.kebele_id = sqlc.narg('kebele_id')::uuid);
 
 -- name: ListUsersByRole :many
 SELECT *, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
