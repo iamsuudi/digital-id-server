@@ -17,8 +17,8 @@ func NewService(dbConn *pgxpool.Pool, dbQueries *repository.Queries) *Service {
 	return &Service{db: dbConn, q: dbQueries}
 }
 
-func (s *Service) GetRolesTree(ctx context.Context, role string) ([]repository.GetRoleTreeRow, error) {
-	return s.q.GetRoleTree(ctx, role)
+func (s *Service) GetRolesTree(ctx context.Context, role string) ([]repository.GetAssignableRolesForActorRow, error) {
+	return s.q.GetAssignableRolesForActor(ctx, role)
 }
 
 func (s *Service) GetRolesPermissions(ctx context.Context) ([]repository.ListRolePermissionsRow, error) {

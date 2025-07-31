@@ -1,7 +1,9 @@
 package permission
 
 import (
+	"digital-id-server/internal/cache"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -11,10 +13,11 @@ import (
 
 type Handler struct {
 	service *Service
+	cache   *cache.Cache
 }
 
-func NewHandler(s *Service) *Handler {
-	return &Handler{service: s}
+func NewHandler(s *Service, c *cache.Cache) *Handler {
+	return &Handler{service: s, cache: c}
 }
 
 func (h *Handler) GetAllPermissions(c *gin.Context) {
@@ -35,8 +38,8 @@ func (h *Handler) GetAllPermissions(c *gin.Context) {
 func (h *Handler) GetAssignablePermissions(c *gin.Context) {
 	raw, _ := c.Get("user_id")
 	id, _ := raw.(uuid.UUID)
-	
-	permissions, err := h.service.GetAssignablePermissions(c, id)
+
+	permissions, err := h.service.GetAssignablePermissionsForActor(c, id)
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -48,4 +51,77 @@ func (h *Handler) GetAssignablePermissions(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, permissions)
+}
+
+func (h *Handler) GetUniversalPermissionsForUser(c *gin.Context) {
+	raw, _ := c.Get("user_id")
+	id, _ := raw.(uuid.UUID)
+	user, _ := h.cache.GetUser(c, id)
+	target_role := c.Query("role")
+	target_id, err := uuid.Parse(c.Query("id"))
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
+
+	perms, err := h.service.GetUniversalPermissionsForUser(c, user.RoleSlug, target_role, target_id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Permissions not found"})
+		} else {
+			fmt.Println(err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch permissions"})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, perms)
+}
+
+func (h *Handler) OverridePermission(c *gin.Context) {
+	raw, _ := c.Get("user_id")
+	id, _ := raw.(uuid.UUID)
+
+	var input struct {
+		TargetID uuid.UUID `json:"id" binding:"required"`
+		Permission string `json:"permission" binding:"required"`
+		Override bool `json:"override"`
+	}
+	err := c.BindJSON(&input)
+	if err != nil {
+		fmt.Println(err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
+
+	err = h.service.OverrideUserPermission(c, id, input.TargetID, input.Permission, input.Override)
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to override permission"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "Permission overridden successfully"})
+}
+
+func (h *Handler) RemoveOverride(c *gin.Context) {
+	var input struct {
+		TargetID uuid.UUID `json:"id" binding:"required"`
+		Permission string `json:"permission" binding:"required"`
+	}
+	err := c.BindJSON(&input)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
+
+	err = h.service.RemoveUserPermissionOverride(c, input.TargetID, input.Permission)
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove permission override"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "Permission override removed successfully"})
 }

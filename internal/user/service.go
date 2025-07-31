@@ -115,3 +115,21 @@ func (s *Service) SearchUsersByRole(ctx context.Context, limit, offset int, quer
 func (s *Service) GetEffectivePermissions(ctx context.Context, id uuid.UUID) ([]repository.GetEffectivePermissionsForUserRow, error) {
 	return s.q.GetEffectivePermissionsForUser(ctx, id)
 }
+
+func (s *Service) UpdateUserRole(ctx context.Context, id uuid.UUID, role string) error {
+	return s.q.UpdateUserRole(ctx, repository.UpdateUserRoleParams{
+		ID: id,
+		RoleSlug: role,
+	})
+}
+
+func (s *Service) UpdateUserInfo(ctx context.Context, id uuid.UUID, first, second, last, email, phone string) error {
+	return s.q.UpdateUserInfo(ctx, repository.UpdateUserInfoParams{
+		ID: id,
+		FirstName: first,
+		SecondName: second,
+		LastName: last,
+		Email: email,
+		Phone: phone,
+	})
+}

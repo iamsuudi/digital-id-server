@@ -25,8 +25,8 @@ func NewHandler(s *Service, c *cache.Cache) *Handler {
 }
 
 func (h *Handler) GetUser(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := uuid.Parse(idStr)
+	raw := c.Param("id")
+	id, err := uuid.Parse(raw)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
 		return
@@ -119,4 +119,63 @@ func (h *Handler) GetUsersByRole(c *gin.Context) {
 			"count": count,
 		})
 	}
+}
+
+func (h *Handler) UpdateUserRole(c *gin.Context) {
+	raw := c.Param("id")
+	id, err := uuid.Parse(raw)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	var input struct {
+		Role string `json:"role" binding:"required"`
+	}
+	err = c.BindJSON(&input)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
+
+	err = h.service.UpdateUserRole(c, id, input.Role)
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user role"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "Role updated successfully"})
+}
+
+func (h *Handler) UpdateUserInfo(c *gin.Context) {
+	raw := c.Param("id")
+	id, err := uuid.Parse(raw)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	var input struct {
+		FirstName  string `json:"first" binding:"required"`
+		SecondName string `json:"second" binding:"required"`
+		LastName   string `json:"last" binding:"required"`
+		Email      string `json:"email" binding:"required"`
+		Phone      string `json:"phone" binding:"required"`
+	}
+	err = c.BindJSON(&input)
+	if err != nil {
+		fmt.Println(err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
+
+	err = h.service.UpdateUserInfo(c, id, input.FirstName, input.SecondName, input.LastName, input.Email, input.Phone)
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user info"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "User updated successfully"})
 }
