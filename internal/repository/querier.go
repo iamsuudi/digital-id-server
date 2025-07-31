@@ -68,6 +68,7 @@ type Querier interface {
 	UpdateCity(ctx context.Context, arg UpdateCityParams) (City, error)
 	UpdateKebele(ctx context.Context, arg UpdateKebeleParams) (Kebele, error)
 	UpdateSubCity(ctx context.Context, arg UpdateSubCityParams) (Subcity, error)
+	UpdateUserInfo(ctx context.Context, arg UpdateUserInfoParams) error
 	UpdateUserRole(ctx context.Context, arg UpdateUserRoleParams) error
 }
 

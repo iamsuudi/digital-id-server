@@ -122,3 +122,14 @@ func (s *Service) UpdateUserRole(ctx context.Context, id uuid.UUID, role string)
 		RoleSlug: role,
 	})
 }
+
+func (s *Service) UpdateUserInfo(ctx context.Context, id uuid.UUID, first, second, last, email, phone string) error {
+	return s.q.UpdateUserInfo(ctx, repository.UpdateUserInfoParams{
+		ID: id,
+		FirstName: first,
+		SecondName: second,
+		LastName: last,
+		Email: email,
+		Phone: phone,
+	})
+}
