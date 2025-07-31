@@ -123,7 +123,7 @@ func (h *Handler) GetUsersByRole(c *gin.Context) {
 
 func (h *Handler) UpdateUserRole(c *gin.Context) {
 	raw := c.Param("id")
-	id, err := uuid.Parse(raw)
+	targetId, err := uuid.Parse(raw)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
 		return
@@ -138,7 +138,20 @@ func (h *Handler) UpdateUserRole(c *gin.Context) {
 		return
 	}
 
-	err = h.service.UpdateUserRole(c, id, input.Role)
+	str, _ := c.Get("user_id")
+	actorId, _ := str.(uuid.UUID)
+	if targetId == actorId {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You can't update your own role"})
+		return
+	} else {
+		myScope, _ := h.service.CanManipulateUser(c, actorId, targetId)
+		if !myScope {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Not your scope"})
+			return
+		}
+	}
+
+	err = h.service.UpdateUserRole(c, targetId, input.Role)
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user role"})
@@ -150,10 +163,20 @@ func (h *Handler) UpdateUserRole(c *gin.Context) {
 
 func (h *Handler) UpdateUserInfo(c *gin.Context) {
 	raw := c.Param("id")
-	id, err := uuid.Parse(raw)
+	targetId, err := uuid.Parse(raw)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
 		return
+	}
+
+	str, _ := c.Get("user_id")
+	actorId, _ := str.(uuid.UUID)
+	if targetId != actorId {
+		myScope, _ := h.service.CanManipulateUser(c, actorId, targetId)
+		if !myScope {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Not your scope"})
+			return
+		}
 	}
 
 	var input struct {
@@ -170,7 +193,7 @@ func (h *Handler) UpdateUserInfo(c *gin.Context) {
 		return
 	}
 
-	err = h.service.UpdateUserInfo(c, id, input.FirstName, input.SecondName, input.LastName, input.Email, input.Phone)
+	err = h.service.UpdateUserInfo(c, targetId, input.FirstName, input.SecondName, input.LastName, input.Email, input.Phone)
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user info"})

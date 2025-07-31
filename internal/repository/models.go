@@ -331,13 +331,15 @@ type Address struct {
 }
 
 type AuditLog struct {
-	ID         uuid.UUID  `db:"id" json:"id"`
-	ActorID    *uuid.UUID `db:"actor_id" json:"actor_id"`
-	ActionType string     `db:"action_type" json:"action_type"`
-	ObjectType string     `db:"object_type" json:"object_type"`
-	ObjectID   *int64     `db:"object_id" json:"object_id"`
-	DiffJson   []byte     `db:"diff_json" json:"diff_json"`
-	Ts         time.Time  `db:"ts" json:"ts"`
+	ID             uuid.UUID  `db:"id" json:"id"`
+	ActorID        *uuid.UUID `db:"actor_id" json:"actor_id"`
+	TargetUserID   *uuid.UUID `db:"target_user_id" json:"target_user_id"`
+	TargetRoleSlug *string    `db:"target_role_slug" json:"target_role_slug"`
+	ActionType     string     `db:"action_type" json:"action_type"`
+	ObjectType     string     `db:"object_type" json:"object_type"`
+	ObjectID       *int64     `db:"object_id" json:"object_id"`
+	DiffJson       []byte     `db:"diff_json" json:"diff_json"`
+	Ts             time.Time  `db:"ts" json:"ts"`
 }
 
 type Biometric struct {

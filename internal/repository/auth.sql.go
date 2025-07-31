@@ -77,7 +77,7 @@ func (q *Queries) CanActorManipulateRole(ctx context.Context, arg CanActorManipu
 
 const canActorTouchTarget = `-- name: CanActorTouchTarget :one
 SELECT CASE
-    WHEN $1 = $2 THEN false
+    WHEN $1::uuid = $2::uuid THEN false
     WHEN a.role_slug = t.role_slug THEN false
     WHEN (SELECT level_rank FROM role WHERE slug = a.role_slug)
          >= (SELECT level_rank FROM role WHERE slug = t.role_slug) THEN false
@@ -87,16 +87,16 @@ SELECT CASE
     ELSE false
 END AS ok
 FROM "user" a, "user" t
-WHERE a.id = $1 AND t.id = $2
+WHERE a.id = $1::uuid AND t.id = $2::uuid
 `
 
 type CanActorTouchTargetParams struct {
-	Column1 interface{} `db:"column_1" json:"column_1"`
-	Column2 interface{} `db:"column_2" json:"column_2"`
+	ActorID  uuid.UUID `db:"actor_id" json:"actor_id"`
+	TargetID uuid.UUID `db:"target_id" json:"target_id"`
 }
 
 func (q *Queries) CanActorTouchTarget(ctx context.Context, arg CanActorTouchTargetParams) (bool, error) {
-	row := q.db.QueryRow(ctx, canActorTouchTarget, arg.Column1, arg.Column2)
+	row := q.db.QueryRow(ctx, canActorTouchTarget, arg.ActorID, arg.TargetID)
 	var ok bool
 	err := row.Scan(&ok)
 	return ok, err
