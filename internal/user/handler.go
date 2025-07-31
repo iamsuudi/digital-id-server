@@ -25,8 +25,8 @@ func NewHandler(s *Service, c *cache.Cache) *Handler {
 }
 
 func (h *Handler) GetUser(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := uuid.Parse(idStr)
+	raw := c.Param("id")
+	id, err := uuid.Parse(raw)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
 		return
@@ -119,4 +119,31 @@ func (h *Handler) GetUsersByRole(c *gin.Context) {
 			"count": count,
 		})
 	}
+}
+
+func (h *Handler) UpdateUserRole(c *gin.Context) {
+	raw := c.Param("id")
+	id, err := uuid.Parse(raw)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+	
+	var input struct {
+		Role string `json:"role" binding:"required"`
+	}
+	err = c.BindJSON(&input)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
+	
+	err = h.service.UpdateUserRole(c, id, input.Role)
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user role"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "Role updated successfully"})
 }

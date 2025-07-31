@@ -18,5 +18,6 @@ func RegisterRoutes(rg *gin.RouterGroup, db *pgxpool.Pool, q *repository.Queries
 		r.GET("/", cache.RequirePlacement(), handler.GetUsers)
 		r.GET("/role", handler.GetUsersByRole)
 		r.GET("/:id", handler.GetUser)
+		r.PUT("/:id/role", handler.UpdateUserRole)
 	}
 }
