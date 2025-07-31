@@ -143,3 +143,10 @@ func (s *Service) UpdateUserInfo(ctx context.Context, id uuid.UUID, first, secon
 		Phone:      phone,
 	})
 }
+
+func (s *Service) CanManipulateUser(ctx context.Context, actorId, targetId uuid.UUID) (bool, error) {
+	return s.q.CanActorTouchTarget(ctx, repository.CanActorTouchTargetParams{
+		ActorID:  actorId,
+		TargetID: targetId,
+	})
+}

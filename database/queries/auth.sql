@@ -1,6 +1,6 @@
 -- name: CanActorTouchTarget :one
 SELECT CASE
-    WHEN $1 = $2 THEN false
+    WHEN sqlc.arg('actor_id')::uuid = sqlc.arg('target_id')::uuid THEN false
     WHEN a.role_slug = t.role_slug THEN false
     WHEN (SELECT level_rank FROM role WHERE slug = a.role_slug)
          >= (SELECT level_rank FROM role WHERE slug = t.role_slug) THEN false
@@ -10,7 +10,7 @@ SELECT CASE
     ELSE false
 END AS ok
 FROM "user" a, "user" t
-WHERE a.id = $1 AND t.id = $2;
+WHERE a.id = sqlc.arg('actor_id')::uuid AND t.id = sqlc.arg('target_id')::uuid;
 
 -- name: CanActorManipulateRole :one
 -- returns true if the actor’s role is strictly more powerful than target_role
