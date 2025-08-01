@@ -1,5 +1,6 @@
 -- name: CanActorTouchTarget :one
 SELECT CASE
+    WHEN (SELECT level_rank FROM role WHERE slug = a.role_slug) = 0 THEN true
     WHEN sqlc.arg('actor_id')::uuid = sqlc.arg('target_id')::uuid THEN false
     WHEN a.role_slug = t.role_slug THEN false
     WHEN (SELECT level_rank FROM role WHERE slug = a.role_slug)

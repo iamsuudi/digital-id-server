@@ -1,4 +1,4 @@
-package user
+package audit
 
 import (
 	"context"
@@ -27,9 +27,8 @@ func (s *Service) GetUserByEmail(ctx context.Context, email string) (repository.
 	return s.q.GetUserByEmail(ctx, email)
 }
 
-func (s *Service) ListUsersUnderScope(ctx context.Context, limit, offset int, query string, myRank *int32, city, subcity, kebele *uuid.UUID) (int64, []repository.ListUsersUnderScopeRow, error) {
-	count, err := s.q.CountListUsersUnderScope(ctx, repository.CountListUsersUnderScopeParams{
-		Rank:      *myRank,
+func (s *Service) ListAuditLogs(ctx context.Context, limit, offset int, city, subcity, kebele *uuid.UUID) (int64, []repository.ListAuditLogsRow, error) {
+	count, err := s.q.CountListAuditLogs(ctx, repository.CountListAuditLogsParams{
 		CityID:    city,
 		SubcityID: subcity,
 		KebeleID:  kebele,
@@ -40,8 +39,7 @@ func (s *Service) ListUsersUnderScope(ctx context.Context, limit, offset int, qu
 	if count == 0 {
 		return 0, nil, nil
 	}
-	users, err := s.q.ListUsersUnderScope(ctx, repository.ListUsersUnderScopeParams{
-		Rank:      *myRank,
+	users, err := s.q.ListAuditLogs(ctx, repository.ListAuditLogsParams{
 		CityID:    city,
 		SubcityID: subcity,
 		KebeleID:  kebele,

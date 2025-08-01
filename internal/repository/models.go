@@ -332,7 +332,7 @@ type Address struct {
 
 type AuditLog struct {
 	ID             uuid.UUID  `db:"id" json:"id"`
-	ActorID        *uuid.UUID `db:"actor_id" json:"actor_id"`
+	ActorID        uuid.UUID  `db:"actor_id" json:"actor_id"`
 	TargetUserID   *uuid.UUID `db:"target_user_id" json:"target_user_id"`
 	TargetRoleSlug *string    `db:"target_role_slug" json:"target_role_slug"`
 	ActionType     string     `db:"action_type" json:"action_type"`

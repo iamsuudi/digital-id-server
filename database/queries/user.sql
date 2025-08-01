@@ -33,6 +33,9 @@ WHERE u.id = $1 AND u.deleted_at IS NULL;
 -- name: GetUserScope :one
 SELECT city_id, subcity_id, kebele_id FROM "user" WHERE id = $1;
 
+-- name: GetUserRole :one
+SELECT role_slug FROM "user" WHERE id = $1;
+
 -- name: UpdateUserRole :exec
 UPDATE "user"
 SET role_slug = $2
