@@ -77,6 +77,7 @@ func (q *Queries) CanActorManipulateRole(ctx context.Context, arg CanActorManipu
 
 const canActorTouchTarget = `-- name: CanActorTouchTarget :one
 SELECT CASE
+    WHEN (SELECT level_rank FROM role WHERE slug = a.role_slug) = 0 THEN true
     WHEN $1::uuid = $2::uuid THEN false
     WHEN a.role_slug = t.role_slug THEN false
     WHEN (SELECT level_rank FROM role WHERE slug = a.role_slug)

@@ -1,4 +1,4 @@
-package user
+package audit
 
 import (
 	"errors"
@@ -24,6 +24,29 @@ func NewHandler(s *Service, c *cache.Cache) *Handler {
 	return &Handler{service: s, cache: c}
 }
 
+func (h *Handler) GetLogs(c *gin.Context) {
+	limit, offset, _ := utils.PaginationHelper(c)
+
+	str, _ := c.Get("user_id")
+	id, _ := str.(uuid.UUID)
+	user, _ := h.cache.GetUser(c, id)
+
+	count, logs, err := h.service.ListAuditLogs(c.Request.Context(), limit, offset, user.CityID, user.SubcityID, user.KebeleID)
+	if err != nil {
+		fmt.Print(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch logs"})
+		return
+	}
+	if logs == nil {
+		logs = []repository.ListAuditLogsRow{}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"logs": logs,
+		"count": count,
+	})
+}
+
 func (h *Handler) GetUser(c *gin.Context) {
 	raw := c.Param("id")
 	id, err := uuid.Parse(raw)
@@ -42,47 +65,6 @@ func (h *Handler) GetUser(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, user)
-}
-
-func (h *Handler) GetUsers(c *gin.Context) {
-	limit, offset, query := utils.PaginationHelper(c)
-
-	str, _ := c.Get("user_id")
-	id, _ := str.(uuid.UUID)
-	user, _ := h.cache.GetUser(c, id)
-
-	if strings.TrimSpace(query) == "" {
-		count, users, err := h.service.ListUsersUnderScope(c.Request.Context(), limit, offset, query, user.RoleLevelRank, user.CityID, user.SubcityID, user.KebeleID)
-		if err != nil {
-			fmt.Print(err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch users"})
-			return
-		}
-		if users == nil {
-			users = []repository.ListUsersUnderScopeRow{}
-		}
-
-		c.JSON(http.StatusOK, gin.H{
-			"users": users,
-			"count": count,
-		})
-	} else {
-		count, users, err := h.service.SearchUsersUnderScope(c, limit, offset, query, user.RoleLevelRank, user.CityID, user.SubcityID, user.KebeleID)
-		fmt.Println(limit, offset, query, count)
-		if err != nil {
-			fmt.Print(err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to search users"})
-			return
-		}
-		if users == nil {
-			users = []repository.SearchUsersUnderScopeRow{}
-		}
-
-		c.JSON(http.StatusOK, gin.H{
-			"users": users,
-			"count": count,
-		})
-	}
 }
 
 func (h *Handler) GetUsersByRole(c *gin.Context) {

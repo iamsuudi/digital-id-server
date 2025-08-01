@@ -76,7 +76,7 @@ CREATE TABLE user_permission_override (
 -- 8. audit log (optional but recommended) ------------------------
 CREATE TABLE audit_log (
     id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    actor_id            UUID REFERENCES "user"(id) ON DELETE SET NULL,
+    actor_id            UUID NOT NULL REFERENCES "user"(id) ON DELETE SET NULL,
     target_user_id      UUID REFERENCES "user"(id) ON DELETE SET NULL,
     target_role_slug    TEXT,
     action_type         TEXT NOT NULL,

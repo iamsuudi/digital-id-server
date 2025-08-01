@@ -15,6 +15,7 @@ type Querier interface {
 	// returns true if the actor’s role is strictly more powerful than target_role
 	CanActorManipulateRole(ctx context.Context, arg CanActorManipulateRoleParams) (bool, error)
 	CanActorTouchTarget(ctx context.Context, arg CanActorTouchTargetParams) (bool, error)
+	CountListAuditLogs(ctx context.Context, arg CountListAuditLogsParams) (int64, error)
 	CountListCities(ctx context.Context) (int64, error)
 	CountListKebeles(ctx context.Context) (int64, error)
 	CountListSubcities(ctx context.Context) (int64, error)
@@ -42,9 +43,13 @@ type Querier interface {
 	GetUniversalPermissionMatrixForUser(ctx context.Context, arg GetUniversalPermissionMatrixForUserParams) ([]GetUniversalPermissionMatrixForUserRow, error)
 	GetUserByEmail(ctx context.Context, email string) (GetUserByEmailRow, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (GetUserByIDRow, error)
+	GetUserRole(ctx context.Context, id uuid.UUID) (string, error)
 	GetUserScope(ctx context.Context, id uuid.UUID) (GetUserScopeRow, error)
 	GrantPermissionToRole(ctx context.Context, arg GrantPermissionToRoleParams) error
 	GrantUserPlacement(ctx context.Context, arg GrantUserPlacementParams) error
+	InsertAuditLog(ctx context.Context, arg InsertAuditLogParams) error
+	// Returns audit logs under scope
+	ListAuditLogs(ctx context.Context, arg ListAuditLogsParams) ([]ListAuditLogsRow, error)
 	ListCities(ctx context.Context, arg ListCitiesParams) ([]ListCitiesRow, error)
 	ListKebeles(ctx context.Context, arg ListKebelesParams) ([]ListKebelesRow, error)
 	ListPermissionMatrixInScope(ctx context.Context, arg ListPermissionMatrixInScopeParams) ([]ListPermissionMatrixInScopeRow, error)
@@ -53,6 +58,8 @@ type Querier interface {
 	ListRolePermissions(ctx context.Context) ([]ListRolePermissionsRow, error)
 	ListRoles(ctx context.Context) ([]Role, error)
 	ListSubCities(ctx context.Context, arg ListSubCitiesParams) ([]ListSubCitiesRow, error)
+	// Returns user related audit logs
+	ListUserAuditLogs(ctx context.Context, arg ListUserAuditLogsParams) ([]ListUserAuditLogsRow, error)
 	ListUsersByRole(ctx context.Context, arg ListUsersByRoleParams) ([]ListUsersByRoleRow, error)
 	ListUsersUnderScope(ctx context.Context, arg ListUsersUnderScopeParams) ([]ListUsersUnderScopeRow, error)
 	RemoveUserPermissionOverride(ctx context.Context, arg RemoveUserPermissionOverrideParams) error

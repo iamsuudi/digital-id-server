@@ -292,6 +292,17 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (GetUserByIDRow
 	return i, err
 }
 
+const getUserRole = `-- name: GetUserRole :one
+SELECT role_slug FROM "user" WHERE id = $1
+`
+
+func (q *Queries) GetUserRole(ctx context.Context, id uuid.UUID) (string, error) {
+	row := q.db.QueryRow(ctx, getUserRole, id)
+	var role_slug string
+	err := row.Scan(&role_slug)
+	return role_slug, err
+}
+
 const getUserScope = `-- name: GetUserScope :one
 SELECT city_id, subcity_id, kebele_id FROM "user" WHERE id = $1
 `
