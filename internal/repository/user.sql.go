@@ -345,6 +345,44 @@ func (q *Queries) GrantUserPlacement(ctx context.Context, arg GrantUserPlacement
 	return err
 }
 
+const listUsersByKebeleAndRole = `-- name: ListUsersByKebeleAndRole :many
+SELECT id, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
+FROM "user"
+WHERE kebele_id = $1
+  AND role_slug = $2
+  AND deleted_at IS NULL
+`
+
+type ListUsersByKebeleAndRoleParams struct {
+	KebeleID *uuid.UUID `db:"kebele_id" json:"kebele_id"`
+	RoleSlug string     `db:"role_slug" json:"role_slug"`
+}
+
+type ListUsersByKebeleAndRoleRow struct {
+	ID       uuid.UUID `db:"id" json:"id"`
+	FullName string    `db:"full_name" json:"full_name"`
+}
+
+func (q *Queries) ListUsersByKebeleAndRole(ctx context.Context, arg ListUsersByKebeleAndRoleParams) ([]ListUsersByKebeleAndRoleRow, error) {
+	rows, err := q.db.Query(ctx, listUsersByKebeleAndRole, arg.KebeleID, arg.RoleSlug)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListUsersByKebeleAndRoleRow{}
+	for rows.Next() {
+		var i ListUsersByKebeleAndRoleRow
+		if err := rows.Scan(&i.ID, &i.FullName); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listUsersByRole = `-- name: ListUsersByRole :many
 SELECT id, first_name, second_name, last_name, email, phone, password_hash, city_id, subcity_id, kebele_id, role_slug, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
 FROM "user"
@@ -614,7 +652,7 @@ func (q *Queries) SearchUsersByRole(ctx context.Context, arg SearchUsersByRolePa
 }
 
 const searchUsersUnderScope = `-- name: SearchUsersUnderScope :many
-SELECT u.id, first_name, second_name, last_name, email, phone, password_hash, u.city_id, u.subcity_id, kebele_id, role_slug, u.created_at, u.deleted_at, slug, r.name, parent_role_slug, level_rank, c.id, c.name, c.created_at, c.deleted_at, sc.id, sc.name, sc.city_id, sc.created_at, sc.deleted_at, k.id, k.name, k.subcity_id, k.city_id, k.created_at, k.deleted_at, r.name, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS full_name,
+SELECT u.id, first_name, second_name, last_name, email, phone, password_hash, u.city_id, u.subcity_id, kebele_id, role_slug, u.created_at, u.deleted_at, slug, r.name, parent_role_slug, level_rank, c.id, c.name, c.lat, c.lon, c.created_at, c.deleted_at, sc.id, sc.name, sc.lat, sc.lon, sc.city_id, sc.created_at, sc.deleted_at, k.id, k.name, k.lat, k.lon, k.subcity_id, k.city_id, k.created_at, k.deleted_at, r.name, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS full_name,
     c.name AS city_name, sc.name AS subcity_name, k.name AS kebele_name,
     r.name AS role_name, r.level_rank AS role_level_rank,
     similarity(CONCAT_WS(' ', u.first_name, u.second_name, u.last_name), $1) AS sim
@@ -663,15 +701,21 @@ type SearchUsersUnderScopeRow struct {
 	LevelRank      int32      `db:"level_rank" json:"level_rank"`
 	ID_2           *uuid.UUID `db:"id_2" json:"id_2"`
 	Name_2         *string    `db:"name_2" json:"name_2"`
+	Lat            *float64   `db:"lat" json:"lat"`
+	Lon            *float64   `db:"lon" json:"lon"`
 	CreatedAt_2    *time.Time `db:"created_at_2" json:"created_at_2"`
 	DeletedAt_2    *time.Time `db:"deleted_at_2" json:"deleted_at_2"`
 	ID_3           *uuid.UUID `db:"id_3" json:"id_3"`
 	Name_3         *string    `db:"name_3" json:"name_3"`
+	Lat_2          *float64   `db:"lat_2" json:"lat_2"`
+	Lon_2          *float64   `db:"lon_2" json:"lon_2"`
 	CityID_2       *uuid.UUID `db:"city_id_2" json:"city_id_2"`
 	CreatedAt_3    *time.Time `db:"created_at_3" json:"created_at_3"`
 	DeletedAt_3    *time.Time `db:"deleted_at_3" json:"deleted_at_3"`
 	ID_4           *uuid.UUID `db:"id_4" json:"id_4"`
 	Name_4         *string    `db:"name_4" json:"name_4"`
+	Lat_3          *float64   `db:"lat_3" json:"lat_3"`
+	Lon_3          *float64   `db:"lon_3" json:"lon_3"`
 	SubcityID_2    *uuid.UUID `db:"subcity_id_2" json:"subcity_id_2"`
 	CityID_3       *uuid.UUID `db:"city_id_3" json:"city_id_3"`
 	CreatedAt_4    *time.Time `db:"created_at_4" json:"created_at_4"`
@@ -723,15 +767,21 @@ func (q *Queries) SearchUsersUnderScope(ctx context.Context, arg SearchUsersUnde
 			&i.LevelRank,
 			&i.ID_2,
 			&i.Name_2,
+			&i.Lat,
+			&i.Lon,
 			&i.CreatedAt_2,
 			&i.DeletedAt_2,
 			&i.ID_3,
 			&i.Name_3,
+			&i.Lat_2,
+			&i.Lon_2,
 			&i.CityID_2,
 			&i.CreatedAt_3,
 			&i.DeletedAt_3,
 			&i.ID_4,
 			&i.Name_4,
+			&i.Lat_3,
+			&i.Lon_3,
 			&i.SubcityID_2,
 			&i.CityID_3,
 			&i.CreatedAt_4,

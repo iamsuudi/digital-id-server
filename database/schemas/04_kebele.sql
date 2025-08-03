@@ -1,6 +1,8 @@
 CREATE TABLE kebele (
     id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name          TEXT NOT NULL,
+    lat           NUMERIC,
+    lon           NUMERIC,
     subcity_id    UUID REFERENCES subcity(id) ON DELETE SET NULL,
     city_id       UUID NOT NULL REFERENCES city(id) ON DELETE CASCADE,
     

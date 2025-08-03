@@ -1,11 +1,11 @@
 -- name: CreateCity :one
-INSERT INTO city (name)
-VALUES ($1)
+INSERT INTO city (name, lat, lon)
+VALUES ($1, $2, $3)
 RETURNING *;
 
 -- name: UpdateCity :one
 UPDATE city
-SET name = $2
+SET name = $2, lat = $3, lon = $4
 WHERE id = $1
 RETURNING *;
 

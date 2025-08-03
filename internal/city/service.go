@@ -21,7 +21,9 @@ func NewService(dbConn *pgxpool.Pool, dbQueries *repository.Queries) *Service {
 }
 
 func (s *Service) CreateCity(ctx context.Context, input types.CityInput) (repository.City, error) {
-	return s.q.CreateCity(ctx, input.Name)
+	return s.q.CreateCity(ctx, repository.CreateCityParams{
+		Name: input.Name,
+	})
 }
 
 func (s *Service) UpdateCity(ctx context.Context, id uuid.UUID, input types.CityInput) error {

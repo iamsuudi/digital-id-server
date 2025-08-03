@@ -355,6 +355,8 @@ type Biometric struct {
 type City struct {
 	ID        uuid.UUID  `db:"id" json:"id"`
 	Name      string     `db:"name" json:"name"`
+	Lat       *float64   `db:"lat" json:"lat"`
+	Lon       *float64   `db:"lon" json:"lon"`
 	CreatedAt time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt *time.Time `db:"deleted_at" json:"deleted_at"`
 }
@@ -405,6 +407,8 @@ type Idcard struct {
 type Kebele struct {
 	ID        uuid.UUID  `db:"id" json:"id"`
 	Name      string     `db:"name" json:"name"`
+	Lat       *float64   `db:"lat" json:"lat"`
+	Lon       *float64   `db:"lon" json:"lon"`
 	SubcityID *uuid.UUID `db:"subcity_id" json:"subcity_id"`
 	CityID    uuid.UUID  `db:"city_id" json:"city_id"`
 	CreatedAt time.Time  `db:"created_at" json:"created_at"`
@@ -472,6 +476,8 @@ type RolePermission struct {
 type Subcity struct {
 	ID        uuid.UUID  `db:"id" json:"id"`
 	Name      string     `db:"name" json:"name"`
+	Lat       *float64   `db:"lat" json:"lat"`
+	Lon       *float64   `db:"lon" json:"lon"`
 	CityID    uuid.UUID  `db:"city_id" json:"city_id"`
 	CreatedAt time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt *time.Time `db:"deleted_at" json:"deleted_at"`

@@ -39,17 +39,25 @@ func (q *Queries) CountSearchCities(ctx context.Context, query string) (int64, e
 }
 
 const createCity = `-- name: CreateCity :one
-INSERT INTO city (name)
-VALUES ($1)
-RETURNING id, name, created_at, deleted_at
+INSERT INTO city (name, lat, lon)
+VALUES ($1, $2, $3)
+RETURNING id, name, lat, lon, created_at, deleted_at
 `
 
-func (q *Queries) CreateCity(ctx context.Context, name string) (City, error) {
-	row := q.db.QueryRow(ctx, createCity, name)
+type CreateCityParams struct {
+	Name string   `db:"name" json:"name"`
+	Lat  *float64 `db:"lat" json:"lat"`
+	Lon  *float64 `db:"lon" json:"lon"`
+}
+
+func (q *Queries) CreateCity(ctx context.Context, arg CreateCityParams) (City, error) {
+	row := q.db.QueryRow(ctx, createCity, arg.Name, arg.Lat, arg.Lon)
 	var i City
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
+		&i.Lat,
+		&i.Lon,
 		&i.CreatedAt,
 		&i.DeletedAt,
 	)
@@ -57,7 +65,7 @@ func (q *Queries) CreateCity(ctx context.Context, name string) (City, error) {
 }
 
 const getCity = `-- name: GetCity :one
-SELECT c.id, c.name, c.created_at, c.deleted_at, u.id as admin_id, 
+SELECT c.id, c.name, c.lat, c.lon, c.created_at, c.deleted_at, u.id as admin_id, 
     CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS admin_name
 FROM city c
 LEFT JOIN "user" u ON u.city_id = c.id AND u.role_slug = 'admin'
@@ -67,6 +75,8 @@ WHERE c.id = $1 AND c.deleted_at IS NULL
 type GetCityRow struct {
 	ID        uuid.UUID  `db:"id" json:"id"`
 	Name      string     `db:"name" json:"name"`
+	Lat       *float64   `db:"lat" json:"lat"`
+	Lon       *float64   `db:"lon" json:"lon"`
 	CreatedAt time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt *time.Time `db:"deleted_at" json:"deleted_at"`
 	AdminID   *uuid.UUID `db:"admin_id" json:"admin_id"`
@@ -79,6 +89,8 @@ func (q *Queries) GetCity(ctx context.Context, id uuid.UUID) (GetCityRow, error)
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
+		&i.Lat,
+		&i.Lon,
 		&i.CreatedAt,
 		&i.DeletedAt,
 		&i.AdminID,
@@ -88,7 +100,7 @@ func (q *Queries) GetCity(ctx context.Context, id uuid.UUID) (GetCityRow, error)
 }
 
 const listCities = `-- name: ListCities :many
-SELECT c.id, c.name, c.created_at, c.deleted_at, u.id as admin_id, 
+SELECT c.id, c.name, c.lat, c.lon, c.created_at, c.deleted_at, u.id as admin_id, 
     CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS admin_name
 FROM city c
 LEFT JOIN "user" u ON u.city_id = c.id AND u.role_slug = 'admin'
@@ -105,6 +117,8 @@ type ListCitiesParams struct {
 type ListCitiesRow struct {
 	ID        uuid.UUID  `db:"id" json:"id"`
 	Name      string     `db:"name" json:"name"`
+	Lat       *float64   `db:"lat" json:"lat"`
+	Lon       *float64   `db:"lon" json:"lon"`
 	CreatedAt time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt *time.Time `db:"deleted_at" json:"deleted_at"`
 	AdminID   *uuid.UUID `db:"admin_id" json:"admin_id"`
@@ -123,6 +137,8 @@ func (q *Queries) ListCities(ctx context.Context, arg ListCitiesParams) ([]ListC
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
+			&i.Lat,
+			&i.Lon,
 			&i.CreatedAt,
 			&i.DeletedAt,
 			&i.AdminID,
@@ -139,7 +155,7 @@ func (q *Queries) ListCities(ctx context.Context, arg ListCitiesParams) ([]ListC
 }
 
 const searchCities = `-- name: SearchCities :many
-SELECT c.id, name, c.created_at, c.deleted_at, u.id, first_name, second_name, last_name, email, phone, password_hash, city_id, subcity_id, kebele_id, role_slug, u.created_at, u.deleted_at, u.id as admin_id, similarity(c.name, $1) AS sim,
+SELECT c.id, name, lat, lon, c.created_at, c.deleted_at, u.id, first_name, second_name, last_name, email, phone, password_hash, city_id, subcity_id, kebele_id, role_slug, u.created_at, u.deleted_at, u.id as admin_id, similarity(c.name, $1) AS sim,
     CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS admin_name
 FROM city c
 LEFT JOIN "user" u ON u.city_id = c.id AND u.role_slug = 'admin'
@@ -157,6 +173,8 @@ type SearchCitiesParams struct {
 type SearchCitiesRow struct {
 	ID           uuid.UUID  `db:"id" json:"id"`
 	Name         string     `db:"name" json:"name"`
+	Lat          *float64   `db:"lat" json:"lat"`
+	Lon          *float64   `db:"lon" json:"lon"`
 	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
 	ID_2         *uuid.UUID `db:"id_2" json:"id_2"`
@@ -189,6 +207,8 @@ func (q *Queries) SearchCities(ctx context.Context, arg SearchCitiesParams) ([]S
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
+			&i.Lat,
+			&i.Lon,
 			&i.CreatedAt,
 			&i.DeletedAt,
 			&i.ID_2,
@@ -220,22 +240,31 @@ func (q *Queries) SearchCities(ctx context.Context, arg SearchCitiesParams) ([]S
 
 const updateCity = `-- name: UpdateCity :one
 UPDATE city
-SET name = $2
+SET name = $2, lat = $3, lon = $4
 WHERE id = $1
-RETURNING id, name, created_at, deleted_at
+RETURNING id, name, lat, lon, created_at, deleted_at
 `
 
 type UpdateCityParams struct {
 	ID   uuid.UUID `db:"id" json:"id"`
 	Name string    `db:"name" json:"name"`
+	Lat  *float64  `db:"lat" json:"lat"`
+	Lon  *float64  `db:"lon" json:"lon"`
 }
 
 func (q *Queries) UpdateCity(ctx context.Context, arg UpdateCityParams) (City, error) {
-	row := q.db.QueryRow(ctx, updateCity, arg.ID, arg.Name)
+	row := q.db.QueryRow(ctx, updateCity,
+		arg.ID,
+		arg.Name,
+		arg.Lat,
+		arg.Lon,
+	)
 	var i City
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
+		&i.Lat,
+		&i.Lon,
 		&i.CreatedAt,
 		&i.DeletedAt,
 	)

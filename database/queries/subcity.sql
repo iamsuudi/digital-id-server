@@ -1,11 +1,11 @@
 -- name: CreateSubCity :one
-INSERT INTO subcity (name, city_id)
-VALUES ($1, $2)
+INSERT INTO subcity (name, lat, lon, city_id)
+VALUES ($1, $2, $3, $4)
 RETURNING *;
 
 -- name: UpdateSubCity :one
 UPDATE subcity
-SET name = $2, city_id = $3
+SET name = $2, lat = $3, lon = $4, city_id = $5
 WHERE id = $1
 RETURNING *;
 

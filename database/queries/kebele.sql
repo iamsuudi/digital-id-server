@@ -1,11 +1,11 @@
 -- name: CreateKebele :one
-INSERT INTO kebele (name, city_id, subcity_id)
-VALUES ($1, $2, $3)
+INSERT INTO kebele (name, lat, lon, city_id, subcity_id)
+VALUES ($1, $2, $3, $4, $5)
 RETURNING *;
 
 -- name: UpdateKebele :one
 UPDATE kebele
-SET name = $2, city_id = $3, subcity_id = $4
+SET name = $2, lat = $3, lon = $4, city_id = $5, subcity_id = $6
 WHERE id = $1
 RETURNING *;
 
