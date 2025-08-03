@@ -120,64 +120,6 @@ func (q *Queries) GetKebele(ctx context.Context, id uuid.UUID) (GetKebeleRow, er
 	return i, err
 }
 
-const getKebeleDetail = `-- name: GetKebeleDetail :one
-SELECT k.id, k.name, k.lat, k.lon, k.subcity_id, k.city_id, k.created_at, k.deleted_at, c.name as city_name, sc.name as subcity_name, u.id as executive_id,
-    cu.id as cashier_id, cu.id as executive_id,
-    CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS executive_name,
-    CONCAT_WS(' ', cu.first_name, cu.second_name, cu.last_name) AS executive_name,
-    CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS executive_name
-FROM kebele k
-LEFT JOIN city c ON c.id = k.city_id
-LEFT JOIN subcity sc ON sc.id = k.subcity_id
-LEFT JOIN "user" u ON u.kebele_id = k.id AND u.role_slug = 'executive'
-LEFT JOIN "user" cu ON cu.kebele_id = k.id AND cu.role_slug = 'cashier'
-LEFT JOIN "user" eu ON eu.kebele_id = k.id AND eu.role_slug = 'encoder'
-WHERE k.id = $1 AND k.deleted_at IS NULL
-`
-
-type GetKebeleDetailRow struct {
-	ID              uuid.UUID  `db:"id" json:"id"`
-	Name            string     `db:"name" json:"name"`
-	Lat             *float64   `db:"lat" json:"lat"`
-	Lon             *float64   `db:"lon" json:"lon"`
-	SubcityID       *uuid.UUID `db:"subcity_id" json:"subcity_id"`
-	CityID          uuid.UUID  `db:"city_id" json:"city_id"`
-	CreatedAt       time.Time  `db:"created_at" json:"created_at"`
-	DeletedAt       *time.Time `db:"deleted_at" json:"deleted_at"`
-	CityName        *string    `db:"city_name" json:"city_name"`
-	SubcityName     *string    `db:"subcity_name" json:"subcity_name"`
-	ExecutiveID     *uuid.UUID `db:"executive_id" json:"executive_id"`
-	CashierID       *uuid.UUID `db:"cashier_id" json:"cashier_id"`
-	ExecutiveID_2   *uuid.UUID `db:"executive_id_2" json:"executive_id_2"`
-	ExecutiveName   string     `db:"executive_name" json:"executive_name"`
-	ExecutiveName_2 string     `db:"executive_name_2" json:"executive_name_2"`
-	ExecutiveName_3 string     `db:"executive_name_3" json:"executive_name_3"`
-}
-
-func (q *Queries) GetKebeleDetail(ctx context.Context, id uuid.UUID) (GetKebeleDetailRow, error) {
-	row := q.db.QueryRow(ctx, getKebeleDetail, id)
-	var i GetKebeleDetailRow
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.Lat,
-		&i.Lon,
-		&i.SubcityID,
-		&i.CityID,
-		&i.CreatedAt,
-		&i.DeletedAt,
-		&i.CityName,
-		&i.SubcityName,
-		&i.ExecutiveID,
-		&i.CashierID,
-		&i.ExecutiveID_2,
-		&i.ExecutiveName,
-		&i.ExecutiveName_2,
-		&i.ExecutiveName_3,
-	)
-	return i, err
-}
-
 const listKebeles = `-- name: ListKebeles :many
 SELECT k.id, k.name, k.lat, k.lon, k.subcity_id, k.city_id, k.created_at, k.deleted_at, c.name as city_name, sc.name as subcity_name, u.id as executive_id,
     CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS executive_name

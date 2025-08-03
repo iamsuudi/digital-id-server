@@ -345,6 +345,44 @@ func (q *Queries) GrantUserPlacement(ctx context.Context, arg GrantUserPlacement
 	return err
 }
 
+const listUsersByKebeleAndRole = `-- name: ListUsersByKebeleAndRole :many
+SELECT id, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
+FROM "user"
+WHERE kebele_id = $1
+  AND role_slug = $2
+  AND deleted_at IS NULL
+`
+
+type ListUsersByKebeleAndRoleParams struct {
+	KebeleID *uuid.UUID `db:"kebele_id" json:"kebele_id"`
+	RoleSlug string     `db:"role_slug" json:"role_slug"`
+}
+
+type ListUsersByKebeleAndRoleRow struct {
+	ID       uuid.UUID `db:"id" json:"id"`
+	FullName string    `db:"full_name" json:"full_name"`
+}
+
+func (q *Queries) ListUsersByKebeleAndRole(ctx context.Context, arg ListUsersByKebeleAndRoleParams) ([]ListUsersByKebeleAndRoleRow, error) {
+	rows, err := q.db.Query(ctx, listUsersByKebeleAndRole, arg.KebeleID, arg.RoleSlug)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListUsersByKebeleAndRoleRow{}
+	for rows.Next() {
+		var i ListUsersByKebeleAndRoleRow
+		if err := rows.Scan(&i.ID, &i.FullName); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listUsersByRole = `-- name: ListUsersByRole :many
 SELECT id, first_name, second_name, last_name, email, phone, password_hash, city_id, subcity_id, kebele_id, role_slug, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
 FROM "user"

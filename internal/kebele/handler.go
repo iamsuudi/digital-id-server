@@ -2,6 +2,7 @@ package kebele
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -73,8 +74,9 @@ func (h *Handler) GetKebele(c *gin.Context) {
 		return
 	}
 
-	subcity, err := h.service.GetKebele(c.Request.Context(), id)
+	kebele,err := h.service.GetKebele(c, id)
 	if err != nil {
+		fmt.Println(err.Error())
 		if errors.Is(err, pgx.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Kebele not found"})
 		} else {
@@ -83,7 +85,51 @@ func (h *Handler) GetKebele(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, subcity)
+	c.JSON(http.StatusOK, kebele)
+}
+
+func(h *Handler) GetKebeleCashiers(c *gin.Context) {
+	idParam := c.Param("id")
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid kebele ID"})
+		return
+	}
+
+	cashiers,err := h.service.GetCashiers(c, id)
+	if err != nil {
+		fmt.Println(err.Error())
+		if errors.Is(err, pgx.ErrNoRows) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Kebele not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch cashiers"})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, cashiers)
+}
+
+func(h *Handler) GetKebeleEncoders(c *gin.Context) {
+	idParam := c.Param("id")
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid kebele ID"})
+		return
+	}
+
+	encoders,err := h.service.GetCashiers(c, id)
+	if err != nil {
+		fmt.Println(err.Error())
+		if errors.Is(err, pgx.ErrNoRows) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Kebele not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch encoders"})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, encoders)
 }
 
 func (h *Handler) GetKebeles(c *gin.Context) {
@@ -101,7 +147,7 @@ func (h *Handler) GetKebeles(c *gin.Context) {
 
 		c.JSON(http.StatusOK, gin.H{
 			"kebeles": kebeles,
-			"count":  count,
+			"count":   count,
 		})
 	} else {
 		count, kebeles, err := h.service.SearchKebeles(c, limit, offset, query)
@@ -115,7 +161,7 @@ func (h *Handler) GetKebeles(c *gin.Context) {
 
 		c.JSON(http.StatusOK, gin.H{
 			"kebeles": kebeles,
-			"count":  count,
+			"count":   count,
 		})
 	}
 }

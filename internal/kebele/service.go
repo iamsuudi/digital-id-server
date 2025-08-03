@@ -45,12 +45,12 @@ func (s *Service) UpdateKebele(ctx context.Context, id uuid.UUID, input types.Ke
 	if err != nil {
 		return err
 	}
-	
+
 	err = qtx.RevokeUserPlacement(ctx, repository.RevokeUserPlacementParams{
 		CityID:    &input.CityID,
 		SubcityID: input.SubCityID,
 		KebeleID:  &id,
-		RoleSlug: "executive",
+		RoleSlug:  "executive",
 	})
 	if err != nil {
 		return err
@@ -73,6 +73,20 @@ func (s *Service) UpdateKebele(ctx context.Context, id uuid.UUID, input types.Ke
 
 func (s *Service) GetKebele(ctx context.Context, id uuid.UUID) (repository.GetKebeleRow, error) {
 	return s.q.GetKebele(ctx, id)
+}
+
+func (s *Service) GetEncoders(ctx context.Context, id uuid.UUID) ([]repository.ListUsersByKebeleAndRoleRow, error) {
+	return s.q.ListUsersByKebeleAndRole(ctx, repository.ListUsersByKebeleAndRoleParams{
+		KebeleID: &id,
+		RoleSlug: "encoder",
+	})
+}
+
+func (s *Service) GetCashiers(ctx context.Context, id uuid.UUID) ([]repository.ListUsersByKebeleAndRoleRow, error) {
+	return s.q.ListUsersByKebeleAndRole(ctx, repository.ListUsersByKebeleAndRoleParams{
+		KebeleID: &id,
+		RoleSlug: "cashier",
+	})
 }
 
 func (s *Service) GetKebeles(ctx context.Context, limit, offset int) (int64, []repository.ListKebelesRow, error) {

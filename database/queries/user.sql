@@ -63,6 +63,13 @@ UPDATE "user"
 SET deleted_at = NOW()
 WHERE id = $1;
 
+-- name: ListUsersByKebeleAndRole :many
+SELECT id, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
+FROM "user"
+WHERE kebele_id = $1
+  AND role_slug = $2
+  AND deleted_at IS NULL;
+
 -- name: ListUsersUnderScope :many
 SELECT u.*, r.name AS role_name, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS full_name,
     c.name AS city_name, sc.name AS subcity_name, k.name AS kebele_name,

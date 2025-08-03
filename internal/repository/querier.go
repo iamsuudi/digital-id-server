@@ -38,7 +38,6 @@ type Querier interface {
 	GetCity(ctx context.Context, id uuid.UUID) (GetCityRow, error)
 	GetEffectivePermissionsForUser(ctx context.Context, id uuid.UUID) ([]GetEffectivePermissionsForUserRow, error)
 	GetKebele(ctx context.Context, id uuid.UUID) (GetKebeleRow, error)
-	GetKebeleDetail(ctx context.Context, id uuid.UUID) (GetKebeleDetailRow, error)
 	GetRefreshToken(ctx context.Context, token string) (RefreshTokens, error)
 	GetSubCity(ctx context.Context, id uuid.UUID) (GetSubCityRow, error)
 	GetUniversalPermissionMatrixForUser(ctx context.Context, arg GetUniversalPermissionMatrixForUserParams) ([]GetUniversalPermissionMatrixForUserRow, error)
@@ -61,6 +60,7 @@ type Querier interface {
 	ListSubCities(ctx context.Context, arg ListSubCitiesParams) ([]ListSubCitiesRow, error)
 	// Returns user related audit logs
 	ListUserAuditLogs(ctx context.Context, arg ListUserAuditLogsParams) ([]ListUserAuditLogsRow, error)
+	ListUsersByKebeleAndRole(ctx context.Context, arg ListUsersByKebeleAndRoleParams) ([]ListUsersByKebeleAndRoleRow, error)
 	ListUsersByRole(ctx context.Context, arg ListUsersByRoleParams) ([]ListUsersByRoleRow, error)
 	ListUsersUnderScope(ctx context.Context, arg ListUsersUnderScopeParams) ([]ListUsersUnderScopeRow, error)
 	RemoveUserPermissionOverride(ctx context.Context, arg RemoveUserPermissionOverrideParams) error

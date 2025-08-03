@@ -18,20 +18,6 @@ LEFT JOIN subcity sc ON sc.id = k.subcity_id
 LEFT JOIN "user" u ON u.kebele_id = k.id AND u.role_slug = 'executive'
 WHERE k.id = $1 AND k.deleted_at IS NULL;
 
--- name: GetKebeleDetail :one
-SELECT k.*, c.name as city_name, sc.name as subcity_name, u.id as executive_id,
-    cu.id as cashier_id, cu.id as executive_id,
-    CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS executive_name,
-    CONCAT_WS(' ', cu.first_name, cu.second_name, cu.last_name) AS executive_name,
-    CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS executive_name
-FROM kebele k
-LEFT JOIN city c ON c.id = k.city_id
-LEFT JOIN subcity sc ON sc.id = k.subcity_id
-LEFT JOIN "user" u ON u.kebele_id = k.id AND u.role_slug = 'executive'
-LEFT JOIN "user" cu ON cu.kebele_id = k.id AND cu.role_slug = 'cashier'
-LEFT JOIN "user" eu ON eu.kebele_id = k.id AND eu.role_slug = 'encoder'
-WHERE k.id = $1 AND k.deleted_at IS NULL;
-
 -- name: ListKebeles :many
 SELECT k.*, c.name as city_name, sc.name as subcity_name, u.id as executive_id,
     CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS executive_name
