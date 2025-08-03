@@ -40,23 +40,33 @@ func (q *Queries) CountSearchKebeles(ctx context.Context, query string) (int64, 
 }
 
 const createKebele = `-- name: CreateKebele :one
-INSERT INTO kebele (name, city_id, subcity_id)
-VALUES ($1, $2, $3)
-RETURNING id, name, subcity_id, city_id, created_at, deleted_at
+INSERT INTO kebele (name, lat, lon, city_id, subcity_id)
+VALUES ($1, $2, $3, $4, $5)
+RETURNING id, name, lat, lon, subcity_id, city_id, created_at, deleted_at
 `
 
 type CreateKebeleParams struct {
 	Name      string     `db:"name" json:"name"`
+	Lat       *float64   `db:"lat" json:"lat"`
+	Lon       *float64   `db:"lon" json:"lon"`
 	CityID    uuid.UUID  `db:"city_id" json:"city_id"`
 	SubcityID *uuid.UUID `db:"subcity_id" json:"subcity_id"`
 }
 
 func (q *Queries) CreateKebele(ctx context.Context, arg CreateKebeleParams) (Kebele, error) {
-	row := q.db.QueryRow(ctx, createKebele, arg.Name, arg.CityID, arg.SubcityID)
+	row := q.db.QueryRow(ctx, createKebele,
+		arg.Name,
+		arg.Lat,
+		arg.Lon,
+		arg.CityID,
+		arg.SubcityID,
+	)
 	var i Kebele
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
+		&i.Lat,
+		&i.Lon,
 		&i.SubcityID,
 		&i.CityID,
 		&i.CreatedAt,
@@ -66,7 +76,7 @@ func (q *Queries) CreateKebele(ctx context.Context, arg CreateKebeleParams) (Keb
 }
 
 const getKebele = `-- name: GetKebele :one
-SELECT k.id, k.name, k.subcity_id, k.city_id, k.created_at, k.deleted_at, c.name as city_name, sc.name as subcity_name, u.id as executive_id,
+SELECT k.id, k.name, k.lat, k.lon, k.subcity_id, k.city_id, k.created_at, k.deleted_at, c.name as city_name, sc.name as subcity_name, u.id as executive_id,
     CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS executive_name
 FROM kebele k
 LEFT JOIN city c ON c.id = k.city_id
@@ -78,6 +88,8 @@ WHERE k.id = $1 AND k.deleted_at IS NULL
 type GetKebeleRow struct {
 	ID            uuid.UUID  `db:"id" json:"id"`
 	Name          string     `db:"name" json:"name"`
+	Lat           *float64   `db:"lat" json:"lat"`
+	Lon           *float64   `db:"lon" json:"lon"`
 	SubcityID     *uuid.UUID `db:"subcity_id" json:"subcity_id"`
 	CityID        uuid.UUID  `db:"city_id" json:"city_id"`
 	CreatedAt     time.Time  `db:"created_at" json:"created_at"`
@@ -94,6 +106,8 @@ func (q *Queries) GetKebele(ctx context.Context, id uuid.UUID) (GetKebeleRow, er
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
+		&i.Lat,
+		&i.Lon,
 		&i.SubcityID,
 		&i.CityID,
 		&i.CreatedAt,
@@ -106,8 +120,66 @@ func (q *Queries) GetKebele(ctx context.Context, id uuid.UUID) (GetKebeleRow, er
 	return i, err
 }
 
+const getKebeleDetail = `-- name: GetKebeleDetail :one
+SELECT k.id, k.name, k.lat, k.lon, k.subcity_id, k.city_id, k.created_at, k.deleted_at, c.name as city_name, sc.name as subcity_name, u.id as executive_id,
+    cu.id as cashier_id, cu.id as executive_id,
+    CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS executive_name,
+    CONCAT_WS(' ', cu.first_name, cu.second_name, cu.last_name) AS executive_name,
+    CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS executive_name
+FROM kebele k
+LEFT JOIN city c ON c.id = k.city_id
+LEFT JOIN subcity sc ON sc.id = k.subcity_id
+LEFT JOIN "user" u ON u.kebele_id = k.id AND u.role_slug = 'executive'
+LEFT JOIN "user" cu ON cu.kebele_id = k.id AND cu.role_slug = 'cashier'
+LEFT JOIN "user" eu ON eu.kebele_id = k.id AND eu.role_slug = 'encoder'
+WHERE k.id = $1 AND k.deleted_at IS NULL
+`
+
+type GetKebeleDetailRow struct {
+	ID              uuid.UUID  `db:"id" json:"id"`
+	Name            string     `db:"name" json:"name"`
+	Lat             *float64   `db:"lat" json:"lat"`
+	Lon             *float64   `db:"lon" json:"lon"`
+	SubcityID       *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	CityID          uuid.UUID  `db:"city_id" json:"city_id"`
+	CreatedAt       time.Time  `db:"created_at" json:"created_at"`
+	DeletedAt       *time.Time `db:"deleted_at" json:"deleted_at"`
+	CityName        *string    `db:"city_name" json:"city_name"`
+	SubcityName     *string    `db:"subcity_name" json:"subcity_name"`
+	ExecutiveID     *uuid.UUID `db:"executive_id" json:"executive_id"`
+	CashierID       *uuid.UUID `db:"cashier_id" json:"cashier_id"`
+	ExecutiveID_2   *uuid.UUID `db:"executive_id_2" json:"executive_id_2"`
+	ExecutiveName   string     `db:"executive_name" json:"executive_name"`
+	ExecutiveName_2 string     `db:"executive_name_2" json:"executive_name_2"`
+	ExecutiveName_3 string     `db:"executive_name_3" json:"executive_name_3"`
+}
+
+func (q *Queries) GetKebeleDetail(ctx context.Context, id uuid.UUID) (GetKebeleDetailRow, error) {
+	row := q.db.QueryRow(ctx, getKebeleDetail, id)
+	var i GetKebeleDetailRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Lat,
+		&i.Lon,
+		&i.SubcityID,
+		&i.CityID,
+		&i.CreatedAt,
+		&i.DeletedAt,
+		&i.CityName,
+		&i.SubcityName,
+		&i.ExecutiveID,
+		&i.CashierID,
+		&i.ExecutiveID_2,
+		&i.ExecutiveName,
+		&i.ExecutiveName_2,
+		&i.ExecutiveName_3,
+	)
+	return i, err
+}
+
 const listKebeles = `-- name: ListKebeles :many
-SELECT k.id, k.name, k.subcity_id, k.city_id, k.created_at, k.deleted_at, c.name as city_name, sc.name as subcity_name, u.id as executive_id,
+SELECT k.id, k.name, k.lat, k.lon, k.subcity_id, k.city_id, k.created_at, k.deleted_at, c.name as city_name, sc.name as subcity_name, u.id as executive_id,
     CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS executive_name
 FROM kebele k
 LEFT JOIN city c ON c.id = k.city_id
@@ -126,6 +198,8 @@ type ListKebelesParams struct {
 type ListKebelesRow struct {
 	ID            uuid.UUID  `db:"id" json:"id"`
 	Name          string     `db:"name" json:"name"`
+	Lat           *float64   `db:"lat" json:"lat"`
+	Lon           *float64   `db:"lon" json:"lon"`
 	SubcityID     *uuid.UUID `db:"subcity_id" json:"subcity_id"`
 	CityID        uuid.UUID  `db:"city_id" json:"city_id"`
 	CreatedAt     time.Time  `db:"created_at" json:"created_at"`
@@ -148,6 +222,8 @@ func (q *Queries) ListKebeles(ctx context.Context, arg ListKebelesParams) ([]Lis
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
+			&i.Lat,
+			&i.Lon,
 			&i.SubcityID,
 			&i.CityID,
 			&i.CreatedAt,
@@ -168,7 +244,7 @@ func (q *Queries) ListKebeles(ctx context.Context, arg ListKebelesParams) ([]Lis
 }
 
 const searchKebeles = `-- name: SearchKebeles :many
-SELECT k.id, k.name, k.subcity_id, k.city_id, k.created_at, k.deleted_at, c.name as city_name, sc.name as subcity_name, u.id as executive_id,
+SELECT k.id, k.name, k.lat, k.lon, k.subcity_id, k.city_id, k.created_at, k.deleted_at, c.name as city_name, sc.name as subcity_name, u.id as executive_id,
     CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS executive_name,
     similarity(CONCAT_WS(' ', k.name, sc.name, c.name), $1) AS sim
 FROM kebele k
@@ -190,6 +266,8 @@ type SearchKebelesParams struct {
 type SearchKebelesRow struct {
 	ID            uuid.UUID  `db:"id" json:"id"`
 	Name          string     `db:"name" json:"name"`
+	Lat           *float64   `db:"lat" json:"lat"`
+	Lon           *float64   `db:"lon" json:"lon"`
 	SubcityID     *uuid.UUID `db:"subcity_id" json:"subcity_id"`
 	CityID        uuid.UUID  `db:"city_id" json:"city_id"`
 	CreatedAt     time.Time  `db:"created_at" json:"created_at"`
@@ -213,6 +291,8 @@ func (q *Queries) SearchKebeles(ctx context.Context, arg SearchKebelesParams) ([
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
+			&i.Lat,
+			&i.Lon,
 			&i.SubcityID,
 			&i.CityID,
 			&i.CreatedAt,
@@ -235,14 +315,16 @@ func (q *Queries) SearchKebeles(ctx context.Context, arg SearchKebelesParams) ([
 
 const updateKebele = `-- name: UpdateKebele :one
 UPDATE kebele
-SET name = $2, city_id = $3, subcity_id = $4
+SET name = $2, lat = $3, lon = $4, city_id = $5, subcity_id = $6
 WHERE id = $1
-RETURNING id, name, subcity_id, city_id, created_at, deleted_at
+RETURNING id, name, lat, lon, subcity_id, city_id, created_at, deleted_at
 `
 
 type UpdateKebeleParams struct {
 	ID        uuid.UUID  `db:"id" json:"id"`
 	Name      string     `db:"name" json:"name"`
+	Lat       *float64   `db:"lat" json:"lat"`
+	Lon       *float64   `db:"lon" json:"lon"`
 	CityID    uuid.UUID  `db:"city_id" json:"city_id"`
 	SubcityID *uuid.UUID `db:"subcity_id" json:"subcity_id"`
 }
@@ -251,6 +333,8 @@ func (q *Queries) UpdateKebele(ctx context.Context, arg UpdateKebeleParams) (Keb
 	row := q.db.QueryRow(ctx, updateKebele,
 		arg.ID,
 		arg.Name,
+		arg.Lat,
+		arg.Lon,
 		arg.CityID,
 		arg.SubcityID,
 	)
@@ -258,6 +342,8 @@ func (q *Queries) UpdateKebele(ctx context.Context, arg UpdateKebeleParams) (Keb
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
+		&i.Lat,
+		&i.Lon,
 		&i.SubcityID,
 		&i.CityID,
 		&i.CreatedAt,
