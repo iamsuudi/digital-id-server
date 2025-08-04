@@ -5,9 +5,17 @@ RETURNING *;
 
 -- name: UpdateSubCity :one
 UPDATE subcity
-SET name = $2, lat = $3, lon = $4, city_id = $5
+SET name = $2, lat = $3, lon = $4
 WHERE id = $1
 RETURNING *;
+
+-- name: GetKebelesForSubCity :many
+SELECT k.*, u.id as executive_id,
+    CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS executive_name
+FROM kebele k
+JOIN subcity sc ON sc.id = k.subcity_id
+LEFT JOIN "user" u ON u.kebele_id = k.id AND u.role_slug = 'executive'
+WHERE sc.id = $1 AND k.deleted_at IS NULL;
 
 -- name: GetSubCity :one
 SELECT s.*, c.name as city_name, u.id as manager_id, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS manager_name

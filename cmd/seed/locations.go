@@ -257,7 +257,7 @@ func seedLocations(ctx context.Context, queries *repository.Queries) {
 					Name:      k.Name,
 					Lat:       &c.Lat,
 					Lon:       &c.Lon,
-					SubcityID: &(subCity.ID),
+					SubcityID: subCity.ID,
 					CityID:    city.ID,
 				})
 				if err != nil {

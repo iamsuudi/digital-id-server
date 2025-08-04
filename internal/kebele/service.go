@@ -24,7 +24,13 @@ func (s *Service) CreateKebele(ctx context.Context, input types.KebeleInput) (re
 		Name:      input.Name,
 		CityID:    input.CityID,
 		SubcityID: input.SubCityID,
+		Lat:       input.Lat,
+		Lon:       input.Lon,
 	})
+}
+
+func (s *Service) DeleteKebele(ctx context.Context, id uuid.UUID) error {
+	return s.q.SoftDeleteKebele(ctx, id)
 }
 
 func (s *Service) RemoveStaff(ctx context.Context, staffID uuid.UUID) error {
@@ -51,7 +57,7 @@ func (s *Service) AddStaff(ctx context.Context, kebeleID, staffID uuid.UUID) err
 	err = qtx.GrantUserPlacement(ctx, repository.GrantUserPlacementParams{
 		ID:        staffID,
 		CityID:    &(kebele.CityID),
-		SubcityID: kebele.SubcityID,
+		SubcityID: &(kebele.SubcityID),
 		KebeleID:  &(kebeleID),
 	})
 	if err != nil {
@@ -78,10 +84,8 @@ func (s *Service) AssignExecutive(ctx context.Context, kebeleID, executiveID uui
 	// Remove previous executive
 	if kebele.ExecutiveID != nil {
 		err = qtx.RevokeUserPlacement(ctx, repository.RevokeUserPlacementParams{
-			CityID:    &(kebele.CityID),
-			SubcityID: kebele.SubcityID,
-			KebeleID:  &kebeleID,
-			ID:        *kebele.ExecutiveID,
+			KebeleID: nil,
+			ID:       *kebele.ExecutiveID,
 		})
 		if err != nil {
 			return err
@@ -91,7 +95,7 @@ func (s *Service) AssignExecutive(ctx context.Context, kebeleID, executiveID uui
 	err = qtx.GrantUserPlacement(ctx, repository.GrantUserPlacementParams{
 		ID:        executiveID,
 		CityID:    &(kebele.CityID),
-		SubcityID: kebele.SubcityID,
+		SubcityID: &(kebele.SubcityID),
 		KebeleID:  &(kebeleID),
 	})
 	if err != nil {

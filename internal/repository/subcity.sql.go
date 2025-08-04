@@ -72,6 +72,59 @@ func (q *Queries) CreateSubCity(ctx context.Context, arg CreateSubCityParams) (S
 	return i, err
 }
 
+const getKebelesForSubCity = `-- name: GetKebelesForSubCity :many
+SELECT k.id, k.name, k.lat, k.lon, k.subcity_id, k.city_id, k.created_at, k.deleted_at, u.id as executive_id,
+    CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS executive_name
+FROM kebele k
+JOIN subcity sc ON sc.id = k.subcity_id
+LEFT JOIN "user" u ON u.kebele_id = k.id AND u.role_slug = 'executive'
+WHERE sc.id = $1 AND k.deleted_at IS NULL
+`
+
+type GetKebelesForSubCityRow struct {
+	ID            uuid.UUID  `db:"id" json:"id"`
+	Name          string     `db:"name" json:"name"`
+	Lat           *float64   `db:"lat" json:"lat"`
+	Lon           *float64   `db:"lon" json:"lon"`
+	SubcityID     uuid.UUID  `db:"subcity_id" json:"subcity_id"`
+	CityID        uuid.UUID  `db:"city_id" json:"city_id"`
+	CreatedAt     time.Time  `db:"created_at" json:"created_at"`
+	DeletedAt     *time.Time `db:"deleted_at" json:"deleted_at"`
+	ExecutiveID   *uuid.UUID `db:"executive_id" json:"executive_id"`
+	ExecutiveName string     `db:"executive_name" json:"executive_name"`
+}
+
+func (q *Queries) GetKebelesForSubCity(ctx context.Context, id uuid.UUID) ([]GetKebelesForSubCityRow, error) {
+	rows, err := q.db.Query(ctx, getKebelesForSubCity, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetKebelesForSubCityRow{}
+	for rows.Next() {
+		var i GetKebelesForSubCityRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Lat,
+			&i.Lon,
+			&i.SubcityID,
+			&i.CityID,
+			&i.CreatedAt,
+			&i.DeletedAt,
+			&i.ExecutiveID,
+			&i.ExecutiveName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getSubCity = `-- name: GetSubCity :one
 SELECT s.id, s.name, s.lat, s.lon, s.city_id, s.created_at, s.deleted_at, c.name as city_name, u.id as manager_id, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS manager_name
 FROM subcity s
@@ -274,17 +327,16 @@ func (q *Queries) SearchSubCities(ctx context.Context, arg SearchSubCitiesParams
 
 const updateSubCity = `-- name: UpdateSubCity :one
 UPDATE subcity
-SET name = $2, lat = $3, lon = $4, city_id = $5
+SET name = $2, lat = $3, lon = $4
 WHERE id = $1
 RETURNING id, name, lat, lon, city_id, created_at, deleted_at
 `
 
 type UpdateSubCityParams struct {
-	ID     uuid.UUID `db:"id" json:"id"`
-	Name   string    `db:"name" json:"name"`
-	Lat    *float64  `db:"lat" json:"lat"`
-	Lon    *float64  `db:"lon" json:"lon"`
-	CityID uuid.UUID `db:"city_id" json:"city_id"`
+	ID   uuid.UUID `db:"id" json:"id"`
+	Name string    `db:"name" json:"name"`
+	Lat  *float64  `db:"lat" json:"lat"`
+	Lon  *float64  `db:"lon" json:"lon"`
 }
 
 func (q *Queries) UpdateSubCity(ctx context.Context, arg UpdateSubCityParams) (Subcity, error) {
@@ -293,7 +345,6 @@ func (q *Queries) UpdateSubCity(ctx context.Context, arg UpdateSubCityParams) (S
 		arg.Name,
 		arg.Lat,
 		arg.Lon,
-		arg.CityID,
 	)
 	var i Subcity
 	err := row.Scan(

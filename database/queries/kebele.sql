@@ -5,9 +5,14 @@ RETURNING *;
 
 -- name: UpdateKebele :one
 UPDATE kebele
-SET name = $2, lat = $3, lon = $4, city_id = $5, subcity_id = $6
+SET name = $2, lat = $3, lon = $4
 WHERE id = $1
 RETURNING *;
+
+-- name: SoftDeleteKebele :exec
+UPDATE kebele
+SET deleted_at = NOW()
+WHERE id = $1;
 
 -- name: GetKebele :one
 SELECT k.*, c.name as city_name, sc.name as subcity_name, u.id as executive_id,

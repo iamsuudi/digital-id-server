@@ -26,6 +26,7 @@ func NewHandler(s *Service) *Handler {
 func (h *Handler) CreateKebele(c *gin.Context) {
 	var input types.KebeleInput
 	if err := c.ShouldBind(&input); err != nil {
+		fmt.Println(err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input: " + err.Error()})
 		return
 	}
@@ -59,10 +60,32 @@ func (h *Handler) UpdateKebeleInfo(c *gin.Context) {
 
 	err = h.service.UpdateKebele(c.Request.Context(), id, input.Name, input.Lat, input.Lon)
 	if err != nil {
+		fmt.Println(err.Error())
 		if errors.Is(err, pgx.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Kebele not found"})
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update kebele"})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true})
+}
+
+func (h *Handler) DeleteKebele(c *gin.Context) {
+	idParam := c.Param("id")
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid kebele ID"})
+		return
+	}
+
+	err = h.service.DeleteKebele(c.Request.Context(), id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Kebele not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete kebele"})
 		}
 		return
 	}
