@@ -549,28 +549,25 @@ func (q *Queries) ListUsersUnderScope(ctx context.Context, arg ListUsersUnderSco
 
 const revokeUserPlacement = `-- name: RevokeUserPlacement :exec
 UPDATE "user"
-SET city_id = NULL,
-    subcity_id = NULL,
-    kebele_id = NULL
-WHERE role_slug = $1
-    AND ($2::uuid IS NULL OR city_id = $2::uuid)
-    AND ($3::uuid IS NULL OR subcity_id = $3::uuid)
-    AND ($4::uuid IS NULL OR kebele_id = $4::uuid)
+SET city_id = $1::uuid,
+    subcity_id = $2::uuid,
+    kebele_id = $3::uuid
+WHERE id = $4
 `
 
 type RevokeUserPlacementParams struct {
-	RoleSlug  string     `db:"role_slug" json:"role_slug"`
 	CityID    *uuid.UUID `db:"city_id" json:"city_id"`
 	SubcityID *uuid.UUID `db:"subcity_id" json:"subcity_id"`
 	KebeleID  *uuid.UUID `db:"kebele_id" json:"kebele_id"`
+	ID        uuid.UUID  `db:"id" json:"id"`
 }
 
 func (q *Queries) RevokeUserPlacement(ctx context.Context, arg RevokeUserPlacementParams) error {
 	_, err := q.db.Exec(ctx, revokeUserPlacement,
-		arg.RoleSlug,
 		arg.CityID,
 		arg.SubcityID,
 		arg.KebeleID,
+		arg.ID,
 	)
 	return err
 }

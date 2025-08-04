@@ -43,30 +43,30 @@ func (s *Service) UpdateCity(ctx context.Context, id uuid.UUID, input types.City
 		return err
 	}
 
-	err = qtx.RevokeUserPlacement(ctx, repository.RevokeUserPlacementParams{
-		CityID:    &id,
-		SubcityID: nil,
-		KebeleID:  nil,
-		RoleSlug:  "admin",
-	})
-	if err != nil {
-		return err
-	}
+	// err = qtx.RevokeUserPlacement(ctx, repository.RevokeUserPlacementParams{
+	// 	CityID:    &id,
+	// 	SubcityID: nil,
+	// 	KebeleID:  nil,
+	// 	RoleSlug:  "admin",
+	// })
+	// if err != nil {
+	// 	return err
+	// }
 
-	if input.AdminID != nil {
+	// if input.AdminID != nil {
 
-		if input.AdminID != nil {
-			err = qtx.GrantUserPlacement(ctx, repository.GrantUserPlacementParams{
-				ID:        *input.AdminID,
-				CityID:    &id,
-				SubcityID: nil,
-				KebeleID:  nil,
-			})
-			if err != nil {
-				return err
-			}
-		}
-	}
+	// 	if input.AdminID != nil {
+	// 		err = qtx.GrantUserPlacement(ctx, repository.GrantUserPlacementParams{
+	// 			ID:        *input.AdminID,
+	// 			CityID:    &id,
+	// 			SubcityID: nil,
+	// 			KebeleID:  nil,
+	// 		})
+	// 		if err != nil {
+	// 			return err
+	// 		}
+	// 	}
+	// }
 
 	return tx.Commit(ctx)
 }

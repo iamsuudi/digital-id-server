@@ -27,7 +27,14 @@ func (s *Service) CreateKebele(ctx context.Context, input types.KebeleInput) (re
 	})
 }
 
-func (s *Service) UpdateKebele(ctx context.Context, id uuid.UUID, input types.KebeleInput) error {
+func (s *Service) RemoveStaff(ctx context.Context, staffID uuid.UUID) error {
+	return s.q.RevokeUserPlacement(ctx, repository.RevokeUserPlacementParams{
+		KebeleID: nil,
+		ID:       staffID,
+	})
+}
+
+func (s *Service) AddStaff(ctx context.Context, kebeleID, staffID uuid.UUID) error {
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
 		return err
@@ -36,39 +43,72 @@ func (s *Service) UpdateKebele(ctx context.Context, id uuid.UUID, input types.Ke
 
 	qtx := s.q.WithTx(tx)
 
-	_, err = qtx.UpdateKebele(ctx, repository.UpdateKebeleParams{
-		ID:        id,
-		Name:      input.Name,
-		CityID:    input.CityID,
-		SubcityID: input.SubCityID,
+	kebele, err := qtx.GetKebele(ctx, kebeleID)
+	if err != nil {
+		return err
+	}
+
+	err = qtx.GrantUserPlacement(ctx, repository.GrantUserPlacementParams{
+		ID:        staffID,
+		CityID:    &(kebele.CityID),
+		SubcityID: kebele.SubcityID,
+		KebeleID:  &(kebeleID),
 	})
 	if err != nil {
 		return err
 	}
 
-	err = qtx.RevokeUserPlacement(ctx, repository.RevokeUserPlacementParams{
-		CityID:    &input.CityID,
-		SubcityID: input.SubCityID,
-		KebeleID:  &id,
-		RoleSlug:  "executive",
-	})
+	return tx.Commit(ctx)
+}
+
+func (s *Service) AssignExecutive(ctx context.Context, kebeleID, executiveID uuid.UUID) error {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	qtx := s.q.WithTx(tx)
+
+	kebele, err := qtx.GetKebele(ctx, kebeleID)
 	if err != nil {
 		return err
 	}
 
-	if input.ExecutiveID != nil {
-		err = qtx.GrantUserPlacement(ctx, repository.GrantUserPlacementParams{
-			ID:        *input.ExecutiveID,
-			CityID:    &input.CityID,
-			SubcityID: input.SubCityID,
-			KebeleID:  &id,
+	// Remove previous executive
+	if kebele.ExecutiveID != nil {
+		err = qtx.RevokeUserPlacement(ctx, repository.RevokeUserPlacementParams{
+			CityID:    &(kebele.CityID),
+			SubcityID: kebele.SubcityID,
+			KebeleID:  &kebeleID,
+			ID:        *kebele.ExecutiveID,
 		})
 		if err != nil {
 			return err
 		}
 	}
 
+	err = qtx.GrantUserPlacement(ctx, repository.GrantUserPlacementParams{
+		ID:        executiveID,
+		CityID:    &(kebele.CityID),
+		SubcityID: kebele.SubcityID,
+		KebeleID:  &(kebeleID),
+	})
+	if err != nil {
+		return err
+	}
+
 	return tx.Commit(ctx)
+}
+
+func (s *Service) UpdateKebele(ctx context.Context, id uuid.UUID, name string, lat, lon *float64) error {
+	_, err := s.q.UpdateKebele(ctx, repository.UpdateKebeleParams{
+		ID:   id,
+		Name: name,
+		Lat:  lat,
+		Lon:  lon,
+	})
+	return err
 }
 
 func (s *Service) GetKebele(ctx context.Context, id uuid.UUID) (repository.GetKebeleRow, error) {
