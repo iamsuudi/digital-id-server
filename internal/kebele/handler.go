@@ -39,8 +39,12 @@ func (h *Handler) CreateKebele(c *gin.Context) {
 	c.JSON(http.StatusCreated, city)
 }
 
-func (h *Handler) UpdateKebele(c *gin.Context) {
-	var input types.KebeleInput
+func (h *Handler) UpdateKebeleInfo(c *gin.Context) {
+	var input struct {
+		Name string   `json:"name" binding:"required"`
+		Lat  *float64 `json:"lat"`
+		Lon  *float64 `json:"lon"`
+	}
 	if err := c.ShouldBind(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input: " + err.Error()})
 		return
@@ -53,12 +57,82 @@ func (h *Handler) UpdateKebele(c *gin.Context) {
 		return
 	}
 
-	err = h.service.UpdateKebele(c.Request.Context(), id, input)
+	err = h.service.UpdateKebele(c.Request.Context(), id, input.Name, input.Lat, input.Lon)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Kebele not found"})
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update kebele"})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true})
+}
+
+func (h *Handler) AddStaff(c *gin.Context) {
+	var input struct {
+		StaffID uuid.UUID `json:"staff_id" binding:"required"`
+		Role    string    `json:"role_slug" binding:"required"`
+	}
+	if err := c.ShouldBind(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input: " + err.Error()})
+		return
+	}
+
+	idParam := c.Param("id")
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid kebele ID"})
+		return
+	}
+
+	switch input.Role {
+	case "executive":
+		{
+			err = h.service.AssignExecutive(c.Request.Context(), id, input.StaffID)
+		}
+	default:
+		{
+			err = h.service.AddStaff(c.Request.Context(), id, input.StaffID)
+		}
+	}
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Kebele not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add kebele " + input.Role})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true})
+}
+
+func (h *Handler) RemoveStaff(c *gin.Context) {
+	var input struct {
+		StaffID uuid.UUID `json:"staff_id"`
+	}
+	if err := c.ShouldBind(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input: " + err.Error()})
+		return
+	}
+
+	idParam := c.Param("id")
+	_, err := uuid.Parse(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid kebele ID"})
+		return
+	}
+
+	err = h.service.RemoveStaff(c.Request.Context(), input.StaffID)
+	if err != nil {
+		fmt.Println(err.Error())
+		if errors.Is(err, pgx.ErrNoRows) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Kebele not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove staff"})
 		}
 		return
 	}
@@ -74,7 +148,7 @@ func (h *Handler) GetKebele(c *gin.Context) {
 		return
 	}
 
-	kebele,err := h.service.GetKebele(c, id)
+	kebele, err := h.service.GetKebele(c, id)
 	if err != nil {
 		fmt.Println(err.Error())
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -88,7 +162,7 @@ func (h *Handler) GetKebele(c *gin.Context) {
 	c.JSON(http.StatusOK, kebele)
 }
 
-func(h *Handler) GetKebeleCashiers(c *gin.Context) {
+func (h *Handler) GetKebeleCashiers(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := uuid.Parse(idParam)
 	if err != nil {
@@ -96,7 +170,7 @@ func(h *Handler) GetKebeleCashiers(c *gin.Context) {
 		return
 	}
 
-	cashiers,err := h.service.GetCashiers(c, id)
+	cashiers, err := h.service.GetCashiers(c, id)
 	if err != nil {
 		fmt.Println(err.Error())
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -110,7 +184,7 @@ func(h *Handler) GetKebeleCashiers(c *gin.Context) {
 	c.JSON(http.StatusOK, cashiers)
 }
 
-func(h *Handler) GetKebeleEncoders(c *gin.Context) {
+func (h *Handler) GetKebeleEncoders(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := uuid.Parse(idParam)
 	if err != nil {
@@ -118,7 +192,7 @@ func(h *Handler) GetKebeleEncoders(c *gin.Context) {
 		return
 	}
 
-	encoders,err := h.service.GetCashiers(c, id)
+	encoders, err := h.service.GetEncoders(c, id)
 	if err != nil {
 		fmt.Println(err.Error())
 		if errors.Is(err, pgx.ErrNoRows) {

@@ -50,13 +50,10 @@ WHERE id = sqlc.arg('id');
 
 -- name: RevokeUserPlacement :exec
 UPDATE "user"
-SET city_id = NULL,
-    subcity_id = NULL,
-    kebele_id = NULL
-WHERE role_slug = sqlc.arg('role_slug')
-    AND (sqlc.narg('city_id')::uuid IS NULL OR city_id = sqlc.narg('city_id')::uuid)
-    AND (sqlc.narg('subcity_id')::uuid IS NULL OR subcity_id = sqlc.narg('subcity_id')::uuid)
-    AND (sqlc.narg('kebele_id')::uuid IS NULL OR kebele_id = sqlc.narg('kebele_id')::uuid);
+SET city_id = sqlc.narg('city_id')::uuid,
+    subcity_id = sqlc.narg('subcity_id')::uuid,
+    kebele_id = sqlc.narg('kebele_id')::uuid
+WHERE id = sqlc.arg('id');
 
 -- name: SoftDeleteUser :exec
 UPDATE "user"

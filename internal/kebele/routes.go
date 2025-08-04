@@ -1,10 +1,11 @@
 package kebele
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"digital-id-server/internal/auth"
 	"digital-id-server/internal/repository"
+
+	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func RegisterRoutes(rg *gin.RouterGroup, db *pgxpool.Pool, q *repository.Queries) {
@@ -13,11 +14,13 @@ func RegisterRoutes(rg *gin.RouterGroup, db *pgxpool.Pool, q *repository.Queries
 
 	r := rg.Group("/kebeles", auth.Authenticate())
 	{
+		r.GET("/", handler.GetKebeles)
 		r.POST("/create", handler.CreateKebele)
 		r.GET("/:id", handler.GetKebele)
 		r.GET("/:id/encoders", handler.GetKebeleEncoders)
 		r.GET("/:id/cashiers", handler.GetKebeleCashiers)
-		r.PUT("/:id", handler.UpdateKebele)
-		r.GET("/", handler.GetKebeles)
+		r.PUT("/:id", handler.UpdateKebeleInfo)
+		r.POST("/:id/staff", handler.AddStaff)
+		r.DELETE("/:id/staff", handler.RemoveStaff)
 	}
 }
