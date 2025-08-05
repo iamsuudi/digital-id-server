@@ -26,7 +26,25 @@ func (s *Service) CreateCity(ctx context.Context, input types.CityInput) (reposi
 	})
 }
 
-func (s *Service) UpdateCity(ctx context.Context, id uuid.UUID, input types.CityInput) error {
+func (s *Service) DeleteCity(ctx context.Context, id uuid.UUID) error {
+	return s.q.SoftDeleteCity(ctx, id)
+}
+
+func (s *Service) RemoveStaff(ctx context.Context, staffID uuid.UUID) error {
+	return s.q.RevokeUserPlacement(ctx, repository.RevokeUserPlacementParams{
+		CityID: nil,
+		ID:     staffID,
+	})
+}
+
+func (s *Service) AddStaff(ctx context.Context, CityID, staffID uuid.UUID) error {
+	return s.q.GrantUserPlacement(ctx, repository.GrantUserPlacementParams{
+		ID:     staffID,
+		CityID: &(CityID),
+	})
+}
+
+func (s *Service) AssignAdmin(ctx context.Context, cityID, adminID uuid.UUID) error {
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
 		return err
@@ -35,40 +53,44 @@ func (s *Service) UpdateCity(ctx context.Context, id uuid.UUID, input types.City
 
 	qtx := s.q.WithTx(tx)
 
-	_, err = qtx.UpdateCity(ctx, repository.UpdateCityParams{
-		ID:   id,
-		Name: input.Name,
+	city, err := qtx.GetCity(ctx, cityID)
+	if err != nil {
+		return err
+	}
+
+	// Remove previous admin
+	if city.AdminID != nil {
+		err = qtx.RevokeUserPlacement(ctx, repository.RevokeUserPlacementParams{
+			CityID: nil,
+			ID:     *city.AdminID,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	err = qtx.GrantUserPlacement(ctx, repository.GrantUserPlacementParams{
+		ID:     adminID,
+		CityID: &cityID,
 	})
 	if err != nil {
 		return err
 	}
 
-	// err = qtx.RevokeUserPlacement(ctx, repository.RevokeUserPlacementParams{
-	// 	CityID:    &id,
-	// 	SubcityID: nil,
-	// 	KebeleID:  nil,
-	// 	RoleSlug:  "admin",
-	// })
-	// if err != nil {
-	// 	return err
-	// }
-
-	// if input.AdminID != nil {
-
-	// 	if input.AdminID != nil {
-	// 		err = qtx.GrantUserPlacement(ctx, repository.GrantUserPlacementParams{
-	// 			ID:        *input.AdminID,
-	// 			CityID:    &id,
-	// 			SubcityID: nil,
-	// 			KebeleID:  nil,
-	// 		})
-	// 		if err != nil {
-	// 			return err
-	// 		}
-	// 	}
-	// }
-
 	return tx.Commit(ctx)
+}
+
+func (s *Service) UpdateCityInfo(ctx context.Context, id uuid.UUID, name string, lat, lon *float64) error {
+	return s.q.UpdateCity(ctx, repository.UpdateCityParams{
+		ID:   id,
+		Name: name,
+		Lat:  lat,
+		Lon:  lon,
+	})
+}
+
+func (s *Service) GetSubCities(ctx context.Context, id uuid.UUID) ([]repository.GetSubCitiesForCityRow, error) {
+	return s.q.GetSubCitiesForCity(ctx, id)
 }
 
 func (s *Service) GetCity(ctx context.Context, id uuid.UUID) (repository.GetCityRow, error) {

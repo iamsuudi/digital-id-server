@@ -99,6 +99,60 @@ func (q *Queries) GetCity(ctx context.Context, id uuid.UUID) (GetCityRow, error)
 	return i, err
 }
 
+const getSubCitiesForCity = `-- name: GetSubCitiesForCity :many
+SELECT s.id, s.name, s.lat, s.lon, s.city_id, s.created_at, s.deleted_at, c.name as city_name, u.id as manager_id, 
+    CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS manager_name
+FROM subcity s
+JOIN city c ON c.id = s.city_id
+LEFT JOIN "user" u ON u.subcity_id = s.id AND u.role_slug = 'manager'
+WHERE s.deleted_at IS NULL AND c.id = $1
+ORDER BY s.created_at DESC
+`
+
+type GetSubCitiesForCityRow struct {
+	ID          uuid.UUID  `db:"id" json:"id"`
+	Name        string     `db:"name" json:"name"`
+	Lat         *float64   `db:"lat" json:"lat"`
+	Lon         *float64   `db:"lon" json:"lon"`
+	CityID      uuid.UUID  `db:"city_id" json:"city_id"`
+	CreatedAt   time.Time  `db:"created_at" json:"created_at"`
+	DeletedAt   *time.Time `db:"deleted_at" json:"deleted_at"`
+	CityName    string     `db:"city_name" json:"city_name"`
+	ManagerID   *uuid.UUID `db:"manager_id" json:"manager_id"`
+	ManagerName string     `db:"manager_name" json:"manager_name"`
+}
+
+func (q *Queries) GetSubCitiesForCity(ctx context.Context, id uuid.UUID) ([]GetSubCitiesForCityRow, error) {
+	rows, err := q.db.Query(ctx, getSubCitiesForCity, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetSubCitiesForCityRow{}
+	for rows.Next() {
+		var i GetSubCitiesForCityRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Lat,
+			&i.Lon,
+			&i.CityID,
+			&i.CreatedAt,
+			&i.DeletedAt,
+			&i.CityName,
+			&i.ManagerID,
+			&i.ManagerName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listCities = `-- name: ListCities :many
 SELECT c.id, c.name, c.lat, c.lon, c.created_at, c.deleted_at, u.id as admin_id, 
     CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS admin_name
@@ -238,11 +292,21 @@ func (q *Queries) SearchCities(ctx context.Context, arg SearchCitiesParams) ([]S
 	return items, nil
 }
 
-const updateCity = `-- name: UpdateCity :one
+const softDeleteCity = `-- name: SoftDeleteCity :exec
+UPDATE city
+SET deleted_at = NOW()
+WHERE id = $1
+`
+
+func (q *Queries) SoftDeleteCity(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, softDeleteCity, id)
+	return err
+}
+
+const updateCity = `-- name: UpdateCity :exec
 UPDATE city
 SET name = $2, lat = $3, lon = $4
 WHERE id = $1
-RETURNING id, name, lat, lon, created_at, deleted_at
 `
 
 type UpdateCityParams struct {
@@ -252,21 +316,12 @@ type UpdateCityParams struct {
 	Lon  *float64  `db:"lon" json:"lon"`
 }
 
-func (q *Queries) UpdateCity(ctx context.Context, arg UpdateCityParams) (City, error) {
-	row := q.db.QueryRow(ctx, updateCity,
+func (q *Queries) UpdateCity(ctx context.Context, arg UpdateCityParams) error {
+	_, err := q.db.Exec(ctx, updateCity,
 		arg.ID,
 		arg.Name,
 		arg.Lat,
 		arg.Lon,
 	)
-	var i City
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.Lat,
-		&i.Lon,
-		&i.CreatedAt,
-		&i.DeletedAt,
-	)
-	return i, err
+	return err
 }

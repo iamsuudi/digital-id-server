@@ -70,6 +70,27 @@ func (h *Handler) UpdateSubCityInfo(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"success": true})
 }
 
+func (h *Handler) DeleteSubCity(c *gin.Context) {
+	idParam := c.Param("id")
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid subcity ID"})
+		return
+	}
+
+	err = h.service.DeleteSubCity(c.Request.Context(), id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "SubCity not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete subcity"})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true})
+}
+
 func (h *Handler) GetKebeles(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := uuid.Parse(idParam)
