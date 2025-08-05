@@ -409,7 +409,7 @@ type Kebele struct {
 	Name      string     `db:"name" json:"name"`
 	Lat       *float64   `db:"lat" json:"lat"`
 	Lon       *float64   `db:"lon" json:"lon"`
-	SubcityID *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	SubcityID uuid.UUID  `db:"subcity_id" json:"subcity_id"`
 	CityID    uuid.UUID  `db:"city_id" json:"city_id"`
 	CreatedAt time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt *time.Time `db:"deleted_at" json:"deleted_at"`

@@ -26,7 +26,14 @@ func (s *Service) CreateSubCity(ctx context.Context, input types.SubCityInput) (
 	})
 }
 
-func (s *Service) UpdateSubCity(ctx context.Context, id uuid.UUID, input types.SubCityInput) error {
+func (s *Service) RemoveStaff(ctx context.Context, staffID uuid.UUID) error {
+	return s.q.RevokeUserPlacement(ctx, repository.RevokeUserPlacementParams{
+		SubcityID: nil,
+		ID:        staffID,
+	})
+}
+
+func (s *Service) AddStaff(ctx context.Context, subCityID, staffID uuid.UUID) error {
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
 		return err
@@ -35,44 +42,77 @@ func (s *Service) UpdateSubCity(ctx context.Context, id uuid.UUID, input types.S
 
 	qtx := s.q.WithTx(tx)
 
-	_, err = qtx.UpdateSubCity(ctx, repository.UpdateSubCityParams{
-		ID:     id,
-		Name:   input.Name,
-		CityID: input.CityID,
+	subcity, err := qtx.GetSubCity(ctx, subCityID)
+	if err != nil {
+		return err
+	}
+
+	err = qtx.GrantUserPlacement(ctx, repository.GrantUserPlacementParams{
+		ID:        staffID,
+		CityID:    &(subcity.CityID),
+		SubcityID: &subCityID,
+		KebeleID:  nil,
 	})
 	if err != nil {
 		return err
 	}
 
-	// err = qtx.RevokeUserPlacement(ctx, repository.RevokeUserPlacementParams{
-	// 	CityID:    &input.CityID,
-	// 	SubcityID: &id,
-	// 	KebeleID:  nil,
-	// 	RoleSlug: "manager",
-	// })
-	// if err != nil {
-	// 	fmt.Println("failed to revoke", err)
-	// 	return err
-	// }
+	return tx.Commit(ctx)
+}
 
-	// if input.ManagerID != nil {
-	// 	err := qtx.GrantUserPlacement(ctx, repository.GrantUserPlacementParams{
-	// 		ID:        *input.ManagerID,
-	// 		CityID:    &input.CityID,
-	// 		SubcityID: &id,
-	// 		KebeleID:  nil,
-	// 	})
-	// 	if err != nil {
-	// 		fmt.Println("failed to grant", err)
-	// 		return err
-	// 	}
-	// }
+func (s *Service) AssignManager(ctx context.Context, subCityID, managerID uuid.UUID) error {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	qtx := s.q.WithTx(tx)
+
+	subcity, err := qtx.GetSubCity(ctx, subCityID)
+	if err != nil {
+		return err
+	}
+
+	// Remove previous executive
+	if subcity.ManagerID != nil {
+		err = qtx.RevokeUserPlacement(ctx, repository.RevokeUserPlacementParams{
+			SubcityID: nil,
+			ID:        *subcity.ManagerID,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	err = qtx.GrantUserPlacement(ctx, repository.GrantUserPlacementParams{
+		ID:        managerID,
+		CityID:    &(subcity.CityID),
+		SubcityID: &subCityID,
+	})
+	if err != nil {
+		return err
+	}
 
 	return tx.Commit(ctx)
 }
 
+func (s *Service) UpdateSubCity(ctx context.Context, id uuid.UUID, name string, lat, lon *float64) error {
+	_, err := s.q.UpdateSubCity(ctx, repository.UpdateSubCityParams{
+		ID:   id,
+		Name: name,
+		Lat:  lat,
+		Lon:  lon,
+	})
+	return err
+}
+
 func (s *Service) GetSubCity(ctx context.Context, id uuid.UUID) (repository.GetSubCityRow, error) {
 	return s.q.GetSubCity(ctx, id)
+}
+
+func (s *Service) GetKebeles(ctx context.Context, id uuid.UUID) ([]repository.GetKebelesForSubCityRow, error) {
+	return s.q.GetKebelesForSubCity(ctx, id)
 }
 
 func (s *Service) GetSubCities(ctx context.Context, limit, offset int) (int64, []repository.ListSubCitiesRow, error) {

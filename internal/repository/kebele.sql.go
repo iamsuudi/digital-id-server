@@ -46,11 +46,11 @@ RETURNING id, name, lat, lon, subcity_id, city_id, created_at, deleted_at
 `
 
 type CreateKebeleParams struct {
-	Name      string     `db:"name" json:"name"`
-	Lat       *float64   `db:"lat" json:"lat"`
-	Lon       *float64   `db:"lon" json:"lon"`
-	CityID    uuid.UUID  `db:"city_id" json:"city_id"`
-	SubcityID *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	Name      string    `db:"name" json:"name"`
+	Lat       *float64  `db:"lat" json:"lat"`
+	Lon       *float64  `db:"lon" json:"lon"`
+	CityID    uuid.UUID `db:"city_id" json:"city_id"`
+	SubcityID uuid.UUID `db:"subcity_id" json:"subcity_id"`
 }
 
 func (q *Queries) CreateKebele(ctx context.Context, arg CreateKebeleParams) (Kebele, error) {
@@ -90,7 +90,7 @@ type GetKebeleRow struct {
 	Name          string     `db:"name" json:"name"`
 	Lat           *float64   `db:"lat" json:"lat"`
 	Lon           *float64   `db:"lon" json:"lon"`
-	SubcityID     *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	SubcityID     uuid.UUID  `db:"subcity_id" json:"subcity_id"`
 	CityID        uuid.UUID  `db:"city_id" json:"city_id"`
 	CreatedAt     time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt     *time.Time `db:"deleted_at" json:"deleted_at"`
@@ -142,7 +142,7 @@ type ListKebelesRow struct {
 	Name          string     `db:"name" json:"name"`
 	Lat           *float64   `db:"lat" json:"lat"`
 	Lon           *float64   `db:"lon" json:"lon"`
-	SubcityID     *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	SubcityID     uuid.UUID  `db:"subcity_id" json:"subcity_id"`
 	CityID        uuid.UUID  `db:"city_id" json:"city_id"`
 	CreatedAt     time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt     *time.Time `db:"deleted_at" json:"deleted_at"`
@@ -210,7 +210,7 @@ type SearchKebelesRow struct {
 	Name          string     `db:"name" json:"name"`
 	Lat           *float64   `db:"lat" json:"lat"`
 	Lon           *float64   `db:"lon" json:"lon"`
-	SubcityID     *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	SubcityID     uuid.UUID  `db:"subcity_id" json:"subcity_id"`
 	CityID        uuid.UUID  `db:"city_id" json:"city_id"`
 	CreatedAt     time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt     *time.Time `db:"deleted_at" json:"deleted_at"`
@@ -255,20 +255,29 @@ func (q *Queries) SearchKebeles(ctx context.Context, arg SearchKebelesParams) ([
 	return items, nil
 }
 
+const softDeleteKebele = `-- name: SoftDeleteKebele :exec
+UPDATE kebele
+SET deleted_at = NOW()
+WHERE id = $1
+`
+
+func (q *Queries) SoftDeleteKebele(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, softDeleteKebele, id)
+	return err
+}
+
 const updateKebele = `-- name: UpdateKebele :one
 UPDATE kebele
-SET name = $2, lat = $3, lon = $4, city_id = $5, subcity_id = $6
+SET name = $2, lat = $3, lon = $4
 WHERE id = $1
 RETURNING id, name, lat, lon, subcity_id, city_id, created_at, deleted_at
 `
 
 type UpdateKebeleParams struct {
-	ID        uuid.UUID  `db:"id" json:"id"`
-	Name      string     `db:"name" json:"name"`
-	Lat       *float64   `db:"lat" json:"lat"`
-	Lon       *float64   `db:"lon" json:"lon"`
-	CityID    uuid.UUID  `db:"city_id" json:"city_id"`
-	SubcityID *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	ID   uuid.UUID `db:"id" json:"id"`
+	Name string    `db:"name" json:"name"`
+	Lat  *float64  `db:"lat" json:"lat"`
+	Lon  *float64  `db:"lon" json:"lon"`
 }
 
 func (q *Queries) UpdateKebele(ctx context.Context, arg UpdateKebeleParams) (Kebele, error) {
@@ -277,8 +286,6 @@ func (q *Queries) UpdateKebele(ctx context.Context, arg UpdateKebeleParams) (Keb
 		arg.Name,
 		arg.Lat,
 		arg.Lon,
-		arg.CityID,
-		arg.SubcityID,
 	)
 	var i Kebele
 	err := row.Scan(

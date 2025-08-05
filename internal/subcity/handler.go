@@ -2,6 +2,7 @@ package subcity
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -38,8 +39,12 @@ func (h *Handler) CreateSubCity(c *gin.Context) {
 	c.JSON(http.StatusCreated, city)
 }
 
-func (h *Handler) UpdateSubCity(c *gin.Context) {
-	var input types.SubCityInput
+func (h *Handler) UpdateSubCityInfo(c *gin.Context) {
+	var input struct {
+		Name string   `json:"name" binding:"required"`
+		Lat  *float64 `json:"lat"`
+		Lon  *float64 `json:"lon"`
+	}
 	if err := c.ShouldBind(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input: " + err.Error()})
 		return
@@ -52,12 +57,93 @@ func (h *Handler) UpdateSubCity(c *gin.Context) {
 		return
 	}
 
-	err = h.service.UpdateSubCity(c.Request.Context(), id, input)
+	err = h.service.UpdateSubCity(c.Request.Context(), id, input.Name, input.Lat, input.Lon)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "SubCity not found"})
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update subcity"})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true})
+}
+
+func (h *Handler) GetKebeles(c *gin.Context) {
+	idParam := c.Param("id")
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid city ID"})
+		return
+	}
+
+	kebeles, err := h.service.GetKebeles(c.Request.Context(), id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "SubCity not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch kebeles"})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, kebeles)
+}
+
+func (h *Handler) AddStaff(c *gin.Context) {
+	var input struct {
+		StaffID uuid.UUID `json:"staff_id" binding:"required"`
+	}
+	if err := c.ShouldBind(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input: " + err.Error()})
+		return
+	}
+
+	idParam := c.Param("id")
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid subcity ID"})
+		return
+	}
+
+	err = h.service.AssignManager(c.Request.Context(), id, input.StaffID)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Subcity not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add staff"})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true})
+}
+
+func (h *Handler) RemoveStaff(c *gin.Context) {
+	var input struct {
+		StaffID uuid.UUID `json:"staff_id"`
+	}
+	if err := c.ShouldBind(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input: " + err.Error()})
+		return
+	}
+
+	idParam := c.Param("id")
+	_, err := uuid.Parse(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid subcity ID"})
+		return
+	}
+
+	err = h.service.RemoveStaff(c.Request.Context(), input.StaffID)
+	if err != nil {
+		fmt.Println(err.Error())
+		if errors.Is(err, pgx.ErrNoRows) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Subcity not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove staff"})
 		}
 		return
 	}
@@ -101,7 +187,7 @@ func (h *Handler) GetSubCities(c *gin.Context) {
 
 		c.JSON(http.StatusOK, gin.H{
 			"subcities": subcities,
-			"count":  count,
+			"count":     count,
 		})
 	} else {
 		count, subcities, err := h.service.SearchSubCities(c, limit, offset, query)
@@ -115,7 +201,7 @@ func (h *Handler) GetSubCities(c *gin.Context) {
 
 		c.JSON(http.StatusOK, gin.H{
 			"subcities": subcities,
-			"count":  count,
+			"count":     count,
 		})
 	}
 }

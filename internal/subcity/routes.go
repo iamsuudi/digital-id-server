@@ -15,7 +15,10 @@ func RegisterRoutes(rg *gin.RouterGroup, db *pgxpool.Pool, q *repository.Queries
 	{
 		r.POST("/create", handler.CreateSubCity)
 		r.GET("/:id", handler.GetSubCity)
-		r.PUT("/:id", handler.UpdateSubCity)
+		r.PUT("/:id", handler.UpdateSubCityInfo)
+		r.GET("/:id/kebeles", handler.GetKebeles)
+		r.POST("/:id/staff", handler.AddStaff)
+		r.DELETE("/:id/staff", handler.RemoveStaff)
 		r.GET("/", handler.GetSubCities)
 	}
 }
