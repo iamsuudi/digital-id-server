@@ -123,8 +123,8 @@ var Data = []City{
 					{"Kebele 01", 7.196930, 38.609152},
 					{"Kebele 02", 7.212218, 38.608053},
 					{"Kebele 03", 7.206998, 38.617253},
-					{"Kebele 03", 7.193552, 38.615262},
-					{"Kebele 03", 7.199448, 38.621940},
+					{"Kebele 04", 7.193552, 38.615262},
+					{"Kebele 05", 7.199448, 38.621940},
 				},
 			},
 		},
@@ -269,8 +269,8 @@ func seedLocations(ctx context.Context, queries *repository.Queries) {
 		for _, sc := range c.SubCities {
 			subCity, err := queries.CreateSubCity(ctx, repository.CreateSubCityParams{
 				Name:   sc.Name,
-				Lat:    &c.Lat,
-				Lon:    &c.Lon,
+				Lat:    &sc.Lat,
+				Lon:    &sc.Lon,
 				CityID: city.ID,
 			})
 			if err != nil {
@@ -281,8 +281,8 @@ func seedLocations(ctx context.Context, queries *repository.Queries) {
 			for _, k := range sc.Kebeles {
 				kebele, err := queries.CreateKebele(ctx, repository.CreateKebeleParams{
 					Name:      k.Name,
-					Lat:       &c.Lat,
-					Lon:       &c.Lon,
+					Lat:       &k.Lat,
+					Lon:       &k.Lon,
 					SubcityID: subCity.ID,
 					CityID:    city.ID,
 				})
