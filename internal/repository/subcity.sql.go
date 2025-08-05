@@ -325,6 +325,17 @@ func (q *Queries) SearchSubCities(ctx context.Context, arg SearchSubCitiesParams
 	return items, nil
 }
 
+const softDeleteSubCity = `-- name: SoftDeleteSubCity :exec
+UPDATE subcity
+SET deleted_at = NOW()
+WHERE id = $1
+`
+
+func (q *Queries) SoftDeleteSubCity(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, softDeleteSubCity, id)
+	return err
+}
+
 const updateSubCity = `-- name: UpdateSubCity :one
 UPDATE subcity
 SET name = $2, lat = $3, lon = $4

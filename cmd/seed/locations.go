@@ -81,24 +81,50 @@ var Data = []City{
 		Lat:  7.1964, Lon: 38.5977, // approximate
 		SubCities: []SubCity{
 			{
-				Name: "Subcity-02", Lat: 7.193, Lon: 38.590,
+				Name: "Subcity-01", Lat: 7.1964, Lon: 38.5977,
 				Kebeles: []Kebele{
-					{"Kebele 01", 7.194, 38.591},
-					{"Kebele 02", 7.192, 38.589},
+					{"Kebele 01", 7.191609, 38.594992},
+					{"Kebele 02", 7.195636, 38.601156},
+					{"Kebele 03", 7.195943, 38.593391},
+					{"Kebele 04", 7.200051, 38.594709},
+					{"Kebele 05", 7.205731, 38.591997},
+					{"Kebele 06", 7.212702, 38.592978},
+					{"Kebele 07", 7.204729, 38.597031},
 				},
 			},
 			{
-				Name: "Subcity-03", Lat: 7.198, Lon: 38.593,
+				Name: "Subcity-02", Lat: 7.199885, Lon: 38.582464,
 				Kebeles: []Kebele{
-					{"Kebele 01", 7.199, 38.594},
-					{"Kebele 02", 7.197, 38.592},
+					{"Kebele 01", 7.195831, 38.586721},
+					{"Kebele 02", 7.206252, 38.582219},
+					{"Kebele 03", 7.190742, 38.580316},
+					{"Kebele 04", 7.185170, 38.582114},
 				},
 			},
 			{
-				Name: "Subcity-04", Lat: 7.195, Lon: 38.599,
+				Name: "Subcity-03", Lat: 7.182148, Lon: 38.603481,
 				Kebeles: []Kebele{
-					{"Kebele 01", 7.196, 38.600},
-					{"Kebele 02", 7.194, 38.598},
+					{"Kebele 01", 7.188425, 38.603409},
+					{"Kebele 02", 7.182689, 38.598398},
+					{"Kebele 03", 7.183240, 38.607945},
+				},
+			},
+			{
+				Name: "Subcity-04", Lat: 7.177617, Lon: 38.589954,
+				Kebeles: []Kebele{
+					{"Kebele 01", 7.186946, 38.593165},
+					{"Kebele 02", 7.185203, 38.589199},
+					{"Kebele 03", 7.179947, 38.587756},
+				},
+			},
+			{
+				Name: "Subcity-05", Lat: 7.199286, Lon: 38.615354,
+				Kebeles: []Kebele{
+					{"Kebele 01", 7.196930, 38.609152},
+					{"Kebele 02", 7.212218, 38.608053},
+					{"Kebele 03", 7.206998, 38.617253},
+					{"Kebele 04", 7.193552, 38.615262},
+					{"Kebele 05", 7.199448, 38.621940},
 				},
 			},
 		},
@@ -243,8 +269,8 @@ func seedLocations(ctx context.Context, queries *repository.Queries) {
 		for _, sc := range c.SubCities {
 			subCity, err := queries.CreateSubCity(ctx, repository.CreateSubCityParams{
 				Name:   sc.Name,
-				Lat:    &c.Lat,
-				Lon:    &c.Lon,
+				Lat:    &sc.Lat,
+				Lon:    &sc.Lon,
 				CityID: city.ID,
 			})
 			if err != nil {
@@ -255,8 +281,8 @@ func seedLocations(ctx context.Context, queries *repository.Queries) {
 			for _, k := range sc.Kebeles {
 				kebele, err := queries.CreateKebele(ctx, repository.CreateKebeleParams{
 					Name:      k.Name,
-					Lat:       &c.Lat,
-					Lon:       &c.Lon,
+					Lat:       &k.Lat,
+					Lon:       &k.Lon,
 					SubcityID: subCity.ID,
 					CityID:    city.ID,
 				})

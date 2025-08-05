@@ -13,9 +13,13 @@ func RegisterRoutes(rg *gin.RouterGroup, db *pgxpool.Pool, q *repository.Queries
 
 	r := rg.Group("/cities", auth.Authenticate())
 	{
-		r.POST("/create", handler.CreateCity)
-		r.GET("/:id", handler.GetCity)
-		r.PUT("/:id", handler.UpdateCity)
 		r.GET("/", handler.GetCities)
+		r.POST("/", handler.CreateCity)
+		r.GET("/:id", handler.GetCity)
+		r.PUT("/:id", handler.UpdateCityInfo)
+		r.DELETE("/:id", handler.DeleteCity)
+		r.GET("/:id/subcities", handler.GetSubCities)
+		r.POST("/:id/staff", handler.AddStaff)
+		r.DELETE("/:id/staff", handler.RemoveStaff)
 	}
 }

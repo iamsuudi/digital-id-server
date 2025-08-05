@@ -9,6 +9,11 @@ SET name = $2, lat = $3, lon = $4
 WHERE id = $1
 RETURNING *;
 
+-- name: SoftDeleteSubCity :exec
+UPDATE subcity
+SET deleted_at = NOW()
+WHERE id = $1;
+
 -- name: GetKebelesForSubCity :many
 SELECT k.*, u.id as executive_id,
     CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS executive_name

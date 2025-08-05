@@ -40,6 +40,7 @@ type Querier interface {
 	GetKebele(ctx context.Context, id uuid.UUID) (GetKebeleRow, error)
 	GetKebelesForSubCity(ctx context.Context, id uuid.UUID) ([]GetKebelesForSubCityRow, error)
 	GetRefreshToken(ctx context.Context, token string) (RefreshTokens, error)
+	GetSubCitiesForCity(ctx context.Context, id uuid.UUID) ([]GetSubCitiesForCityRow, error)
 	GetSubCity(ctx context.Context, id uuid.UUID) (GetSubCityRow, error)
 	GetUniversalPermissionMatrixForUser(ctx context.Context, arg GetUniversalPermissionMatrixForUserParams) ([]GetUniversalPermissionMatrixForUserRow, error)
 	GetUserByEmail(ctx context.Context, email string) (GetUserByEmailRow, error)
@@ -73,9 +74,11 @@ type Querier interface {
 	SearchUsersByRole(ctx context.Context, arg SearchUsersByRoleParams) ([]SearchUsersByRoleRow, error)
 	SearchUsersUnderScope(ctx context.Context, arg SearchUsersUnderScopeParams) ([]SearchUsersUnderScopeRow, error)
 	SetUserPermissionOverride(ctx context.Context, arg SetUserPermissionOverrideParams) error
+	SoftDeleteCity(ctx context.Context, id uuid.UUID) error
 	SoftDeleteKebele(ctx context.Context, id uuid.UUID) error
+	SoftDeleteSubCity(ctx context.Context, id uuid.UUID) error
 	SoftDeleteUser(ctx context.Context, id uuid.UUID) error
-	UpdateCity(ctx context.Context, arg UpdateCityParams) (City, error)
+	UpdateCity(ctx context.Context, arg UpdateCityParams) error
 	UpdateKebele(ctx context.Context, arg UpdateKebeleParams) (Kebele, error)
 	UpdateSubCity(ctx context.Context, arg UpdateSubCityParams) (Subcity, error)
 	UpdateUserInfo(ctx context.Context, arg UpdateUserInfoParams) error

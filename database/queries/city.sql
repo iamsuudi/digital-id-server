@@ -3,11 +3,10 @@ INSERT INTO city (name, lat, lon)
 VALUES ($1, $2, $3)
 RETURNING *;
 
--- name: UpdateCity :one
+-- name: UpdateCity :exec
 UPDATE city
 SET name = $2, lat = $3, lon = $4
-WHERE id = $1
-RETURNING *;
+WHERE id = $1;
 
 -- name: GetCity :one
 SELECT c.*, u.id as admin_id, 
@@ -15,6 +14,20 @@ SELECT c.*, u.id as admin_id,
 FROM city c
 LEFT JOIN "user" u ON u.city_id = c.id AND u.role_slug = 'admin'
 WHERE c.id = $1 AND c.deleted_at IS NULL;
+
+-- name: SoftDeleteCity :exec
+UPDATE city
+SET deleted_at = NOW()
+WHERE id = $1;
+
+-- name: GetSubCitiesForCity :many
+SELECT s.*, c.name as city_name, u.id as manager_id, 
+    CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS manager_name
+FROM subcity s
+JOIN city c ON c.id = s.city_id
+LEFT JOIN "user" u ON u.subcity_id = s.id AND u.role_slug = 'manager'
+WHERE s.deleted_at IS NULL AND c.id = $1
+ORDER BY s.created_at DESC;
 
 -- name: ListCities :many
 SELECT c.*, u.id as admin_id, 

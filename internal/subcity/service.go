@@ -26,6 +26,10 @@ func (s *Service) CreateSubCity(ctx context.Context, input types.SubCityInput) (
 	})
 }
 
+func (s *Service) DeleteSubCity(ctx context.Context, id uuid.UUID) error {
+	return s.q.SoftDeleteSubCity(ctx, id)
+}
+
 func (s *Service) RemoveStaff(ctx context.Context, staffID uuid.UUID) error {
 	return s.q.RevokeUserPlacement(ctx, repository.RevokeUserPlacementParams{
 		SubcityID: nil,
@@ -51,7 +55,6 @@ func (s *Service) AddStaff(ctx context.Context, subCityID, staffID uuid.UUID) er
 		ID:        staffID,
 		CityID:    &(subcity.CityID),
 		SubcityID: &subCityID,
-		KebeleID:  nil,
 	})
 	if err != nil {
 		return err
@@ -74,7 +77,7 @@ func (s *Service) AssignManager(ctx context.Context, subCityID, managerID uuid.U
 		return err
 	}
 
-	// Remove previous executive
+	// Remove previous manager
 	if subcity.ManagerID != nil {
 		err = qtx.RevokeUserPlacement(ctx, repository.RevokeUserPlacementParams{
 			SubcityID: nil,
