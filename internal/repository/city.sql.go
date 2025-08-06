@@ -106,7 +106,7 @@ FROM subcity s
 JOIN city c ON c.id = s.city_id
 LEFT JOIN "user" u ON u.subcity_id = s.id AND u.role_slug = 'manager'
 WHERE s.deleted_at IS NULL AND c.id = $1
-ORDER BY s.created_at DESC
+ORDER BY s.created_at ASC
 `
 
 type GetSubCitiesForCityRow struct {
@@ -159,7 +159,7 @@ SELECT c.id, c.name, c.lat, c.lon, c.created_at, c.deleted_at, u.id as admin_id,
 FROM city c
 LEFT JOIN "user" u ON u.city_id = c.id AND u.role_slug = 'admin'
 WHERE c.deleted_at IS NULL
-ORDER BY c.created_at DESC
+ORDER BY c.created_at ASC
 LIMIT $1 OFFSET $2
 `
 
@@ -214,7 +214,7 @@ SELECT c.id, name, lat, lon, c.created_at, c.deleted_at, u.id, first_name, secon
 FROM city c
 LEFT JOIN "user" u ON u.city_id = c.id AND u.role_slug = 'admin'
 WHERE c.deleted_at IS NULL AND similarity(c.name, $1) > 0.2
-ORDER BY sim DESC, c.created_at DESC
+ORDER BY sim DESC, c.created_at ASC
 LIMIT $3 OFFSET $2
 `
 

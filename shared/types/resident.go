@@ -1,4 +1,4 @@
-package resident
+package types
 
 import (
 	"time"
@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type RegisterResidentInput struct {
+type ResidentInput struct {
 	Email             string
 	FirstName         string
 	SecondName        string
@@ -17,9 +17,9 @@ type RegisterResidentInput struct {
 	MaritalStatus     string
 	Religion          string
 	Ethnicity         string
-	DisabilityStatus  string
+	Disability        string
 	EducationLevel    string
-	LanguagesSpoken   string
+	LanguagesSpoken   []string
 	BloodType         string
 	Face              string // this might later be a file or URL
 	DocumentType      string

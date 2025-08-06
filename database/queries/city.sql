@@ -27,7 +27,7 @@ FROM subcity s
 JOIN city c ON c.id = s.city_id
 LEFT JOIN "user" u ON u.subcity_id = s.id AND u.role_slug = 'manager'
 WHERE s.deleted_at IS NULL AND c.id = $1
-ORDER BY s.created_at DESC;
+ORDER BY s.created_at ASC;
 
 -- name: ListCities :many
 SELECT c.*, u.id as admin_id, 
@@ -35,7 +35,7 @@ SELECT c.*, u.id as admin_id,
 FROM city c
 LEFT JOIN "user" u ON u.city_id = c.id AND u.role_slug = 'admin'
 WHERE c.deleted_at IS NULL
-ORDER BY c.created_at DESC
+ORDER BY c.created_at ASC
 LIMIT $1 OFFSET $2;
 
 -- name: CountListCities :one
@@ -49,7 +49,7 @@ SELECT *, u.id as admin_id, similarity(c.name, sqlc.arg('query')) AS sim,
 FROM city c
 LEFT JOIN "user" u ON u.city_id = c.id AND u.role_slug = 'admin'
 WHERE c.deleted_at IS NULL AND similarity(c.name, sqlc.arg('query')) > 0.2
-ORDER BY sim DESC, c.created_at DESC
+ORDER BY sim DESC, c.created_at ASC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: CountSearchCities :one
