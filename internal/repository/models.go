@@ -362,14 +362,14 @@ type City struct {
 }
 
 type Document struct {
-	ID         uuid.UUID  `db:"id" json:"id"`
-	Type       string     `db:"type" json:"type"`
-	ResidentID uuid.UUID  `db:"resident_id" json:"resident_id"`
-	Url        string     `db:"url" json:"url"`
-	Status     string     `db:"status" json:"status"`
-	Number     string     `db:"number" json:"number"`
-	CreatedAt  time.Time  `db:"created_at" json:"created_at"`
-	DeletedAt  *time.Time `db:"deleted_at" json:"deleted_at"`
+	ID         uuid.UUID      `db:"id" json:"id"`
+	Type       DocumentType   `db:"type" json:"type"`
+	ResidentID uuid.UUID      `db:"resident_id" json:"resident_id"`
+	Url        string         `db:"url" json:"url"`
+	Status     DocumentStatus `db:"status" json:"status"`
+	Number     string         `db:"number" json:"number"`
+	CreatedAt  time.Time      `db:"created_at" json:"created_at"`
+	DeletedAt  *time.Time     `db:"deleted_at" json:"deleted_at"`
 }
 
 type Emergency struct {
@@ -416,15 +416,15 @@ type Kebele struct {
 }
 
 type Payment struct {
-	ID          uuid.UUID  `db:"id" json:"id"`
-	ResidentID  uuid.UUID  `db:"resident_id" json:"resident_id"`
-	Amount      float64    `db:"amount" json:"amount"`
-	Description string     `db:"description" json:"description"`
-	Status      string     `db:"status" json:"status"`
-	Reference   string     `db:"reference" json:"reference"`
-	Method      string     `db:"method" json:"method"`
-	CreatedAt   time.Time  `db:"created_at" json:"created_at"`
-	DeletedAt   *time.Time `db:"deleted_at" json:"deleted_at"`
+	ID          uuid.UUID     `db:"id" json:"id"`
+	ResidentID  uuid.UUID     `db:"resident_id" json:"resident_id"`
+	Amount      float64       `db:"amount" json:"amount"`
+	Description string        `db:"description" json:"description"`
+	Status      PaymentStatus `db:"status" json:"status"`
+	Reference   string        `db:"reference" json:"reference"`
+	Method      PaymentMethod `db:"method" json:"method"`
+	CreatedAt   time.Time     `db:"created_at" json:"created_at"`
+	DeletedAt   *time.Time    `db:"deleted_at" json:"deleted_at"`
 }
 
 type Permission struct {
@@ -442,23 +442,24 @@ type RefreshTokens struct {
 }
 
 type Resident struct {
-	ID               uuid.UUID  `db:"id" json:"id"`
-	Email            string     `db:"email" json:"email"`
-	FirstName        string     `db:"first_name" json:"first_name"`
-	SecondName       string     `db:"second_name" json:"second_name"`
-	LastName         string     `db:"last_name" json:"last_name"`
-	BirthDate        time.Time  `db:"birth_date" json:"birth_date"`
-	Gender           string     `db:"gender" json:"gender"`
-	Phone            string     `db:"phone" json:"phone"`
-	MaritalStatus    string     `db:"marital_status" json:"marital_status"`
-	Religion         string     `db:"religion" json:"religion"`
-	Ethnicity        *string    `db:"ethnicity" json:"ethnicity"`
-	DisabilityStatus *string    `db:"disability_status" json:"disability_status"`
-	EducationLevel   *string    `db:"education_level" json:"education_level"`
-	LanguagesSpoken  string     `db:"languages_spoken" json:"languages_spoken"`
-	AddressID        *uuid.UUID `db:"address_id" json:"address_id"`
-	CreatedAt        time.Time  `db:"created_at" json:"created_at"`
-	DeletedAt        *time.Time `db:"deleted_at" json:"deleted_at"`
+	ID              uuid.UUID  `db:"id" json:"id"`
+	Email           string     `db:"email" json:"email"`
+	FirstName       string     `db:"first_name" json:"first_name"`
+	SecondName      string     `db:"second_name" json:"second_name"`
+	LastName        string     `db:"last_name" json:"last_name"`
+	BirthDate       time.Time  `db:"birth_date" json:"birth_date"`
+	Gender          string     `db:"gender" json:"gender"`
+	Phone           string     `db:"phone" json:"phone"`
+	MaritalStatus   *string    `db:"marital_status" json:"marital_status"`
+	Religion        *string    `db:"religion" json:"religion"`
+	NationalID      *int32     `db:"national_id" json:"national_id"`
+	Ethnicity       *string    `db:"ethnicity" json:"ethnicity"`
+	Disability      *string    `db:"disability" json:"disability"`
+	EducationLevel  *string    `db:"education_level" json:"education_level"`
+	LanguagesSpoken []string   `db:"languages_spoken" json:"languages_spoken"`
+	AddressID       *uuid.UUID `db:"address_id" json:"address_id"`
+	CreatedAt       time.Time  `db:"created_at" json:"created_at"`
+	DeletedAt       *time.Time `db:"deleted_at" json:"deleted_at"`
 }
 
 type Role struct {

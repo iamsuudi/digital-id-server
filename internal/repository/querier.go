@@ -18,21 +18,26 @@ type Querier interface {
 	CountListAuditLogs(ctx context.Context, arg CountListAuditLogsParams) (int64, error)
 	CountListCities(ctx context.Context) (int64, error)
 	CountListKebeles(ctx context.Context) (int64, error)
+	CountListResidents(ctx context.Context) (int64, error)
 	CountListSubcities(ctx context.Context) (int64, error)
 	CountListUsersByRole(ctx context.Context, roleSlug string) (int64, error)
 	CountListUsersUnderScope(ctx context.Context, arg CountListUsersUnderScopeParams) (int64, error)
 	CountSearchCities(ctx context.Context, query string) (int64, error)
 	CountSearchKebeles(ctx context.Context, query string) (int64, error)
+	CountSearchResidents(ctx context.Context, query string) (int64, error)
 	CountSearchSubCities(ctx context.Context, query string) (int64, error)
 	CountSearchUsersByRole(ctx context.Context, arg CountSearchUsersByRoleParams) (int64, error)
 	CountSearchUsersUnderScope(ctx context.Context, arg CountSearchUsersUnderScopeParams) (int64, error)
 	CreateCity(ctx context.Context, arg CreateCityParams) (City, error)
 	CreateKebele(ctx context.Context, arg CreateKebeleParams) (Kebele, error)
 	CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) (uuid.UUID, error)
+	CreateResident(ctx context.Context, arg CreateResidentParams) (uuid.UUID, error)
 	CreateSubCity(ctx context.Context, arg CreateSubCityParams) (Subcity, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error)
+	DeleteAllResidents(ctx context.Context) error
 	DeleteRefreshToken(ctx context.Context, token string) error
 	DeleteRefreshTokensByUser(ctx context.Context, userID uuid.UUID) error
+	DeleteResident(ctx context.Context, id uuid.UUID) error
 	GetAssignablePermissionsForActor(ctx context.Context, id uuid.UUID) ([]Permission, error)
 	GetAssignableRolesForActor(ctx context.Context, slug string) ([]GetAssignableRolesForActorRow, error)
 	GetCity(ctx context.Context, id uuid.UUID) (GetCityRow, error)
@@ -40,6 +45,7 @@ type Querier interface {
 	GetKebele(ctx context.Context, id uuid.UUID) (GetKebeleRow, error)
 	GetKebelesForSubCity(ctx context.Context, id uuid.UUID) ([]GetKebelesForSubCityRow, error)
 	GetRefreshToken(ctx context.Context, token string) (RefreshTokens, error)
+	GetResident(ctx context.Context, id uuid.UUID) (GetResidentRow, error)
 	GetSubCitiesForCity(ctx context.Context, id uuid.UUID) ([]GetSubCitiesForCityRow, error)
 	GetSubCity(ctx context.Context, id uuid.UUID) (GetSubCityRow, error)
 	GetUniversalPermissionMatrixForUser(ctx context.Context, arg GetUniversalPermissionMatrixForUserParams) ([]GetUniversalPermissionMatrixForUserRow, error)
@@ -57,6 +63,7 @@ type Querier interface {
 	ListPermissionMatrixInScope(ctx context.Context, arg ListPermissionMatrixInScopeParams) ([]ListPermissionMatrixInScopeRow, error)
 	ListPermissionOverridesForUser(ctx context.Context, userID uuid.UUID) ([]ListPermissionOverridesForUserRow, error)
 	ListPermissions(ctx context.Context) ([]Permission, error)
+	ListResidents(ctx context.Context, arg ListResidentsParams) ([]ListResidentsRow, error)
 	ListRolePermissions(ctx context.Context) ([]ListRolePermissionsRow, error)
 	ListRoles(ctx context.Context) ([]Role, error)
 	ListSubCities(ctx context.Context, arg ListSubCitiesParams) ([]ListSubCitiesRow, error)
@@ -70,6 +77,7 @@ type Querier interface {
 	RevokeUserPlacement(ctx context.Context, arg RevokeUserPlacementParams) error
 	SearchCities(ctx context.Context, arg SearchCitiesParams) ([]SearchCitiesRow, error)
 	SearchKebeles(ctx context.Context, arg SearchKebelesParams) ([]SearchKebelesRow, error)
+	SearchResidents(ctx context.Context, arg SearchResidentsParams) ([]SearchResidentsRow, error)
 	SearchSubCities(ctx context.Context, arg SearchSubCitiesParams) ([]SearchSubCitiesRow, error)
 	SearchUsersByRole(ctx context.Context, arg SearchUsersByRoleParams) ([]SearchUsersByRoleRow, error)
 	SearchUsersUnderScope(ctx context.Context, arg SearchUsersUnderScopeParams) ([]SearchUsersUnderScopeRow, error)
@@ -80,6 +88,9 @@ type Querier interface {
 	SoftDeleteUser(ctx context.Context, id uuid.UUID) error
 	UpdateCity(ctx context.Context, arg UpdateCityParams) error
 	UpdateKebele(ctx context.Context, arg UpdateKebeleParams) (Kebele, error)
+	UpdateResident(ctx context.Context, arg UpdateResidentParams) error
+	UpdateResidentAddress(ctx context.Context, arg UpdateResidentAddressParams) error
+	UpdateResidentLanguages(ctx context.Context, arg UpdateResidentLanguagesParams) error
 	UpdateSubCity(ctx context.Context, arg UpdateSubCityParams) (Subcity, error)
 	UpdateUserInfo(ctx context.Context, arg UpdateUserInfoParams) error
 	UpdateUserRole(ctx context.Context, arg UpdateUserRoleParams) error

@@ -4,11 +4,15 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
+
+	"digital-id-server/internal/repository"
+	"digital-id-server/shared/types"
+	"digital-id-server/shared/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"digital-id-server/internal/repository"
 )
 
 type Handler struct {
@@ -20,7 +24,7 @@ func NewHandler(s *Service) *Handler {
 }
 
 func (h *Handler) RegisterResident(c *gin.Context) {
-	var input RegisterResidentInput
+	var input types.ResidentInput
 	if err := c.ShouldBind(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input: " + err.Error()})
 		return
@@ -74,14 +78,36 @@ func (h *Handler) GetResident(c *gin.Context) {
 	c.JSON(http.StatusOK, resident)
 }
 
-func (h *Handler) GetAll(c *gin.Context) {
-	residents, err := h.service.GetAll(c.Request.Context())
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch residents"})
-		return
+func (h *Handler) GetResidents(c *gin.Context) {
+	limit, offset, query := utils.PaginationHelper(c)
+
+	if strings.TrimSpace(query) == "" {
+		count, residents, err := h.service.GetResidents(c.Request.Context(), limit, offset)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch residents"})
+			return
+		}
+		if residents == nil {
+			residents = []repository.ListResidentsRow{}
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"residents": residents,
+			"count":  count,
+		})
+	} else {
+		count, residents, err := h.service.SearchResidents(c, limit, offset, query)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to search residents"})
+			return
+		}
+		if residents == nil {
+			residents = []repository.SearchResidentsRow{}
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"residents": residents,
+			"count":  count,
+		})
 	}
-	if residents == nil {
-		residents = []repository.Resident{}
-	}
-	c.JSON(http.StatusOK, residents)
 }

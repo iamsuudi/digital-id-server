@@ -9,6 +9,7 @@ import (
 	"digital-id-server/internal/kebele"
 	"digital-id-server/internal/permission"
 	"digital-id-server/internal/repository"
+	"digital-id-server/internal/resident"
 	"digital-id-server/internal/role"
 	"digital-id-server/internal/subcity"
 
@@ -43,6 +44,7 @@ func main() {
 	subcity.RegisterRoutes(r.Group("/api/v1"), db, q)
 	kebele.RegisterRoutes(r.Group("/api/v1"), db, q)
 	audit.RegisterRoutes(r.Group("/api/v1"), db, q, cache)
+	resident.RegisterRoutes(r.Group("/api/v1"), db, q)
 
 	r.Run(":8080")
 }

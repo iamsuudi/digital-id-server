@@ -1,7 +1,7 @@
 version: "2"
 sql:
   - schema: "database/schemas"
-    queries: 
+    queries:
       - "database/queries"
     engine: "postgresql"
     gen:
@@ -33,58 +33,9 @@ sql:
               type: "string"
               pointer: true
             nullable: true
-          - db_type: "varchar"
+          - db_type: "pg_catalog.varchar"
             go_type: "string"
-          - db_type: "varchar"
-            go_type:
-              type: "string"
-              pointer: true
-            nullable: true
-          - db_type: "document_type"
-            go_type: "string"
-          - db_type: "document_type"
-            go_type:
-              type: "string"
-              pointer: true
-            nullable: true
-          - db_type: "document_status"
-            go_type: "string"
-          - db_type: "document_status"
-            go_type:
-              type: "string"
-              pointer: true
-            nullable: true
-          - db_type: "payment_method"
-            go_type: "string"
-          - db_type: "payment_method"
-            go_type:
-              type: "string"
-              pointer: true
-            nullable: true
-          - db_type: "payment_status"
-            go_type: "string"
-          - db_type: "payment_status"
-            go_type:
-              type: "string"
-              pointer: true
-            nullable: true
-          - db_type: "gender"
-            go_type: "string"
-          - db_type: "gender"
-            go_type:
-              type: "string"
-              pointer: true
-            nullable: true
-          - db_type: "marital_status"
-            go_type: "string"
-          - db_type: "marital_status"
-            go_type:
-              type: "string"
-              pointer: true
-            nullable: true
-          - db_type: "religion"
-            go_type: "string"
-          - db_type: "religion"
+          - db_type: "pg_catalog.varchar"
             go_type:
               type: "string"
               pointer: true
@@ -118,12 +69,5 @@ sql:
             go_type:
               import: "time"
               type: "Time"
-              pointer: true
-            nullable: true
-          - db_type: "tsvector"
-            go_type: "string"
-          - db_type: "tsvector"
-            go_type:
-              type: "string"
               pointer: true
             nullable: true

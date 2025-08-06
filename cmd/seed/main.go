@@ -20,10 +20,11 @@ func main() {
 	ctx := context.Background()
 
 	// Initialize sqlc Queries
-	queries := repository.New(dbConn)
+	q := repository.New(dbConn)
 
 	log.Println("🌱 Seeding data...")
-
-	seedUsers(ctx, queries)
-	seedLocations(ctx, queries)
+	
+	// seedUsers(ctx, q)
+	// seedLocations(ctx, q)
+	seedResidents(ctx, q)
 }
