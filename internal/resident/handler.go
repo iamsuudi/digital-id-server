@@ -24,49 +24,59 @@ func NewHandler(s *Service) *Handler {
 }
 
 func (h *Handler) RegisterResident(c *gin.Context) {
-	var input types.ResidentInput
+	var input types.ResidentPayload
 	if err := c.ShouldBind(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input: " + err.Error()})
 		return
 	}
+	
+    file, _ := c.FormFile("document")
+    if file != nil {
+        c.SaveUploadedFile(file, "uploads/"+file.Filename)
+    }
 
-	faceFile, err := c.FormFile("face")
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "missing face image"})
-		return
-	}
+    c.JSON(200, gin.H{"ok": true})
 
-	docFile, err := c.FormFile("document")
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "missing document"})
-		return
-	}
+	// faceFile, err := c.FormFile("face")
+	// if err != nil {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "missing face image"})
+	// 	return
+	// }
 
-	fmt.Println(faceFile, docFile)
+	// docFile, err := c.FormFile("document")
+	// if err != nil {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "missing document"})
+	// 	return
+	// }
 
-	// TODO: Save files to storage (or mock)
-	faceURL := "/mock/face.jpg"
-	docURL := "/mock/document.pdf"
+	// fmt.Println(faceFile, docFile)
 
-	err = h.service.RegisterResident(c.Request.Context(), input, faceURL, docURL)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to register resident: " + err.Error()})
-		return
-	}
+	// // TODO: Save files to storage (or mock)
+	// faceURL := "/mock/face.jpg"
+	// docURL := "/mock/document.pdf"
 
-	c.JSON(http.StatusCreated, gin.H{"message": "resident registered successfully"})
+	// err = h.service.RegisterResident(c.Request.Context(), input, faceURL, docURL)
+	// if err != nil {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to register resident: " + err.Error()})
+	// 	return
+	// }
+
+	// c.JSON(http.StatusCreated, gin.H{"message": "resident registered successfully"})
 }
 
 func (h *Handler) GetResident(c *gin.Context) {
-	idParam := c.Param("id")
-	id, err := uuid.Parse(idParam)
+	raw := c.Param("id")
+	id, err := uuid.Parse(raw)
+	fmt.Println(raw)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid resident ID"})
 		return
 	}
+	fmt.Println(id)
 
 	resident, err := h.service.GetResident(c.Request.Context(), id)
 	if err != nil {
+		fmt.Println(err.Error())
 		if errors.Is(err, pgx.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Resident not found"})
 		} else {

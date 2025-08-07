@@ -24,7 +24,7 @@ func main() {
 
 	log.Println("🌱 Seeding data...")
 	
-	// seedUsers(ctx, q)
-	// seedLocations(ctx, q)
+	seedUsers(ctx, q)
+	seedLocations(ctx, q)
 	seedResidents(ctx, q)
 }

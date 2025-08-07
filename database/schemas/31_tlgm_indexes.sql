@@ -6,7 +6,6 @@ CREATE INDEX IF NOT EXISTS kebele_name_trgm_idx     ON kebele     USING GIN (nam
 CREATE INDEX IF NOT EXISTS address_house_trgm_idx   ON address    USING GIN (house_number gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS resident_name_trgm_idx   ON resident   USING GIN ((first_name||' '||second_name||' '||last_name) gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS biometric_blood_trgm_idx ON biometric  USING GIN (blood_type gin_trgm_ops);
-CREATE INDEX IF NOT EXISTS document_number_trgm_idx ON document   USING GIN (number gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idcard_combo_trgm_idx    ON idcard     USING GIN ((number||' '||issue_place) gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS payment_combo_trgm_idx   ON payment    USING GIN ((description||' '||reference) gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS employment_combo_trgm_idx ON employment USING GIN (

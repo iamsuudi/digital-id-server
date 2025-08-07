@@ -19,7 +19,7 @@ func NewService(dbConn *pgxpool.Pool, dbQueries *repository.Queries) *Service {
 	return &Service{db: dbConn, q: dbQueries}
 }
 
-func (s *Service) RegisterResident(ctx context.Context, input types.ResidentInput, faceURL, docURL string) error {
+func (s *Service) RegisterResident(ctx context.Context, input types.ResidentPayload, faceURL, docURL string) error {
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
 		return err
@@ -37,12 +37,6 @@ func (s *Service) RegisterResident(ctx context.Context, input types.ResidentInpu
 		BirthDate:       input.BirthDate,
 		Gender:          input.Gender,
 		Phone:           input.Phone,
-		MaritalStatus:   &input.MaritalStatus,
-		Religion:        &input.Religion,
-		Ethnicity:       &input.Ethnicity,
-		Disability:      &input.Disability,
-		EducationLevel:  &input.EducationLevel,
-		LanguagesSpoken: input.LanguagesSpoken,
 	})
 	if err != nil {
 		return err

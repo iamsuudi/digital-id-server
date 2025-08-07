@@ -28,7 +28,7 @@ func (q *Queries) CountListResidents(ctx context.Context) (int64, error) {
 const countSearchResidents = `-- name: CountSearchResidents :one
 SELECT COUNT(*)
 FROM resident
-WHERE deleted_at IS NULL AND 
+WHERE deleted_at IS NULL AND
     similarity(CONCAT_WS(' ', first_name, second_name, last_name), $1) > 0.2
 `
 
@@ -41,31 +41,22 @@ func (q *Queries) CountSearchResidents(ctx context.Context, query string) (int64
 
 const createResident = `-- name: CreateResident :one
 INSERT INTO resident (
-  email, first_name, second_name, last_name, birth_date, gender, phone,
-  marital_status, religion, ethnicity, disability, education_level,
-  languages_spoken, address_id
+  email, first_name, second_name, last_name, birth_date, gender, phone, address_id
 ) VALUES (
-  $1, $2, $3, $4, $5, $6, $7,
-  $8, $9, $10, $11, $12, $13, $14
+  $1, $2, $3, $4, $5, $6, $7, $8
 )
 RETURNING id
 `
 
 type CreateResidentParams struct {
-	Email           string     `db:"email" json:"email"`
-	FirstName       string     `db:"first_name" json:"first_name"`
-	SecondName      string     `db:"second_name" json:"second_name"`
-	LastName        string     `db:"last_name" json:"last_name"`
-	BirthDate       time.Time  `db:"birth_date" json:"birth_date"`
-	Gender          string     `db:"gender" json:"gender"`
-	Phone           string     `db:"phone" json:"phone"`
-	MaritalStatus   *string    `db:"marital_status" json:"marital_status"`
-	Religion        *string    `db:"religion" json:"religion"`
-	Ethnicity       *string    `db:"ethnicity" json:"ethnicity"`
-	Disability      *string    `db:"disability" json:"disability"`
-	EducationLevel  *string    `db:"education_level" json:"education_level"`
-	LanguagesSpoken []string   `db:"languages_spoken" json:"languages_spoken"`
-	AddressID       *uuid.UUID `db:"address_id" json:"address_id"`
+	Email      string     `db:"email" json:"email"`
+	FirstName  string     `db:"first_name" json:"first_name"`
+	SecondName string     `db:"second_name" json:"second_name"`
+	LastName   string     `db:"last_name" json:"last_name"`
+	BirthDate  time.Time  `db:"birth_date" json:"birth_date"`
+	Gender     string     `db:"gender" json:"gender"`
+	Phone      string     `db:"phone" json:"phone"`
+	AddressID  *uuid.UUID `db:"address_id" json:"address_id"`
 }
 
 func (q *Queries) CreateResident(ctx context.Context, arg CreateResidentParams) (uuid.UUID, error) {
@@ -77,12 +68,6 @@ func (q *Queries) CreateResident(ctx context.Context, arg CreateResidentParams) 
 		arg.BirthDate,
 		arg.Gender,
 		arg.Phone,
-		arg.MaritalStatus,
-		arg.Religion,
-		arg.Ethnicity,
-		arg.Disability,
-		arg.EducationLevel,
-		arg.LanguagesSpoken,
 		arg.AddressID,
 	)
 	var id uuid.UUID
@@ -109,29 +94,23 @@ func (q *Queries) DeleteResident(ctx context.Context, id uuid.UUID) error {
 }
 
 const getResident = `-- name: GetResident :one
-SELECT resident.id, resident.email, resident.first_name, resident.second_name, resident.last_name, resident.birth_date, resident.gender, resident.phone, resident.marital_status, resident.religion, resident.national_id, resident.ethnicity, resident.disability, resident.education_level, resident.languages_spoken, resident.address_id, resident.created_at, resident.deleted_at, address.id, address.house_number, address.kebele_id, address.subcity_id, address.city_id, address.created_at, address.deleted_at, biometric.id, biometric.resident_id, biometric.fingerprint, biometric.blood_type, biometric.face, biometric.created_at, biometric.deleted_at,
-    document.id, document.type, document.resident_id, document.url, document.status, document.number, document.created_at, document.deleted_at, employment.id, employment.resident_id, employment.status, employment.occupation, employment.employer_name, employment.work_address, employment.created_at, employment.deleted_at, emergency.id, emergency.resident_id, emergency.name, emergency.relation, emergency.phone, emergency.created_at, emergency.deleted_at,
-    idcard.id, idcard.resident_id, idcard.number, idcard.issue_date, idcard.expiry_date, idcard.issue_place, idcard.created_at, idcard.deleted_at
+SELECT resident.id, resident.email, resident.first_name, resident.second_name, resident.last_name, resident.birth_date, resident.gender, resident.phone, resident.address_id, resident.created_at, resident.deleted_at
+    -- sqlc.embed(address), sqlc.embed(biometric), sqlc.embed(document),
+    -- sqlc.embed(employment), sqlc.embed(emergency), sqlc.embed(idcard)
 FROM resident
-LEFT JOIN address    ON resident.address_id = address.id
-LEFT JOIN biometric  ON resident.id = biometric.resident_id
-LEFT JOIN document   ON resident.id = document.resident_id
-LEFT JOIN employment ON resident.id = employment.resident_id
-LEFT JOIN emergency  ON resident.id = emergency.resident_id
-LEFT JOIN idcard     ON resident.id = idcard.resident_id
 WHERE resident.id = $1
 `
 
 type GetResidentRow struct {
-	Resident   Resident   `db:"resident" json:"resident"`
-	Address    Address    `db:"address" json:"address"`
-	Biometric  Biometric  `db:"biometric" json:"biometric"`
-	Document   Document   `db:"document" json:"document"`
-	Employment Employment `db:"employment" json:"employment"`
-	Emergency  Emergency  `db:"emergency" json:"emergency"`
-	Idcard     Idcard     `db:"idcard" json:"idcard"`
+	Resident Resident `db:"resident" json:"resident"`
 }
 
+// LEFT JOIN address    ON resident.address_id = address.id
+// LEFT JOIN biometric  ON resident.id = biometric.resident_id
+// LEFT JOIN document   ON resident.id = document.resident_id
+// LEFT JOIN employment ON resident.id = employment.resident_id
+// LEFT JOIN emergency  ON resident.id = emergency.resident_id
+// LEFT JOIN idcard     ON resident.id = idcard.resident_id
 func (q *Queries) GetResident(ctx context.Context, id uuid.UUID) (GetResidentRow, error) {
 	row := q.db.QueryRow(ctx, getResident, id)
 	var i GetResidentRow
@@ -144,67 +123,15 @@ func (q *Queries) GetResident(ctx context.Context, id uuid.UUID) (GetResidentRow
 		&i.Resident.BirthDate,
 		&i.Resident.Gender,
 		&i.Resident.Phone,
-		&i.Resident.MaritalStatus,
-		&i.Resident.Religion,
-		&i.Resident.NationalID,
-		&i.Resident.Ethnicity,
-		&i.Resident.Disability,
-		&i.Resident.EducationLevel,
-		&i.Resident.LanguagesSpoken,
 		&i.Resident.AddressID,
 		&i.Resident.CreatedAt,
 		&i.Resident.DeletedAt,
-		&i.Address.ID,
-		&i.Address.HouseNumber,
-		&i.Address.KebeleID,
-		&i.Address.SubcityID,
-		&i.Address.CityID,
-		&i.Address.CreatedAt,
-		&i.Address.DeletedAt,
-		&i.Biometric.ID,
-		&i.Biometric.ResidentID,
-		&i.Biometric.Fingerprint,
-		&i.Biometric.BloodType,
-		&i.Biometric.Face,
-		&i.Biometric.CreatedAt,
-		&i.Biometric.DeletedAt,
-		&i.Document.ID,
-		&i.Document.Type,
-		&i.Document.ResidentID,
-		&i.Document.Url,
-		&i.Document.Status,
-		&i.Document.Number,
-		&i.Document.CreatedAt,
-		&i.Document.DeletedAt,
-		&i.Employment.ID,
-		&i.Employment.ResidentID,
-		&i.Employment.Status,
-		&i.Employment.Occupation,
-		&i.Employment.EmployerName,
-		&i.Employment.WorkAddress,
-		&i.Employment.CreatedAt,
-		&i.Employment.DeletedAt,
-		&i.Emergency.ID,
-		&i.Emergency.ResidentID,
-		&i.Emergency.Name,
-		&i.Emergency.Relation,
-		&i.Emergency.Phone,
-		&i.Emergency.CreatedAt,
-		&i.Emergency.DeletedAt,
-		&i.Idcard.ID,
-		&i.Idcard.ResidentID,
-		&i.Idcard.Number,
-		&i.Idcard.IssueDate,
-		&i.Idcard.ExpiryDate,
-		&i.Idcard.IssuePlace,
-		&i.Idcard.CreatedAt,
-		&i.Idcard.DeletedAt,
 	)
 	return i, err
 }
 
 const listResidents = `-- name: ListResidents :many
-SELECT id, email, first_name, second_name, last_name, birth_date, gender, phone, marital_status, religion, national_id, ethnicity, disability, education_level, languages_spoken, address_id, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
+SELECT id, email, first_name, second_name, last_name, birth_date, gender, phone, address_id, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
 FROM resident
 WHERE deleted_at IS NULL
 ORDER BY created_at ASC
@@ -217,25 +144,18 @@ type ListResidentsParams struct {
 }
 
 type ListResidentsRow struct {
-	ID              uuid.UUID  `db:"id" json:"id"`
-	Email           string     `db:"email" json:"email"`
-	FirstName       string     `db:"first_name" json:"first_name"`
-	SecondName      string     `db:"second_name" json:"second_name"`
-	LastName        string     `db:"last_name" json:"last_name"`
-	BirthDate       time.Time  `db:"birth_date" json:"birth_date"`
-	Gender          string     `db:"gender" json:"gender"`
-	Phone           string     `db:"phone" json:"phone"`
-	MaritalStatus   *string    `db:"marital_status" json:"marital_status"`
-	Religion        *string    `db:"religion" json:"religion"`
-	NationalID      *int32     `db:"national_id" json:"national_id"`
-	Ethnicity       *string    `db:"ethnicity" json:"ethnicity"`
-	Disability      *string    `db:"disability" json:"disability"`
-	EducationLevel  *string    `db:"education_level" json:"education_level"`
-	LanguagesSpoken []string   `db:"languages_spoken" json:"languages_spoken"`
-	AddressID       *uuid.UUID `db:"address_id" json:"address_id"`
-	CreatedAt       time.Time  `db:"created_at" json:"created_at"`
-	DeletedAt       *time.Time `db:"deleted_at" json:"deleted_at"`
-	FullName        string     `db:"full_name" json:"full_name"`
+	ID         uuid.UUID  `db:"id" json:"id"`
+	Email      string     `db:"email" json:"email"`
+	FirstName  string     `db:"first_name" json:"first_name"`
+	SecondName string     `db:"second_name" json:"second_name"`
+	LastName   string     `db:"last_name" json:"last_name"`
+	BirthDate  time.Time  `db:"birth_date" json:"birth_date"`
+	Gender     string     `db:"gender" json:"gender"`
+	Phone      string     `db:"phone" json:"phone"`
+	AddressID  *uuid.UUID `db:"address_id" json:"address_id"`
+	CreatedAt  time.Time  `db:"created_at" json:"created_at"`
+	DeletedAt  *time.Time `db:"deleted_at" json:"deleted_at"`
+	FullName   string     `db:"full_name" json:"full_name"`
 }
 
 func (q *Queries) ListResidents(ctx context.Context, arg ListResidentsParams) ([]ListResidentsRow, error) {
@@ -256,13 +176,6 @@ func (q *Queries) ListResidents(ctx context.Context, arg ListResidentsParams) ([
 			&i.BirthDate,
 			&i.Gender,
 			&i.Phone,
-			&i.MaritalStatus,
-			&i.Religion,
-			&i.NationalID,
-			&i.Ethnicity,
-			&i.Disability,
-			&i.EducationLevel,
-			&i.LanguagesSpoken,
 			&i.AddressID,
 			&i.CreatedAt,
 			&i.DeletedAt,
@@ -279,10 +192,10 @@ func (q *Queries) ListResidents(ctx context.Context, arg ListResidentsParams) ([
 }
 
 const searchResidents = `-- name: SearchResidents :many
-SELECT id, email, first_name, second_name, last_name, birth_date, gender, phone, marital_status, religion, national_id, ethnicity, disability, education_level, languages_spoken, address_id, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name,
+SELECT id, email, first_name, second_name, last_name, birth_date, gender, phone, address_id, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name,
     similarity(CONCAT_WS(' ', first_name, second_name, last_name), $1) AS sim
 FROM resident
-WHERE deleted_at IS NULL AND 
+WHERE deleted_at IS NULL AND
     similarity(CONCAT_WS(' ', first_name, second_name, last_name), $1) > 0.2
 ORDER BY sim DESC, created_at ASC
 LIMIT $3 OFFSET $2
@@ -295,26 +208,19 @@ type SearchResidentsParams struct {
 }
 
 type SearchResidentsRow struct {
-	ID              uuid.UUID  `db:"id" json:"id"`
-	Email           string     `db:"email" json:"email"`
-	FirstName       string     `db:"first_name" json:"first_name"`
-	SecondName      string     `db:"second_name" json:"second_name"`
-	LastName        string     `db:"last_name" json:"last_name"`
-	BirthDate       time.Time  `db:"birth_date" json:"birth_date"`
-	Gender          string     `db:"gender" json:"gender"`
-	Phone           string     `db:"phone" json:"phone"`
-	MaritalStatus   *string    `db:"marital_status" json:"marital_status"`
-	Religion        *string    `db:"religion" json:"religion"`
-	NationalID      *int32     `db:"national_id" json:"national_id"`
-	Ethnicity       *string    `db:"ethnicity" json:"ethnicity"`
-	Disability      *string    `db:"disability" json:"disability"`
-	EducationLevel  *string    `db:"education_level" json:"education_level"`
-	LanguagesSpoken []string   `db:"languages_spoken" json:"languages_spoken"`
-	AddressID       *uuid.UUID `db:"address_id" json:"address_id"`
-	CreatedAt       time.Time  `db:"created_at" json:"created_at"`
-	DeletedAt       *time.Time `db:"deleted_at" json:"deleted_at"`
-	FullName        string     `db:"full_name" json:"full_name"`
-	Sim             float32    `db:"sim" json:"sim"`
+	ID         uuid.UUID  `db:"id" json:"id"`
+	Email      string     `db:"email" json:"email"`
+	FirstName  string     `db:"first_name" json:"first_name"`
+	SecondName string     `db:"second_name" json:"second_name"`
+	LastName   string     `db:"last_name" json:"last_name"`
+	BirthDate  time.Time  `db:"birth_date" json:"birth_date"`
+	Gender     string     `db:"gender" json:"gender"`
+	Phone      string     `db:"phone" json:"phone"`
+	AddressID  *uuid.UUID `db:"address_id" json:"address_id"`
+	CreatedAt  time.Time  `db:"created_at" json:"created_at"`
+	DeletedAt  *time.Time `db:"deleted_at" json:"deleted_at"`
+	FullName   string     `db:"full_name" json:"full_name"`
+	Sim        float32    `db:"sim" json:"sim"`
 }
 
 func (q *Queries) SearchResidents(ctx context.Context, arg SearchResidentsParams) ([]SearchResidentsRow, error) {
@@ -335,13 +241,6 @@ func (q *Queries) SearchResidents(ctx context.Context, arg SearchResidentsParams
 			&i.BirthDate,
 			&i.Gender,
 			&i.Phone,
-			&i.MaritalStatus,
-			&i.Religion,
-			&i.NationalID,
-			&i.Ethnicity,
-			&i.Disability,
-			&i.EducationLevel,
-			&i.LanguagesSpoken,
 			&i.AddressID,
 			&i.CreatedAt,
 			&i.DeletedAt,
@@ -361,28 +260,19 @@ func (q *Queries) SearchResidents(ctx context.Context, arg SearchResidentsParams
 const updateResident = `-- name: UpdateResident :exec
 UPDATE resident SET
   email = $2, first_name = $3, second_name = $4, last_name = $5,
-  birth_date = $6, gender = $7, phone = $8,
-  marital_status = $9, religion = $10, ethnicity = $11, disability = $12,
-  education_level = $13, languages_spoken = $14, address_id = $15
+  birth_date = $6, gender = $7, phone = $8
 WHERE id = $1
 `
 
 type UpdateResidentParams struct {
-	ID              uuid.UUID  `db:"id" json:"id"`
-	Email           string     `db:"email" json:"email"`
-	FirstName       string     `db:"first_name" json:"first_name"`
-	SecondName      string     `db:"second_name" json:"second_name"`
-	LastName        string     `db:"last_name" json:"last_name"`
-	BirthDate       time.Time  `db:"birth_date" json:"birth_date"`
-	Gender          string     `db:"gender" json:"gender"`
-	Phone           string     `db:"phone" json:"phone"`
-	MaritalStatus   *string    `db:"marital_status" json:"marital_status"`
-	Religion        *string    `db:"religion" json:"religion"`
-	Ethnicity       *string    `db:"ethnicity" json:"ethnicity"`
-	Disability      *string    `db:"disability" json:"disability"`
-	EducationLevel  *string    `db:"education_level" json:"education_level"`
-	LanguagesSpoken []string   `db:"languages_spoken" json:"languages_spoken"`
-	AddressID       *uuid.UUID `db:"address_id" json:"address_id"`
+	ID         uuid.UUID `db:"id" json:"id"`
+	Email      string    `db:"email" json:"email"`
+	FirstName  string    `db:"first_name" json:"first_name"`
+	SecondName string    `db:"second_name" json:"second_name"`
+	LastName   string    `db:"last_name" json:"last_name"`
+	BirthDate  time.Time `db:"birth_date" json:"birth_date"`
+	Gender     string    `db:"gender" json:"gender"`
+	Phone      string    `db:"phone" json:"phone"`
 }
 
 func (q *Queries) UpdateResident(ctx context.Context, arg UpdateResidentParams) error {
@@ -395,13 +285,6 @@ func (q *Queries) UpdateResident(ctx context.Context, arg UpdateResidentParams) 
 		arg.BirthDate,
 		arg.Gender,
 		arg.Phone,
-		arg.MaritalStatus,
-		arg.Religion,
-		arg.Ethnicity,
-		arg.Disability,
-		arg.EducationLevel,
-		arg.LanguagesSpoken,
-		arg.AddressID,
 	)
 	return err
 }
@@ -417,19 +300,5 @@ type UpdateResidentAddressParams struct {
 
 func (q *Queries) UpdateResidentAddress(ctx context.Context, arg UpdateResidentAddressParams) error {
 	_, err := q.db.Exec(ctx, updateResidentAddress, arg.AddressID, arg.ID)
-	return err
-}
-
-const updateResidentLanguages = `-- name: UpdateResidentLanguages :exec
-UPDATE resident SET languages_spoken = $1 WHERE id = $2
-`
-
-type UpdateResidentLanguagesParams struct {
-	LanguagesSpoken []string  `db:"languages_spoken" json:"languages_spoken"`
-	ID              uuid.UUID `db:"id" json:"id"`
-}
-
-func (q *Queries) UpdateResidentLanguages(ctx context.Context, arg UpdateResidentLanguagesParams) error {
-	_, err := q.db.Exec(ctx, updateResidentLanguages, arg.LanguagesSpoken, arg.ID)
 	return err
 }

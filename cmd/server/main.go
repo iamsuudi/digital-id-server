@@ -30,6 +30,8 @@ func main() {
 	gin.DisableConsoleColor()
 
 	r := gin.Default()
+	
+	r.Static("/assets", "./uploads")
 
 	q := repository.New(db)
 	uService := user.NewService(db, q)

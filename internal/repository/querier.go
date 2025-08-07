@@ -28,6 +28,7 @@ type Querier interface {
 	CountSearchSubCities(ctx context.Context, query string) (int64, error)
 	CountSearchUsersByRole(ctx context.Context, arg CountSearchUsersByRoleParams) (int64, error)
 	CountSearchUsersUnderScope(ctx context.Context, arg CountSearchUsersUnderScopeParams) (int64, error)
+	CreateAdditional(ctx context.Context, arg CreateAdditionalParams) error
 	CreateCity(ctx context.Context, arg CreateCityParams) (City, error)
 	CreateKebele(ctx context.Context, arg CreateKebeleParams) (Kebele, error)
 	CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) (uuid.UUID, error)
@@ -45,6 +46,12 @@ type Querier interface {
 	GetKebele(ctx context.Context, id uuid.UUID) (GetKebeleRow, error)
 	GetKebelesForSubCity(ctx context.Context, id uuid.UUID) ([]GetKebelesForSubCityRow, error)
 	GetRefreshToken(ctx context.Context, token string) (RefreshTokens, error)
+	// LEFT JOIN address    ON resident.address_id = address.id
+	// LEFT JOIN biometric  ON resident.id = biometric.resident_id
+	// LEFT JOIN document   ON resident.id = document.resident_id
+	// LEFT JOIN employment ON resident.id = employment.resident_id
+	// LEFT JOIN emergency  ON resident.id = emergency.resident_id
+	// LEFT JOIN idcard     ON resident.id = idcard.resident_id
 	GetResident(ctx context.Context, id uuid.UUID) (GetResidentRow, error)
 	GetSubCitiesForCity(ctx context.Context, id uuid.UUID) ([]GetSubCitiesForCityRow, error)
 	GetSubCity(ctx context.Context, id uuid.UUID) (GetSubCityRow, error)
@@ -90,7 +97,6 @@ type Querier interface {
 	UpdateKebele(ctx context.Context, arg UpdateKebeleParams) (Kebele, error)
 	UpdateResident(ctx context.Context, arg UpdateResidentParams) error
 	UpdateResidentAddress(ctx context.Context, arg UpdateResidentAddressParams) error
-	UpdateResidentLanguages(ctx context.Context, arg UpdateResidentLanguagesParams) error
 	UpdateSubCity(ctx context.Context, arg UpdateSubCityParams) (Subcity, error)
 	UpdateUserInfo(ctx context.Context, arg UpdateUserInfoParams) error
 	UpdateUserRole(ctx context.Context, arg UpdateUserRoleParams) error
