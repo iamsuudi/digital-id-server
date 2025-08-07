@@ -7,15 +7,25 @@ CREATE TABLE resident (
     birth_date          TIMESTAMP(3)    NOT NULL,
     gender              VARCHAR(20)     NOT NULL,
     phone               VARCHAR(20)     NOT NULL,
+    
+    address_id          UUID REFERENCES address(id) ON DELETE SET NULL,
+
+    created_at          TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at          TIMESTAMP(3)
+);
+
+CREATE TABLE additional (
+    id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    resident_id         UUID NOT NULL UNIQUE REFERENCES resident(id) ON DELETE CASCADE,
+
+    national_id         INTEGER UNIQUE,
     marital_status      VARCHAR(20),
     religion            VARCHAR(20),
-    national_id         INTEGER UNIQUE,
     ethnicity           VARCHAR(20),
     disability          VARCHAR(30),
     education_level     VARCHAR(20),
     languages_spoken    VARCHAR(20)[],
-    address_id          UUID REFERENCES address(id) ON DELETE SET NULL,
-    
+
     created_at          TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at          TIMESTAMP(3)
-);
+)

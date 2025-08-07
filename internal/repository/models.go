@@ -320,11 +320,25 @@ func (ns NullReligion) Value() (driver.Value, error) {
 	return string(ns.Religion), nil
 }
 
+type Additional struct {
+	ID              uuid.UUID  `db:"id" json:"id"`
+	ResidentID      uuid.UUID  `db:"resident_id" json:"resident_id"`
+	NationalID      *int32     `db:"national_id" json:"national_id"`
+	MaritalStatus   *string    `db:"marital_status" json:"marital_status"`
+	Religion        *string    `db:"religion" json:"religion"`
+	Ethnicity       *string    `db:"ethnicity" json:"ethnicity"`
+	Disability      *string    `db:"disability" json:"disability"`
+	EducationLevel  *string    `db:"education_level" json:"education_level"`
+	LanguagesSpoken []string   `db:"languages_spoken" json:"languages_spoken"`
+	CreatedAt       time.Time  `db:"created_at" json:"created_at"`
+	DeletedAt       *time.Time `db:"deleted_at" json:"deleted_at"`
+}
+
 type Address struct {
 	ID          uuid.UUID  `db:"id" json:"id"`
 	HouseNumber string     `db:"house_number" json:"house_number"`
 	KebeleID    uuid.UUID  `db:"kebele_id" json:"kebele_id"`
-	SubcityID   *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	SubcityID   uuid.UUID  `db:"subcity_id" json:"subcity_id"`
 	CityID      uuid.UUID  `db:"city_id" json:"city_id"`
 	CreatedAt   time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt   *time.Time `db:"deleted_at" json:"deleted_at"`
@@ -347,7 +361,7 @@ type Biometric struct {
 	ResidentID  uuid.UUID  `db:"resident_id" json:"resident_id"`
 	Fingerprint []byte     `db:"fingerprint" json:"fingerprint"`
 	BloodType   string     `db:"blood_type" json:"blood_type"`
-	Face        string     `db:"face" json:"face"`
+	FaceUrl     string     `db:"face_url" json:"face_url"`
 	CreatedAt   time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt   *time.Time `db:"deleted_at" json:"deleted_at"`
 }
@@ -362,14 +376,12 @@ type City struct {
 }
 
 type Document struct {
-	ID         uuid.UUID      `db:"id" json:"id"`
-	Type       DocumentType   `db:"type" json:"type"`
-	ResidentID uuid.UUID      `db:"resident_id" json:"resident_id"`
-	Url        string         `db:"url" json:"url"`
-	Status     DocumentStatus `db:"status" json:"status"`
-	Number     string         `db:"number" json:"number"`
-	CreatedAt  time.Time      `db:"created_at" json:"created_at"`
-	DeletedAt  *time.Time     `db:"deleted_at" json:"deleted_at"`
+	ID         uuid.UUID  `db:"id" json:"id"`
+	ResidentID uuid.UUID  `db:"resident_id" json:"resident_id"`
+	Url        string     `db:"url" json:"url"`
+	Status     string     `db:"status" json:"status"`
+	CreatedAt  time.Time  `db:"created_at" json:"created_at"`
+	DeletedAt  *time.Time `db:"deleted_at" json:"deleted_at"`
 }
 
 type Emergency struct {
@@ -378,6 +390,7 @@ type Emergency struct {
 	Name       string     `db:"name" json:"name"`
 	Relation   string     `db:"relation" json:"relation"`
 	Phone      string     `db:"phone" json:"phone"`
+	Email      *string    `db:"email" json:"email"`
 	CreatedAt  time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt  *time.Time `db:"deleted_at" json:"deleted_at"`
 }
@@ -386,6 +399,7 @@ type Employment struct {
 	ID           uuid.UUID  `db:"id" json:"id"`
 	ResidentID   uuid.UUID  `db:"resident_id" json:"resident_id"`
 	Status       string     `db:"status" json:"status"`
+	Type         *string    `db:"type" json:"type"`
 	Occupation   *string    `db:"occupation" json:"occupation"`
 	EmployerName *string    `db:"employer_name" json:"employer_name"`
 	WorkAddress  *string    `db:"work_address" json:"work_address"`
@@ -442,24 +456,17 @@ type RefreshTokens struct {
 }
 
 type Resident struct {
-	ID              uuid.UUID  `db:"id" json:"id"`
-	Email           string     `db:"email" json:"email"`
-	FirstName       string     `db:"first_name" json:"first_name"`
-	SecondName      string     `db:"second_name" json:"second_name"`
-	LastName        string     `db:"last_name" json:"last_name"`
-	BirthDate       time.Time  `db:"birth_date" json:"birth_date"`
-	Gender          string     `db:"gender" json:"gender"`
-	Phone           string     `db:"phone" json:"phone"`
-	MaritalStatus   *string    `db:"marital_status" json:"marital_status"`
-	Religion        *string    `db:"religion" json:"religion"`
-	NationalID      *int32     `db:"national_id" json:"national_id"`
-	Ethnicity       *string    `db:"ethnicity" json:"ethnicity"`
-	Disability      *string    `db:"disability" json:"disability"`
-	EducationLevel  *string    `db:"education_level" json:"education_level"`
-	LanguagesSpoken []string   `db:"languages_spoken" json:"languages_spoken"`
-	AddressID       *uuid.UUID `db:"address_id" json:"address_id"`
-	CreatedAt       time.Time  `db:"created_at" json:"created_at"`
-	DeletedAt       *time.Time `db:"deleted_at" json:"deleted_at"`
+	ID         uuid.UUID  `db:"id" json:"id"`
+	Email      string     `db:"email" json:"email"`
+	FirstName  string     `db:"first_name" json:"first_name"`
+	SecondName string     `db:"second_name" json:"second_name"`
+	LastName   string     `db:"last_name" json:"last_name"`
+	BirthDate  time.Time  `db:"birth_date" json:"birth_date"`
+	Gender     string     `db:"gender" json:"gender"`
+	Phone      string     `db:"phone" json:"phone"`
+	AddressID  *uuid.UUID `db:"address_id" json:"address_id"`
+	CreatedAt  time.Time  `db:"created_at" json:"created_at"`
+	DeletedAt  *time.Time `db:"deleted_at" json:"deleted_at"`
 }
 
 type Role struct {

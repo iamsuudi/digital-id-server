@@ -3,8 +3,8 @@ CREATE TABLE kebele (
     name          TEXT NOT NULL,
     lat           NUMERIC,
     lon           NUMERIC,
-    subcity_id    UUID NOT NULL REFERENCES subcity(id) ON DELETE SET NULL,
-    city_id       UUID NOT NULL REFERENCES city(id) ON DELETE CASCADE,
+    subcity_id    UUID NOT NULL REFERENCES subcity(id)  ON DELETE CASCADE,
+    city_id       UUID NOT NULL REFERENCES city(id)     ON DELETE CASCADE,
     
     created_at    TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at    TIMESTAMP(3),
