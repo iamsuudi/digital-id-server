@@ -128,7 +128,5 @@ func (h *Handler) Me(c *gin.Context) {
 		return
 	}
 
-	// Exclude password hash
-	user.PasswordHash = ""
 	c.JSON(http.StatusOK, user)
 }
