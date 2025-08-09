@@ -11,16 +11,18 @@ import (
 	"github.com/google/uuid"
 )
 
-const createAdditional = `-- name: CreateAdditional :exec
+const createAdditional = `-- name: CreateAdditional :one
 INSERT INTO additional (
-    resident_id, marital_status, religion, ethnicity, disability, education_level, languages_spoken
+    resident_id,  national_id,  marital_status,  religion,  ethnicity,  disability,  education_level,  languages_spoken
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7
+    $1, $2, $3, $4, $5, $6, $7, $8
 )
+RETURNING id, resident_id, marital_status, religion, ethnicity, disability, national_id, education_level, languages_spoken, created_at, deleted_at
 `
 
 type CreateAdditionalParams struct {
 	ResidentID      uuid.UUID `db:"resident_id" json:"resident_id"`
+	NationalID      *string   `db:"national_id" json:"national_id"`
 	MaritalStatus   *string   `db:"marital_status" json:"marital_status"`
 	Religion        *string   `db:"religion" json:"religion"`
 	Ethnicity       *string   `db:"ethnicity" json:"ethnicity"`
@@ -29,9 +31,10 @@ type CreateAdditionalParams struct {
 	LanguagesSpoken []string  `db:"languages_spoken" json:"languages_spoken"`
 }
 
-func (q *Queries) CreateAdditional(ctx context.Context, arg CreateAdditionalParams) error {
-	_, err := q.db.Exec(ctx, createAdditional,
+func (q *Queries) CreateAdditional(ctx context.Context, arg CreateAdditionalParams) (Additional, error) {
+	row := q.db.QueryRow(ctx, createAdditional,
 		arg.ResidentID,
+		arg.NationalID,
 		arg.MaritalStatus,
 		arg.Religion,
 		arg.Ethnicity,
@@ -39,5 +42,189 @@ func (q *Queries) CreateAdditional(ctx context.Context, arg CreateAdditionalPara
 		arg.EducationLevel,
 		arg.LanguagesSpoken,
 	)
+	var i Additional
+	err := row.Scan(
+		&i.ID,
+		&i.ResidentID,
+		&i.MaritalStatus,
+		&i.Religion,
+		&i.Ethnicity,
+		&i.Disability,
+		&i.NationalID,
+		&i.EducationLevel,
+		&i.LanguagesSpoken,
+		&i.CreatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const deleteAdditional = `-- name: DeleteAdditional :exec
+UPDATE additional
+SET deleted_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+`
+
+func (q *Queries) DeleteAdditional(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteAdditional, id)
 	return err
+}
+
+const getAdditional = `-- name: GetAdditional :one
+SELECT id, resident_id, marital_status, religion, ethnicity, disability, national_id, education_level, languages_spoken, created_at, deleted_at
+FROM additional
+WHERE id = $1 AND deleted_at IS NULL
+`
+
+func (q *Queries) GetAdditional(ctx context.Context, id uuid.UUID) (Additional, error) {
+	row := q.db.QueryRow(ctx, getAdditional, id)
+	var i Additional
+	err := row.Scan(
+		&i.ID,
+		&i.ResidentID,
+		&i.MaritalStatus,
+		&i.Religion,
+		&i.Ethnicity,
+		&i.Disability,
+		&i.NationalID,
+		&i.EducationLevel,
+		&i.LanguagesSpoken,
+		&i.CreatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const getAdditionalByResident = `-- name: GetAdditionalByResident :one
+SELECT id, resident_id, marital_status, religion, ethnicity, disability, national_id, education_level, languages_spoken, created_at, deleted_at
+FROM additional
+WHERE resident_id = $1 AND deleted_at IS NULL
+`
+
+func (q *Queries) GetAdditionalByResident(ctx context.Context, residentID uuid.UUID) (Additional, error) {
+	row := q.db.QueryRow(ctx, getAdditionalByResident, residentID)
+	var i Additional
+	err := row.Scan(
+		&i.ID,
+		&i.ResidentID,
+		&i.MaritalStatus,
+		&i.Religion,
+		&i.Ethnicity,
+		&i.Disability,
+		&i.NationalID,
+		&i.EducationLevel,
+		&i.LanguagesSpoken,
+		&i.CreatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const hardDeleteAdditional = `-- name: HardDeleteAdditional :exec
+DELETE FROM additional
+WHERE id = $1 AND deleted_at IS NOT NULL
+`
+
+func (q *Queries) HardDeleteAdditional(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, hardDeleteAdditional, id)
+	return err
+}
+
+const listAdditionals = `-- name: ListAdditionals :many
+SELECT id, resident_id, marital_status, religion, ethnicity, disability, national_id, education_level, languages_spoken, created_at, deleted_at
+FROM additional
+WHERE deleted_at IS NULL
+ORDER BY created_at DESC
+LIMIT $2 OFFSET $1
+`
+
+type ListAdditionalsParams struct {
+	Offset int32 `db:"offset" json:"offset"`
+	Limit  int32 `db:"limit" json:"limit"`
+}
+
+func (q *Queries) ListAdditionals(ctx context.Context, arg ListAdditionalsParams) ([]Additional, error) {
+	rows, err := q.db.Query(ctx, listAdditionals, arg.Offset, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Additional{}
+	for rows.Next() {
+		var i Additional
+		if err := rows.Scan(
+			&i.ID,
+			&i.ResidentID,
+			&i.MaritalStatus,
+			&i.Religion,
+			&i.Ethnicity,
+			&i.Disability,
+			&i.NationalID,
+			&i.EducationLevel,
+			&i.LanguagesSpoken,
+			&i.CreatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const updateAdditional = `-- name: UpdateAdditional :one
+UPDATE additional
+SET
+    national_id      = COALESCE($1, national_id),
+    marital_status   = COALESCE($2, marital_status),
+    religion         = COALESCE($3, religion),
+    ethnicity        = COALESCE($4, ethnicity),
+    disability       = COALESCE($5, disability),
+    education_level  = COALESCE($6, education_level),
+    languages_spoken = COALESCE($7, languages_spoken)
+WHERE id = $8
+AND deleted_at IS NULL
+RETURNING id, resident_id, marital_status, religion, ethnicity, disability, national_id, education_level, languages_spoken, created_at, deleted_at
+`
+
+type UpdateAdditionalParams struct {
+	NationalID      *string   `db:"national_id" json:"national_id"`
+	MaritalStatus   *string   `db:"marital_status" json:"marital_status"`
+	Religion        *string   `db:"religion" json:"religion"`
+	Ethnicity       *string   `db:"ethnicity" json:"ethnicity"`
+	Disability      *string   `db:"disability" json:"disability"`
+	EducationLevel  *string   `db:"education_level" json:"education_level"`
+	LanguagesSpoken []string  `db:"languages_spoken" json:"languages_spoken"`
+	ID              uuid.UUID `db:"id" json:"id"`
+}
+
+func (q *Queries) UpdateAdditional(ctx context.Context, arg UpdateAdditionalParams) (Additional, error) {
+	row := q.db.QueryRow(ctx, updateAdditional,
+		arg.NationalID,
+		arg.MaritalStatus,
+		arg.Religion,
+		arg.Ethnicity,
+		arg.Disability,
+		arg.EducationLevel,
+		arg.LanguagesSpoken,
+		arg.ID,
+	)
+	var i Additional
+	err := row.Scan(
+		&i.ID,
+		&i.ResidentID,
+		&i.MaritalStatus,
+		&i.Religion,
+		&i.Ethnicity,
+		&i.Disability,
+		&i.NationalID,
+		&i.EducationLevel,
+		&i.LanguagesSpoken,
+		&i.CreatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
 }

@@ -28,7 +28,7 @@ type Querier interface {
 	CountSearchSubCities(ctx context.Context, query string) (int64, error)
 	CountSearchUsersByRole(ctx context.Context, arg CountSearchUsersByRoleParams) (int64, error)
 	CountSearchUsersUnderScope(ctx context.Context, arg CountSearchUsersUnderScopeParams) (int64, error)
-	CreateAdditional(ctx context.Context, arg CreateAdditionalParams) error
+	CreateAdditional(ctx context.Context, arg CreateAdditionalParams) (Additional, error)
 	CreateAddress(ctx context.Context, arg CreateAddressParams) (Address, error)
 	CreateBiometric(ctx context.Context, arg CreateBiometricParams) (Biometric, error)
 	CreateCity(ctx context.Context, arg CreateCityParams) (City, error)
@@ -42,6 +42,7 @@ type Querier interface {
 	CreateResident(ctx context.Context, arg CreateResidentParams) (uuid.UUID, error)
 	CreateSubCity(ctx context.Context, arg CreateSubCityParams) (Subcity, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error)
+	DeleteAdditional(ctx context.Context, id uuid.UUID) error
 	DeleteAddress(ctx context.Context, id uuid.UUID) error
 	DeleteAllResidents(ctx context.Context) error
 	DeleteDocument(ctx context.Context, id uuid.UUID) error
@@ -52,6 +53,8 @@ type Querier interface {
 	DeleteRefreshToken(ctx context.Context, token string) error
 	DeleteRefreshTokensByUser(ctx context.Context, userID uuid.UUID) error
 	DeleteResident(ctx context.Context, id uuid.UUID) error
+	GetAdditional(ctx context.Context, id uuid.UUID) (Additional, error)
+	GetAdditionalByResident(ctx context.Context, residentID uuid.UUID) (Additional, error)
 	GetAddress(ctx context.Context, id uuid.UUID) (Address, error)
 	GetAddressByLocations(ctx context.Context, arg GetAddressByLocationsParams) (Address, error)
 	GetAssignablePermissionsForActor(ctx context.Context, id uuid.UUID) ([]Permission, error)
@@ -71,13 +74,8 @@ type Querier interface {
 	GetKebelesForSubCity(ctx context.Context, id uuid.UUID) ([]GetKebelesForSubCityRow, error)
 	GetPayment(ctx context.Context, id uuid.UUID) (Payment, error)
 	GetPaymentByResident(ctx context.Context, residentID uuid.UUID) (Payment, error)
+	GetRandomLocation(ctx context.Context) (GetRandomLocationRow, error)
 	GetRefreshToken(ctx context.Context, token string) (RefreshTokens, error)
-	// LEFT JOIN address    ON resident.address_id = address.id
-	// LEFT JOIN biometric  ON resident.id = biometric.resident_id
-	// LEFT JOIN document   ON resident.id = document.resident_id
-	// LEFT JOIN employment ON resident.id = employment.resident_id
-	// LEFT JOIN emergency  ON resident.id = emergency.resident_id
-	// LEFT JOIN idcard     ON resident.id = idcard.resident_id
 	GetResident(ctx context.Context, id uuid.UUID) (GetResidentRow, error)
 	GetSubCitiesForCity(ctx context.Context, id uuid.UUID) ([]GetSubCitiesForCityRow, error)
 	GetSubCity(ctx context.Context, id uuid.UUID) (GetSubCityRow, error)
@@ -88,6 +86,7 @@ type Querier interface {
 	GetUserScope(ctx context.Context, id uuid.UUID) (GetUserScopeRow, error)
 	GrantPermissionToRole(ctx context.Context, arg GrantPermissionToRoleParams) error
 	GrantUserPlacement(ctx context.Context, arg GrantUserPlacementParams) error
+	HardDeleteAdditional(ctx context.Context, id uuid.UUID) error
 	HardDeleteAddress(ctx context.Context, id uuid.UUID) error
 	HardDeleteDocument(ctx context.Context, id uuid.UUID) error
 	HardDeleteEmergencyContact(ctx context.Context, id uuid.UUID) error
@@ -95,6 +94,7 @@ type Querier interface {
 	HardDeleteIDCard(ctx context.Context, id uuid.UUID) error
 	HardDeletePayment(ctx context.Context, id uuid.UUID) error
 	InsertAuditLog(ctx context.Context, arg InsertAuditLogParams) error
+	ListAdditionals(ctx context.Context, arg ListAdditionalsParams) ([]Additional, error)
 	ListAddresses(ctx context.Context, arg ListAddressesParams) ([]Address, error)
 	// Returns audit logs under scope
 	ListAuditLogs(ctx context.Context, arg ListAuditLogsParams) ([]ListAuditLogsRow, error)
@@ -131,6 +131,7 @@ type Querier interface {
 	SoftDeleteKebele(ctx context.Context, id uuid.UUID) error
 	SoftDeleteSubCity(ctx context.Context, id uuid.UUID) error
 	SoftDeleteUser(ctx context.Context, id uuid.UUID) error
+	UpdateAdditional(ctx context.Context, arg UpdateAdditionalParams) (Additional, error)
 	UpdateAddress(ctx context.Context, arg UpdateAddressParams) (Address, error)
 	UpdateBiometric(ctx context.Context, arg UpdateBiometricParams) error
 	UpdateCity(ctx context.Context, arg UpdateCityParams) error

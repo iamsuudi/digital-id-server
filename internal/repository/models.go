@@ -323,11 +323,11 @@ func (ns NullReligion) Value() (driver.Value, error) {
 type Additional struct {
 	ID              uuid.UUID  `db:"id" json:"id"`
 	ResidentID      uuid.UUID  `db:"resident_id" json:"resident_id"`
-	NationalID      *int32     `db:"national_id" json:"national_id"`
 	MaritalStatus   *string    `db:"marital_status" json:"marital_status"`
 	Religion        *string    `db:"religion" json:"religion"`
 	Ethnicity       *string    `db:"ethnicity" json:"ethnicity"`
 	Disability      *string    `db:"disability" json:"disability"`
+	NationalID      *string    `db:"national_id" json:"national_id"`
 	EducationLevel  *string    `db:"education_level" json:"education_level"`
 	LanguagesSpoken []string   `db:"languages_spoken" json:"languages_spoken"`
 	CreatedAt       time.Time  `db:"created_at" json:"created_at"`

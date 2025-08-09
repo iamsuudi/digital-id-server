@@ -52,19 +52,19 @@ func (s *Service) RegisterResident(ctx context.Context, input types.ResidentPayl
 	if err != nil {
 		return err
 	}
-	
+
 	raw := input.KebeleID
 	kebeleID, err := uuid.Parse(raw)
 	if err != nil {
 		return err
 	}
-	
+
 	raw = input.SubCityID
 	subcityID, err := uuid.Parse(raw)
 	if err != nil {
 		return err
 	}
-	
+
 	raw = input.CityID
 	cityID, err := uuid.Parse(raw)
 	if err != nil {
@@ -144,6 +144,18 @@ func (s *Service) RegisterResident(ctx context.Context, input types.ResidentPayl
 	if err != nil {
 		return err
 	}
+
+	// 6. Create additional
+	_, err = qtx.CreateAdditional(ctx, repository.CreateAdditionalParams{
+		ResidentID:      residentID,
+		Religion:        &input.Religion,
+		Ethnicity:       &input.Ethnicity,
+		NationalID:      &input.NationalID,
+		Disability:      &input.Disability,
+		EducationLevel:  &input.EducationLevel,
+		MaritalStatus:   &input.MaritalStatus,
+		LanguagesSpoken: input.LanguagesSpoken,
+	})
 
 	return tx.Commit(ctx)
 }

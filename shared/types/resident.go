@@ -17,6 +17,7 @@ type ResidentPayload struct {
 	Ethnicity         string    `form:"ethnicity"`
 	Disability        string    `form:"disability"`
 	EducationLevel    string    `form:"education_level"`
+	NationalID        string    `form:"national_id"`
 	LanguagesSpoken   []string  `form:"languages_spoken"`
 	BloodType         string    `form:"blood_type"`
 	EmploymentStatus  string    `form:"document_status"`

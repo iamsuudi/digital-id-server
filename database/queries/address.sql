@@ -45,3 +45,15 @@ AND deleted_at IS NULL;
 DELETE FROM address
 WHERE id = $1
 AND deleted_at IS NOT NULL;
+
+-- name: GetRandomLocation :one
+SELECT 
+    c.id   AS city_id,
+    s.id   AS subcity_id,
+    k.id   AS kebele_id
+FROM kebele k
+JOIN subcity s ON k.subcity_id = s.id
+JOIN city c ON s.city_id = c.id
+ORDER BY RANDOM()
+LIMIT 1;
+
