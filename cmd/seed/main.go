@@ -14,17 +14,17 @@ func main() {
 	_ = godotenv.Load(".env")
 
 	config.Load()
-	dbConn := database.Connect()
-	defer dbConn.Close()
+	db := database.Connect()
+	defer db.Close()
 
 	ctx := context.Background()
 
 	// Initialize sqlc Queries
-	q := repository.New(dbConn)
+	q := repository.New(db)
 
 	log.Println("🌱 Seeding data...")
 	
 	seedUsers(ctx, q)
 	seedLocations(ctx, q)
-	seedResidents(ctx, q)
+	seedResidents(ctx, db, q)
 }
