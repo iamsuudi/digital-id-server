@@ -39,3 +39,9 @@ WHERE id = $1 AND deleted_at IS NULL;
 -- name: HardDeleteDocument :exec
 DELETE FROM document
 WHERE id = $1 AND deleted_at IS NOT NULL;
+
+-- name: GetResidentDocuments :many
+SELECT *
+FROM document
+WHERE resident_id = $1 AND deleted_at IS NULL
+ORDER BY created_at DESC;

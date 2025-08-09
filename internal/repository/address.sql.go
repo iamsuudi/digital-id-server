@@ -114,6 +114,31 @@ func (q *Queries) GetAddressByLocations(ctx context.Context, arg GetAddressByLoc
 	return i, err
 }
 
+const getRandomLocation = `-- name: GetRandomLocation :one
+SELECT 
+    c.id   AS city_id,
+    s.id   AS subcity_id,
+    k.id   AS kebele_id
+FROM kebele k
+JOIN subcity s ON k.subcity_id = s.id
+JOIN city c ON s.city_id = c.id
+ORDER BY RANDOM()
+LIMIT 1
+`
+
+type GetRandomLocationRow struct {
+	CityID    uuid.UUID `db:"city_id" json:"city_id"`
+	SubcityID uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	KebeleID  uuid.UUID `db:"kebele_id" json:"kebele_id"`
+}
+
+func (q *Queries) GetRandomLocation(ctx context.Context) (GetRandomLocationRow, error) {
+	row := q.db.QueryRow(ctx, getRandomLocation)
+	var i GetRandomLocationRow
+	err := row.Scan(&i.CityID, &i.SubcityID, &i.KebeleID)
+	return i, err
+}
+
 const hardDeleteAddress = `-- name: HardDeleteAddress :exec
 DELETE FROM address
 WHERE id = $1

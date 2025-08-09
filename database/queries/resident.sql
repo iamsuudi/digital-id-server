@@ -16,16 +16,15 @@ WHERE id = $1;
 UPDATE resident SET address_id = $1 WHERE id = $2;
 
 -- name: GetResident :one
-SELECT sqlc.embed(resident)
-    -- sqlc.embed(address), sqlc.embed(biometric), sqlc.embed(document),
-    -- sqlc.embed(employment), sqlc.embed(emergency), sqlc.embed(idcard)
+SELECT sqlc.embed(resident), sqlc.embed(address), sqlc.embed(biometric), 
+    sqlc.embed(additional), sqlc.embed(employment), sqlc.embed(emergency)
 FROM resident
--- LEFT JOIN address    ON resident.address_id = address.id
--- LEFT JOIN biometric  ON resident.id = biometric.resident_id
--- LEFT JOIN document   ON resident.id = document.resident_id
--- LEFT JOIN employment ON resident.id = employment.resident_id
--- LEFT JOIN emergency  ON resident.id = emergency.resident_id
--- LEFT JOIN idcard     ON resident.id = idcard.resident_id
+LEFT JOIN address    ON resident.address_id = address.id
+LEFT JOIN biometric  ON resident.id = biometric.resident_id
+LEFT JOIN document   ON resident.id = document.resident_id
+LEFT JOIN employment ON resident.id = employment.resident_id
+LEFT JOIN emergency  ON resident.id = emergency.resident_id
+LEFT JOIN additional ON resident.id = additional.resident_id
 WHERE resident.id = $1;
 
 -- name: DeleteResident :exec

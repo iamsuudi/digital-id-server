@@ -52,19 +52,20 @@ func (s *Service) RegisterResident(ctx context.Context, input types.ResidentPayl
 	if err != nil {
 		return err
 	}
-	
+	fmt.Println("Biometric created")
+
 	raw := input.KebeleID
 	kebeleID, err := uuid.Parse(raw)
 	if err != nil {
 		return err
 	}
-	
+
 	raw = input.SubCityID
 	subcityID, err := uuid.Parse(raw)
 	if err != nil {
 		return err
 	}
-	
+
 	raw = input.CityID
 	cityID, err := uuid.Parse(raw)
 	if err != nil {
@@ -119,6 +120,7 @@ func (s *Service) RegisterResident(ctx context.Context, input types.ResidentPayl
 			return err
 		}
 	}
+	fmt.Println("Documents created")
 
 	// 5. Create employment
 	_, err = qtx.CreateEmployment(ctx, repository.CreateEmploymentParams{
@@ -132,6 +134,7 @@ func (s *Service) RegisterResident(ctx context.Context, input types.ResidentPayl
 	if err != nil {
 		return err
 	}
+	fmt.Println("Created employment")
 
 	// 6. Create emergency
 	_, err = qtx.CreateEmergencyContact(ctx, repository.CreateEmergencyContactParams{
@@ -144,12 +147,33 @@ func (s *Service) RegisterResident(ctx context.Context, input types.ResidentPayl
 	if err != nil {
 		return err
 	}
+	fmt.Println("Emergency created")
+
+	// 6. Create additional
+	_, err = qtx.CreateAdditional(ctx, repository.CreateAdditionalParams{
+		ResidentID:      residentID,
+		Religion:        &input.Religion,
+		Ethnicity:       &input.Ethnicity,
+		NationalID:      &input.NationalID,
+		Disability:      &input.Disability,
+		EducationLevel:  &input.EducationLevel,
+		MaritalStatus:   &input.MaritalStatus,
+		LanguagesSpoken: input.LanguagesSpoken,
+	})
+	if err != nil {
+		return err
+	}
+	fmt.Println("Additional created")
 
 	return tx.Commit(ctx)
 }
 
 func (s *Service) GetResident(ctx context.Context, id uuid.UUID) (repository.GetResidentRow, error) {
 	return s.q.GetResident(ctx, id)
+}
+
+func (s *Service) GetResidentDocuments(ctx context.Context, id uuid.UUID) ([]repository.Document, error) {
+	return s.q.GetResidentDocuments(ctx, id)
 }
 
 func (s *Service) GetResidents(ctx context.Context, limit, offset int) (int64, []repository.ListResidentsRow, error) {

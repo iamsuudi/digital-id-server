@@ -94,23 +94,27 @@ func (q *Queries) DeleteResident(ctx context.Context, id uuid.UUID) error {
 }
 
 const getResident = `-- name: GetResident :one
-SELECT resident.id, resident.email, resident.first_name, resident.second_name, resident.last_name, resident.birth_date, resident.gender, resident.phone, resident.address_id, resident.created_at, resident.deleted_at
-    -- sqlc.embed(address), sqlc.embed(biometric), sqlc.embed(document),
-    -- sqlc.embed(employment), sqlc.embed(emergency), sqlc.embed(idcard)
+SELECT resident.id, resident.email, resident.first_name, resident.second_name, resident.last_name, resident.birth_date, resident.gender, resident.phone, resident.address_id, resident.created_at, resident.deleted_at, address.id, address.house_number, address.kebele_id, address.subcity_id, address.city_id, address.created_at, address.deleted_at, biometric.id, biometric.resident_id, biometric.fingerprint, biometric.blood_type, biometric.face_url, biometric.created_at, biometric.deleted_at, 
+    additional.id, additional.resident_id, additional.marital_status, additional.religion, additional.ethnicity, additional.disability, additional.national_id, additional.education_level, additional.languages_spoken, additional.created_at, additional.deleted_at, employment.id, employment.resident_id, employment.status, employment.type, employment.occupation, employment.employer_name, employment.work_address, employment.created_at, employment.deleted_at, emergency.id, emergency.resident_id, emergency.name, emergency.relation, emergency.phone, emergency.email, emergency.created_at, emergency.deleted_at
 FROM resident
+LEFT JOIN address    ON resident.address_id = address.id
+LEFT JOIN biometric  ON resident.id = biometric.resident_id
+LEFT JOIN document   ON resident.id = document.resident_id
+LEFT JOIN employment ON resident.id = employment.resident_id
+LEFT JOIN emergency  ON resident.id = emergency.resident_id
+LEFT JOIN additional ON resident.id = additional.resident_id
 WHERE resident.id = $1
 `
 
 type GetResidentRow struct {
-	Resident Resident `db:"resident" json:"resident"`
+	Resident   Resident   `db:"resident" json:"resident"`
+	Address    Address    `db:"address" json:"address"`
+	Biometric  Biometric  `db:"biometric" json:"biometric"`
+	Additional Additional `db:"additional" json:"additional"`
+	Employment Employment `db:"employment" json:"employment"`
+	Emergency  Emergency  `db:"emergency" json:"emergency"`
 }
 
-// LEFT JOIN address    ON resident.address_id = address.id
-// LEFT JOIN biometric  ON resident.id = biometric.resident_id
-// LEFT JOIN document   ON resident.id = document.resident_id
-// LEFT JOIN employment ON resident.id = employment.resident_id
-// LEFT JOIN emergency  ON resident.id = emergency.resident_id
-// LEFT JOIN idcard     ON resident.id = idcard.resident_id
 func (q *Queries) GetResident(ctx context.Context, id uuid.UUID) (GetResidentRow, error) {
 	row := q.db.QueryRow(ctx, getResident, id)
 	var i GetResidentRow
@@ -126,6 +130,48 @@ func (q *Queries) GetResident(ctx context.Context, id uuid.UUID) (GetResidentRow
 		&i.Resident.AddressID,
 		&i.Resident.CreatedAt,
 		&i.Resident.DeletedAt,
+		&i.Address.ID,
+		&i.Address.HouseNumber,
+		&i.Address.KebeleID,
+		&i.Address.SubcityID,
+		&i.Address.CityID,
+		&i.Address.CreatedAt,
+		&i.Address.DeletedAt,
+		&i.Biometric.ID,
+		&i.Biometric.ResidentID,
+		&i.Biometric.Fingerprint,
+		&i.Biometric.BloodType,
+		&i.Biometric.FaceUrl,
+		&i.Biometric.CreatedAt,
+		&i.Biometric.DeletedAt,
+		&i.Additional.ID,
+		&i.Additional.ResidentID,
+		&i.Additional.MaritalStatus,
+		&i.Additional.Religion,
+		&i.Additional.Ethnicity,
+		&i.Additional.Disability,
+		&i.Additional.NationalID,
+		&i.Additional.EducationLevel,
+		&i.Additional.LanguagesSpoken,
+		&i.Additional.CreatedAt,
+		&i.Additional.DeletedAt,
+		&i.Employment.ID,
+		&i.Employment.ResidentID,
+		&i.Employment.Status,
+		&i.Employment.Type,
+		&i.Employment.Occupation,
+		&i.Employment.EmployerName,
+		&i.Employment.WorkAddress,
+		&i.Employment.CreatedAt,
+		&i.Employment.DeletedAt,
+		&i.Emergency.ID,
+		&i.Emergency.ResidentID,
+		&i.Emergency.Name,
+		&i.Emergency.Relation,
+		&i.Emergency.Phone,
+		&i.Emergency.Email,
+		&i.Emergency.CreatedAt,
+		&i.Emergency.DeletedAt,
 	)
 	return i, err
 }
