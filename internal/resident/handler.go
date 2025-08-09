@@ -26,47 +26,51 @@ func NewHandler(s *Service) *Handler {
 }
 
 func (h *Handler) RegisterResident(c *gin.Context) {
+	// 1. Bind the entire multipart form at once.
 	var input types.ResidentPayload
 	if err := c.ShouldBind(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input: " + err.Error()})
 		return
 	}
 
-	prettyJSON, err := json.MarshalIndent(input, "", "  ")
-	if err != nil {
-		fmt.Println("Error marshaling JSON:", err)
-	} else {
-		fmt.Println(string(prettyJSON))
+	// 2. Optional pretty print.
+	if b, err := json.MarshalIndent(input, "", "  "); err == nil {
+		fmt.Println(string(b))
 	}
 
+	// 3. Collect uploaded documents.
 	form, err := c.MultipartForm()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	docsUrls := make([]string, 3)
 	docs := form.File["documents"]
+	docsUrls := make([]string, 0, len(docs))
 	for _, doc := range docs {
 		name := utils.MakeFileName(doc.Filename)
-		dst := filepath.Join("uploads", name)
-		c.SaveUploadedFile(doc, dst)
+		dst  := filepath.Join("uploads", name)
+		if err := c.SaveUploadedFile(doc, dst); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save document"})
+			return
+		}
 		docsUrls = append(docsUrls, name)
 	}
 
+	// 4. Handle face image.
 	face, err := c.FormFile("face")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "missing face image"})
 		return
 	}
-	faceUrl := utils.MakeFileName(face.Filename)
-	dst := filepath.Join("uploads", faceUrl)
-	c.SaveUploadedFile(face, dst)
-	
-	fmt.Println("Files are saved!")
+	faceName := utils.MakeFileName(face.Filename)
+	if err := c.SaveUploadedFile(face, filepath.Join("uploads", faceName)); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save face image"})
+		return
+	}
 
-	err = h.service.RegisterResident(c.Request.Context(), input, docsUrls, faceUrl)
-	if err != nil {
+	// 5. Call service layer.
+	if err := h.service.RegisterResident(c.Request.Context(), input, docsUrls, faceName); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to register: " + err.Error()})
 		return
 	}
