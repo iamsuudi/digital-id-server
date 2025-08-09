@@ -18,11 +18,11 @@ CREATE TABLE additional (
     id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     resident_id         UUID NOT NULL UNIQUE REFERENCES resident(id) ON DELETE CASCADE,
 
-    national_id         INTEGER UNIQUE,
     marital_status      VARCHAR(20),
     religion            VARCHAR(20),
     ethnicity           VARCHAR(20),
     disability          VARCHAR(30),
+    national_id         TEXT,
     education_level     VARCHAR(20),
     languages_spoken    VARCHAR(20)[],
 
