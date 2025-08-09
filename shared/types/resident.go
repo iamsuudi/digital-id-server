@@ -2,8 +2,6 @@ package types
 
 import (
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type ResidentPayload struct {
@@ -18,21 +16,20 @@ type ResidentPayload struct {
 	Religion          string    `form:"religion"`
 	Ethnicity         string    `form:"ethnicity"`
 	Disability        string    `form:"disability"`
-	EducationLevel    string    `form:"educational_level"`
+	EducationLevel    string    `form:"education_level"`
 	LanguagesSpoken   []string  `form:"languages_spoken"`
 	BloodType         string    `form:"blood_type"`
-	Face              string    `form:"face"`
-	DocumentType      string    `form:"document_type"`
-	DocumentNumber    string    `form:"document_number"`
 	EmploymentStatus  string    `form:"document_status"`
 	Occupation        string    `form:"occupation"`
+	EmploymentType    string    `form:"employment_type"`
 	EmployerName      string    `form:"employer_name"`
 	WorkAddress       string    `form:"work_address"`
 	EmergencyName     string    `form:"emergency_contact_name"`
 	EmergencyRelation string    `form:"emergency_contact_relation"`
 	EmergencyPhone    string    `form:"emergency_contact_phone"`
+	EmergencyEmail    string    `form:"emergency_contact_email"`
 	HouseNumber       string    `form:"house_number"`
-	KebeleID          uuid.UUID `form:"kebele_id"`
-	SubCityID         uuid.UUID `form:"subcity_id"`
-	CityID            uuid.UUID `form:"city_id"`
+	KebeleID          string    `form:"kebele"`
+	SubCityID         string    `form:"subcity"`
+	CityID            string    `form:"city"`
 }

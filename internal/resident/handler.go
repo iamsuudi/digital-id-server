@@ -1,9 +1,11 @@
 package resident
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+	"path/filepath"
 	"strings"
 
 	"digital-id-server/internal/repository"
@@ -29,50 +31,56 @@ func (h *Handler) RegisterResident(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input: " + err.Error()})
 		return
 	}
+
+	prettyJSON, err := json.MarshalIndent(input, "", "  ")
+	if err != nil {
+		fmt.Println("Error marshaling JSON:", err)
+	} else {
+		fmt.Println(string(prettyJSON))
+	}
+
+	form, err := c.MultipartForm()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	docsUrls := make([]string, 3)
+	docs := form.File["documents"]
+	for _, doc := range docs {
+		name := utils.MakeFileName(doc.Filename)
+		dst := filepath.Join("uploads", name)
+		c.SaveUploadedFile(doc, dst)
+		docsUrls = append(docsUrls, name)
+	}
+
+	face, err := c.FormFile("face")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "missing face image"})
+		return
+	}
+	faceUrl := utils.MakeFileName(face.Filename)
+	dst := filepath.Join("uploads", faceUrl)
+	c.SaveUploadedFile(face, dst)
 	
-    file, _ := c.FormFile("document")
-    if file != nil {
-        c.SaveUploadedFile(file, "uploads/"+file.Filename)
-    }
+	fmt.Println("Files are saved!")
 
-    c.JSON(200, gin.H{"ok": true})
+	err = h.service.RegisterResident(c.Request.Context(), input, docsUrls, faceUrl)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to register: " + err.Error()})
+		return
+	}
 
-	// faceFile, err := c.FormFile("face")
-	// if err != nil {
-	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "missing face image"})
-	// 	return
-	// }
-
-	// docFile, err := c.FormFile("document")
-	// if err != nil {
-	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "missing document"})
-	// 	return
-	// }
-
-	// fmt.Println(faceFile, docFile)
-
-	// // TODO: Save files to storage (or mock)
-	// faceURL := "/mock/face.jpg"
-	// docURL := "/mock/document.pdf"
-
-	// err = h.service.RegisterResident(c.Request.Context(), input, faceURL, docURL)
-	// if err != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to register resident: " + err.Error()})
-	// 	return
-	// }
-
-	// c.JSON(http.StatusCreated, gin.H{"message": "resident registered successfully"})
+	c.JSON(http.StatusCreated, gin.H{"message": "resident registered successfully"})
 }
 
 func (h *Handler) GetResident(c *gin.Context) {
 	raw := c.Param("id")
 	id, err := uuid.Parse(raw)
-	fmt.Println(raw)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid resident ID"})
 		return
 	}
-	fmt.Println(id)
 
 	resident, err := h.service.GetResident(c.Request.Context(), id)
 	if err != nil {
@@ -103,7 +111,7 @@ func (h *Handler) GetResidents(c *gin.Context) {
 
 		c.JSON(http.StatusOK, gin.H{
 			"residents": residents,
-			"count":  count,
+			"count":     count,
 		})
 	} else {
 		count, residents, err := h.service.SearchResidents(c, limit, offset, query)
@@ -117,7 +125,7 @@ func (h *Handler) GetResidents(c *gin.Context) {
 
 		c.JSON(http.StatusOK, gin.H{
 			"residents": residents,
-			"count":  count,
+			"count":     count,
 		})
 	}
 }

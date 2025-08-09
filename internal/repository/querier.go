@@ -29,22 +29,48 @@ type Querier interface {
 	CountSearchUsersByRole(ctx context.Context, arg CountSearchUsersByRoleParams) (int64, error)
 	CountSearchUsersUnderScope(ctx context.Context, arg CountSearchUsersUnderScopeParams) (int64, error)
 	CreateAdditional(ctx context.Context, arg CreateAdditionalParams) error
+	CreateAddress(ctx context.Context, arg CreateAddressParams) (Address, error)
+	CreateBiometric(ctx context.Context, arg CreateBiometricParams) (Biometric, error)
 	CreateCity(ctx context.Context, arg CreateCityParams) (City, error)
+	CreateDocument(ctx context.Context, arg CreateDocumentParams) (Document, error)
+	CreateEmergencyContact(ctx context.Context, arg CreateEmergencyContactParams) (Emergency, error)
+	CreateEmployment(ctx context.Context, arg CreateEmploymentParams) (Employment, error)
+	CreateIDCard(ctx context.Context, arg CreateIDCardParams) (Idcard, error)
 	CreateKebele(ctx context.Context, arg CreateKebeleParams) (Kebele, error)
+	CreatePayment(ctx context.Context, arg CreatePaymentParams) (Payment, error)
 	CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) (uuid.UUID, error)
 	CreateResident(ctx context.Context, arg CreateResidentParams) (uuid.UUID, error)
 	CreateSubCity(ctx context.Context, arg CreateSubCityParams) (Subcity, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error)
+	DeleteAddress(ctx context.Context, id uuid.UUID) error
 	DeleteAllResidents(ctx context.Context) error
+	DeleteDocument(ctx context.Context, id uuid.UUID) error
+	DeleteEmergencyContact(ctx context.Context, id uuid.UUID) error
+	DeleteEmployment(ctx context.Context, id uuid.UUID) error
+	DeleteIDCard(ctx context.Context, id uuid.UUID) error
+	DeletePayment(ctx context.Context, id uuid.UUID) error
 	DeleteRefreshToken(ctx context.Context, token string) error
 	DeleteRefreshTokensByUser(ctx context.Context, userID uuid.UUID) error
 	DeleteResident(ctx context.Context, id uuid.UUID) error
+	GetAddress(ctx context.Context, id uuid.UUID) (Address, error)
+	GetAddressByLocations(ctx context.Context, arg GetAddressByLocationsParams) (Address, error)
 	GetAssignablePermissionsForActor(ctx context.Context, id uuid.UUID) ([]Permission, error)
 	GetAssignableRolesForActor(ctx context.Context, slug string) ([]GetAssignableRolesForActorRow, error)
 	GetCity(ctx context.Context, id uuid.UUID) (GetCityRow, error)
+	GetDocument(ctx context.Context, id uuid.UUID) (Document, error)
+	GetDocumentByResident(ctx context.Context, residentID uuid.UUID) (Document, error)
 	GetEffectivePermissionsForUser(ctx context.Context, id uuid.UUID) ([]GetEffectivePermissionsForUserRow, error)
+	GetEmergencyContact(ctx context.Context, id uuid.UUID) (Emergency, error)
+	GetEmergencyContactByResident(ctx context.Context, residentID uuid.UUID) (Emergency, error)
+	GetEmployment(ctx context.Context, id uuid.UUID) (Employment, error)
+	GetEmploymentByResident(ctx context.Context, residentID uuid.UUID) (Employment, error)
+	GetIDCard(ctx context.Context, id uuid.UUID) (Idcard, error)
+	GetIDCardByNumber(ctx context.Context, number string) (Idcard, error)
+	GetIDCardByResident(ctx context.Context, residentID uuid.UUID) (Idcard, error)
 	GetKebele(ctx context.Context, id uuid.UUID) (GetKebeleRow, error)
 	GetKebelesForSubCity(ctx context.Context, id uuid.UUID) ([]GetKebelesForSubCityRow, error)
+	GetPayment(ctx context.Context, id uuid.UUID) (Payment, error)
+	GetPaymentByResident(ctx context.Context, residentID uuid.UUID) (Payment, error)
 	GetRefreshToken(ctx context.Context, token string) (RefreshTokens, error)
 	// LEFT JOIN address    ON resident.address_id = address.id
 	// LEFT JOIN biometric  ON resident.id = biometric.resident_id
@@ -62,11 +88,23 @@ type Querier interface {
 	GetUserScope(ctx context.Context, id uuid.UUID) (GetUserScopeRow, error)
 	GrantPermissionToRole(ctx context.Context, arg GrantPermissionToRoleParams) error
 	GrantUserPlacement(ctx context.Context, arg GrantUserPlacementParams) error
+	HardDeleteAddress(ctx context.Context, id uuid.UUID) error
+	HardDeleteDocument(ctx context.Context, id uuid.UUID) error
+	HardDeleteEmergencyContact(ctx context.Context, id uuid.UUID) error
+	HardDeleteEmployment(ctx context.Context, id uuid.UUID) error
+	HardDeleteIDCard(ctx context.Context, id uuid.UUID) error
+	HardDeletePayment(ctx context.Context, id uuid.UUID) error
 	InsertAuditLog(ctx context.Context, arg InsertAuditLogParams) error
+	ListAddresses(ctx context.Context, arg ListAddressesParams) ([]Address, error)
 	// Returns audit logs under scope
 	ListAuditLogs(ctx context.Context, arg ListAuditLogsParams) ([]ListAuditLogsRow, error)
 	ListCities(ctx context.Context, arg ListCitiesParams) ([]ListCitiesRow, error)
+	ListDocuments(ctx context.Context, arg ListDocumentsParams) ([]Document, error)
+	ListEmergencyContacts(ctx context.Context, arg ListEmergencyContactsParams) ([]Emergency, error)
+	ListEmployments(ctx context.Context, arg ListEmploymentsParams) ([]Employment, error)
+	ListIDCards(ctx context.Context, arg ListIDCardsParams) ([]Idcard, error)
 	ListKebeles(ctx context.Context, arg ListKebelesParams) ([]ListKebelesRow, error)
+	ListPayments(ctx context.Context, arg ListPaymentsParams) ([]Payment, error)
 	ListPermissionMatrixInScope(ctx context.Context, arg ListPermissionMatrixInScopeParams) ([]ListPermissionMatrixInScopeRow, error)
 	ListPermissionOverridesForUser(ctx context.Context, userID uuid.UUID) ([]ListPermissionOverridesForUserRow, error)
 	ListPermissions(ctx context.Context) ([]Permission, error)
@@ -93,8 +131,15 @@ type Querier interface {
 	SoftDeleteKebele(ctx context.Context, id uuid.UUID) error
 	SoftDeleteSubCity(ctx context.Context, id uuid.UUID) error
 	SoftDeleteUser(ctx context.Context, id uuid.UUID) error
+	UpdateAddress(ctx context.Context, arg UpdateAddressParams) (Address, error)
+	UpdateBiometric(ctx context.Context, arg UpdateBiometricParams) error
 	UpdateCity(ctx context.Context, arg UpdateCityParams) error
+	UpdateDocument(ctx context.Context, arg UpdateDocumentParams) (Document, error)
+	UpdateEmergencyContact(ctx context.Context, arg UpdateEmergencyContactParams) (Emergency, error)
+	UpdateEmployment(ctx context.Context, arg UpdateEmploymentParams) (Employment, error)
+	UpdateIDCard(ctx context.Context, arg UpdateIDCardParams) (Idcard, error)
 	UpdateKebele(ctx context.Context, arg UpdateKebeleParams) (Kebele, error)
+	UpdatePayment(ctx context.Context, arg UpdatePaymentParams) (Payment, error)
 	UpdateResident(ctx context.Context, arg UpdateResidentParams) error
 	UpdateResidentAddress(ctx context.Context, arg UpdateResidentAddressParams) error
 	UpdateSubCity(ctx context.Context, arg UpdateSubCityParams) (Subcity, error)
