@@ -1,6 +1,6 @@
 CREATE TABLE document (
     id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    resident_id  UUID NOT NULL UNIQUE REFERENCES resident(id) ON DELETE CASCADE,
+    resident_id  UUID NOT NULL REFERENCES resident(id) ON DELETE CASCADE,
     
     url          TEXT NOT NULL,
     status       VARCHAR(20) NOT NULL,
