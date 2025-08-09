@@ -17,8 +17,7 @@ UPDATE resident SET address_id = $1 WHERE id = $2;
 
 -- name: GetResident :one
 SELECT sqlc.embed(resident), sqlc.embed(address), sqlc.embed(biometric), 
-    sqlc.embed(document), sqlc.embed(employment), sqlc.embed(emergency),
-    sqlc.embed(additional)
+    sqlc.embed(additional), sqlc.embed(employment), sqlc.embed(emergency)
 FROM resident
 LEFT JOIN address    ON resident.address_id = address.id
 LEFT JOIN biometric  ON resident.id = biometric.resident_id

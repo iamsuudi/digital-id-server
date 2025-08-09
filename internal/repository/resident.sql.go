@@ -95,8 +95,7 @@ func (q *Queries) DeleteResident(ctx context.Context, id uuid.UUID) error {
 
 const getResident = `-- name: GetResident :one
 SELECT resident.id, resident.email, resident.first_name, resident.second_name, resident.last_name, resident.birth_date, resident.gender, resident.phone, resident.address_id, resident.created_at, resident.deleted_at, address.id, address.house_number, address.kebele_id, address.subcity_id, address.city_id, address.created_at, address.deleted_at, biometric.id, biometric.resident_id, biometric.fingerprint, biometric.blood_type, biometric.face_url, biometric.created_at, biometric.deleted_at, 
-    document.id, document.resident_id, document.url, document.status, document.created_at, document.deleted_at, employment.id, employment.resident_id, employment.status, employment.type, employment.occupation, employment.employer_name, employment.work_address, employment.created_at, employment.deleted_at, emergency.id, emergency.resident_id, emergency.name, emergency.relation, emergency.phone, emergency.email, emergency.created_at, emergency.deleted_at,
-    additional.id, additional.resident_id, additional.marital_status, additional.religion, additional.ethnicity, additional.disability, additional.national_id, additional.education_level, additional.languages_spoken, additional.created_at, additional.deleted_at
+    additional.id, additional.resident_id, additional.marital_status, additional.religion, additional.ethnicity, additional.disability, additional.national_id, additional.education_level, additional.languages_spoken, additional.created_at, additional.deleted_at, employment.id, employment.resident_id, employment.status, employment.type, employment.occupation, employment.employer_name, employment.work_address, employment.created_at, employment.deleted_at, emergency.id, emergency.resident_id, emergency.name, emergency.relation, emergency.phone, emergency.email, emergency.created_at, emergency.deleted_at
 FROM resident
 LEFT JOIN address    ON resident.address_id = address.id
 LEFT JOIN biometric  ON resident.id = biometric.resident_id
@@ -111,10 +110,9 @@ type GetResidentRow struct {
 	Resident   Resident   `db:"resident" json:"resident"`
 	Address    Address    `db:"address" json:"address"`
 	Biometric  Biometric  `db:"biometric" json:"biometric"`
-	Document   Document   `db:"document" json:"document"`
+	Additional Additional `db:"additional" json:"additional"`
 	Employment Employment `db:"employment" json:"employment"`
 	Emergency  Emergency  `db:"emergency" json:"emergency"`
-	Additional Additional `db:"additional" json:"additional"`
 }
 
 func (q *Queries) GetResident(ctx context.Context, id uuid.UUID) (GetResidentRow, error) {
@@ -146,12 +144,17 @@ func (q *Queries) GetResident(ctx context.Context, id uuid.UUID) (GetResidentRow
 		&i.Biometric.FaceUrl,
 		&i.Biometric.CreatedAt,
 		&i.Biometric.DeletedAt,
-		&i.Document.ID,
-		&i.Document.ResidentID,
-		&i.Document.Url,
-		&i.Document.Status,
-		&i.Document.CreatedAt,
-		&i.Document.DeletedAt,
+		&i.Additional.ID,
+		&i.Additional.ResidentID,
+		&i.Additional.MaritalStatus,
+		&i.Additional.Religion,
+		&i.Additional.Ethnicity,
+		&i.Additional.Disability,
+		&i.Additional.NationalID,
+		&i.Additional.EducationLevel,
+		&i.Additional.LanguagesSpoken,
+		&i.Additional.CreatedAt,
+		&i.Additional.DeletedAt,
 		&i.Employment.ID,
 		&i.Employment.ResidentID,
 		&i.Employment.Status,
@@ -169,17 +172,6 @@ func (q *Queries) GetResident(ctx context.Context, id uuid.UUID) (GetResidentRow
 		&i.Emergency.Email,
 		&i.Emergency.CreatedAt,
 		&i.Emergency.DeletedAt,
-		&i.Additional.ID,
-		&i.Additional.ResidentID,
-		&i.Additional.MaritalStatus,
-		&i.Additional.Religion,
-		&i.Additional.Ethnicity,
-		&i.Additional.Disability,
-		&i.Additional.NationalID,
-		&i.Additional.EducationLevel,
-		&i.Additional.LanguagesSpoken,
-		&i.Additional.CreatedAt,
-		&i.Additional.DeletedAt,
 	)
 	return i, err
 }

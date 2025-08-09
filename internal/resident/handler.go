@@ -96,6 +96,28 @@ func (h *Handler) GetResident(c *gin.Context) {
 	c.JSON(http.StatusOK, resident)
 }
 
+func (h *Handler) GetResidentDocuments(c *gin.Context) {
+	raw := c.Param("id")
+	id, err := uuid.Parse(raw)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid resident ID"})
+		return
+	}
+
+	documents, err := h.service.GetResidentDocuments(c.Request.Context(), id)
+	if err != nil {
+		fmt.Println(err.Error())
+		if errors.Is(err, pgx.ErrNoRows) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Resident not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch documents"})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, documents)
+}
+
 func (h *Handler) GetResidents(c *gin.Context) {
 	limit, offset, query := utils.PaginationHelper(c)
 

@@ -91,6 +91,40 @@ func (q *Queries) GetDocumentByResident(ctx context.Context, residentID uuid.UUI
 	return i, err
 }
 
+const getResidentDocuments = `-- name: GetResidentDocuments :many
+SELECT id, resident_id, url, status, created_at, deleted_at
+FROM document
+WHERE resident_id = $1 AND deleted_at IS NULL
+ORDER BY created_at DESC
+`
+
+func (q *Queries) GetResidentDocuments(ctx context.Context, residentID uuid.UUID) ([]Document, error) {
+	rows, err := q.db.Query(ctx, getResidentDocuments, residentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Document{}
+	for rows.Next() {
+		var i Document
+		if err := rows.Scan(
+			&i.ID,
+			&i.ResidentID,
+			&i.Url,
+			&i.Status,
+			&i.CreatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const hardDeleteDocument = `-- name: HardDeleteDocument :exec
 DELETE FROM document
 WHERE id = $1 AND deleted_at IS NOT NULL

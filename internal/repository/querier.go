@@ -77,6 +77,7 @@ type Querier interface {
 	GetRandomLocation(ctx context.Context) (GetRandomLocationRow, error)
 	GetRefreshToken(ctx context.Context, token string) (RefreshTokens, error)
 	GetResident(ctx context.Context, id uuid.UUID) (GetResidentRow, error)
+	GetResidentDocuments(ctx context.Context, residentID uuid.UUID) ([]Document, error)
 	GetSubCitiesForCity(ctx context.Context, id uuid.UUID) ([]GetSubCitiesForCityRow, error)
 	GetSubCity(ctx context.Context, id uuid.UUID) (GetSubCityRow, error)
 	GetUniversalPermissionMatrixForUser(ctx context.Context, arg GetUniversalPermissionMatrixForUserParams) ([]GetUniversalPermissionMatrixForUserRow, error)
