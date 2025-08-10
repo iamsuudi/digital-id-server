@@ -21,6 +21,7 @@ type Querier interface {
 	CountListResidents(ctx context.Context) (int64, error)
 	CountListSubcities(ctx context.Context) (int64, error)
 	CountListUnpaidResidents(ctx context.Context) (int64, error)
+	CountListUnverifiedResidents(ctx context.Context) (int64, error)
 	CountListUsersByRole(ctx context.Context, roleSlug string) (int64, error)
 	CountListUsersUnderScope(ctx context.Context, arg CountListUsersUnderScopeParams) (int64, error)
 	CountSearchCities(ctx context.Context, query string) (int64, error)
@@ -28,6 +29,7 @@ type Querier interface {
 	CountSearchResidents(ctx context.Context, query string) (int64, error)
 	CountSearchSubCities(ctx context.Context, query string) (int64, error)
 	CountSearchUnpaidResidents(ctx context.Context, query string) (int64, error)
+	CountSearchUnverifiedResidents(ctx context.Context, query string) (int64, error)
 	CountSearchUsersByRole(ctx context.Context, arg CountSearchUsersByRoleParams) (int64, error)
 	CountSearchUsersUnderScope(ctx context.Context, arg CountSearchUsersUnderScopeParams) (int64, error)
 	CreateAdditional(ctx context.Context, arg CreateAdditionalParams) (Additional, error)
@@ -116,6 +118,7 @@ type Querier interface {
 	ListRoles(ctx context.Context) ([]Role, error)
 	ListSubCities(ctx context.Context, arg ListSubCitiesParams) ([]ListSubCitiesRow, error)
 	ListUnpaidResidents(ctx context.Context, arg ListUnpaidResidentsParams) ([]ListUnpaidResidentsRow, error)
+	ListUnverifiedResidents(ctx context.Context, arg ListUnverifiedResidentsParams) ([]ListUnverifiedResidentsRow, error)
 	// Returns user related audit logs
 	ListUserAuditLogs(ctx context.Context, arg ListUserAuditLogsParams) ([]ListUserAuditLogsRow, error)
 	ListUsersByKebeleAndRole(ctx context.Context, arg ListUsersByKebeleAndRoleParams) ([]ListUsersByKebeleAndRoleRow, error)
@@ -129,6 +132,7 @@ type Querier interface {
 	SearchResidents(ctx context.Context, arg SearchResidentsParams) ([]SearchResidentsRow, error)
 	SearchSubCities(ctx context.Context, arg SearchSubCitiesParams) ([]SearchSubCitiesRow, error)
 	SearchUnpaidResidents(ctx context.Context, arg SearchUnpaidResidentsParams) ([]SearchUnpaidResidentsRow, error)
+	SearchUnverifiedResidents(ctx context.Context, arg SearchUnverifiedResidentsParams) ([]SearchUnverifiedResidentsRow, error)
 	SearchUsersByRole(ctx context.Context, arg SearchUsersByRoleParams) ([]SearchUsersByRoleRow, error)
 	SearchUsersUnderScope(ctx context.Context, arg SearchUsersUnderScopeParams) ([]SearchUsersUnderScopeRow, error)
 	SetUserPermissionOverride(ctx context.Context, arg SetUserPermissionOverrideParams) error

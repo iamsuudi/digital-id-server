@@ -189,3 +189,37 @@ func (h *Handler) GetUnpaidResidents(c *gin.Context) {
 		})
 	}
 }
+
+func (h *Handler) GetUnverifiedResidents(c *gin.Context) {
+	limit, offset, query := utils.PaginationHelper(c)
+
+	if strings.TrimSpace(query) == "" {
+		count, data, err := h.service.GetUnverifiedResidents(c.Request.Context(), limit, offset)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch data"})
+			return
+		}
+		if data == nil {
+			data = []repository.ListUnverifiedResidentsRow{}
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"data": 	 data,
+			"count":     count,
+		})
+	} else {
+		count, data, err := h.service.SearchUnverifiedResidents(c, limit, offset, query)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to search data"})
+			return
+		}
+		if data == nil {
+			data = []repository.SearchUnverifiedResidentsRow{}
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"data": 	 data,
+			"count":     count,
+		})
+	}
+}
