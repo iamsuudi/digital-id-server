@@ -13,31 +13,20 @@ import (
 
 const createPayment = `-- name: CreatePayment :one
 INSERT INTO payment (
-    resident_id, amount, description, status, reference, method
+    resident_id, status
 ) VALUES (
-    $1, $2, $3, $4, $5, $6
+    $1, $2
 )
 RETURNING id, resident_id, amount, description, status, reference, method, created_at, deleted_at
 `
 
 type CreatePaymentParams struct {
-	ResidentID  uuid.UUID     `db:"resident_id" json:"resident_id"`
-	Amount      float64       `db:"amount" json:"amount"`
-	Description string        `db:"description" json:"description"`
-	Status      PaymentStatus `db:"status" json:"status"`
-	Reference   string        `db:"reference" json:"reference"`
-	Method      PaymentMethod `db:"method" json:"method"`
+	ResidentID uuid.UUID `db:"resident_id" json:"resident_id"`
+	Status     string    `db:"status" json:"status"`
 }
 
 func (q *Queries) CreatePayment(ctx context.Context, arg CreatePaymentParams) (Payment, error) {
-	row := q.db.QueryRow(ctx, createPayment,
-		arg.ResidentID,
-		arg.Amount,
-		arg.Description,
-		arg.Status,
-		arg.Reference,
-		arg.Method,
-	)
+	row := q.db.QueryRow(ctx, createPayment, arg.ResidentID, arg.Status)
 	var i Payment
 	err := row.Scan(
 		&i.ID,
@@ -176,12 +165,12 @@ RETURNING id, resident_id, amount, description, status, reference, method, creat
 `
 
 type UpdatePaymentParams struct {
-	Amount      *float64          `db:"amount" json:"amount"`
-	Description *string           `db:"description" json:"description"`
-	Status      NullPaymentStatus `db:"status" json:"status"`
-	Reference   *string           `db:"reference" json:"reference"`
-	Method      NullPaymentMethod `db:"method" json:"method"`
-	ID          uuid.UUID         `db:"id" json:"id"`
+	Amount      *float64  `db:"amount" json:"amount"`
+	Description *string   `db:"description" json:"description"`
+	Status      *string   `db:"status" json:"status"`
+	Reference   *string   `db:"reference" json:"reference"`
+	Method      *string   `db:"method" json:"method"`
+	ID          uuid.UUID `db:"id" json:"id"`
 }
 
 func (q *Queries) UpdatePayment(ctx context.Context, arg UpdatePaymentParams) (Payment, error) {

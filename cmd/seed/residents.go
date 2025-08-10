@@ -158,6 +158,7 @@ func seedResidents(ctx context.Context, db *pgxpool.Pool, q *repository.Queries)
 			break
 		}
 
+		// 7. Create additional
 		_, err = qtx.CreateAdditional(ctx, repository.CreateAdditionalParams{
 			ResidentID:      residentID,
 			Religion:        &r.Religion,
@@ -169,6 +170,17 @@ func seedResidents(ctx context.Context, db *pgxpool.Pool, q *repository.Queries)
 			LanguagesSpoken: r.LanguagesSpoken,
 		})
 
+		// 8. Create payment
+		_, err = qtx.CreatePayment(ctx, repository.CreatePaymentParams{
+			ResidentID: residentID,
+			Status:     "unpaid",
+		})
+		if err != nil {
+			fmt.Printf("Couldn't create payment: %v\n", err.Error())
+			break
+		}
+
+		// 9. Commit transaction
 		err = tx.Commit(ctx)
 		if err != nil {
 			fmt.Printf("Couldn't commit transaction: %v\n", err.Error())

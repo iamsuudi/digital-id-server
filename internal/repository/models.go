@@ -430,15 +430,15 @@ type Kebele struct {
 }
 
 type Payment struct {
-	ID          uuid.UUID     `db:"id" json:"id"`
-	ResidentID  uuid.UUID     `db:"resident_id" json:"resident_id"`
-	Amount      float64       `db:"amount" json:"amount"`
-	Description string        `db:"description" json:"description"`
-	Status      PaymentStatus `db:"status" json:"status"`
-	Reference   string        `db:"reference" json:"reference"`
-	Method      PaymentMethod `db:"method" json:"method"`
-	CreatedAt   time.Time     `db:"created_at" json:"created_at"`
-	DeletedAt   *time.Time    `db:"deleted_at" json:"deleted_at"`
+	ID          uuid.UUID  `db:"id" json:"id"`
+	ResidentID  uuid.UUID  `db:"resident_id" json:"resident_id"`
+	Amount      *float64   `db:"amount" json:"amount"`
+	Description *string    `db:"description" json:"description"`
+	Status      string     `db:"status" json:"status"`
+	Reference   *string    `db:"reference" json:"reference"`
+	Method      *string    `db:"method" json:"method"`
+	CreatedAt   time.Time  `db:"created_at" json:"created_at"`
+	DeletedAt   *time.Time `db:"deleted_at" json:"deleted_at"`
 }
 
 type Permission struct {
