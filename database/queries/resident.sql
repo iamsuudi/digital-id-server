@@ -116,7 +116,7 @@ WHERE r.deleted_at IS NULL AND p.status != 'verified' AND
 
 -- name: ListUnverifiedResidents :many
 SELECT 
-    r.*,
+    sqlc.embed(r), sqlc.embed(p), b.face_url,
     CONCAT_WS(' ', r.first_name, r.second_name, r.last_name) AS full_name,
     CASE 
         WHEN EXISTS (
@@ -130,6 +130,7 @@ SELECT
         ELSE 'no documents'
     END AS status
 FROM resident r
+JOIN biometric b   ON r.id = b.resident_id
 JOIN payment p     ON p.resident_id = r.id
 WHERE r.deleted_at IS NULL AND p.status = 'verified'
 AND NOT EXISTS (
@@ -151,7 +152,7 @@ AND NOT EXISTS (
 
 -- name: SearchUnverifiedResidents :many
 SELECT 
-    r.*,
+    sqlc.embed(r), sqlc.embed(p), b.face_url,
     CONCAT_WS(' ', r.first_name, r.second_name, r.last_name) AS full_name,
     similarity(CONCAT_WS(' ', r.first_name, r.second_name, r.last_name), sqlc.arg('query')) AS sim,
     CASE 
@@ -166,6 +167,7 @@ SELECT
         ELSE 'no documents'
     END AS status
 FROM resident r
+JOIN biometric b   ON r.id = b.resident_id
 JOIN payment p     ON p.resident_id = r.id
 WHERE r.deleted_at IS NULL AND p.status = 'verified'
 AND NOT EXISTS (
