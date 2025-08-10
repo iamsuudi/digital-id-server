@@ -295,14 +295,23 @@ func (s *Service) SearchUnverifiedResidents(ctx context.Context, limit, offset i
 	return count, cities, nil
 }
 
-func (s *Service) UpdatePaymentInfo(ctx context.Context, id uuid.UUID, amount float64, status string, method, description string, receipt *string) error {
+func (s *Service) UpdatePaymentInfo(ctx context.Context, id uuid.UUID, amount float64, status, method, description string, receipt *string) error {
 	_, err := s.q.UpdatePayment(ctx, repository.UpdatePaymentParams{
-		ID:        id,
-		Amount:    &amount,
-		Status:    &status,
-		Method:    &method,
+		ID:          id,
+		Amount:      &amount,
+		Status:      &status,
+		Method:      &method,
 		Description: &description,
 		Reference:   receipt,
+	})
+	return err
+}
+
+func (s *Service) UpdateDocumentInfo(ctx context.Context, id uuid.UUID, status string, url *string) error {
+	_, err := s.q.UpdateDocument(ctx, repository.UpdateDocumentParams{
+		ID:     id,
+		Status: &status,
+		Url:    url,
 	})
 	return err
 }

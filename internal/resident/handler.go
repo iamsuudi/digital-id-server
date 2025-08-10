@@ -296,3 +296,53 @@ func (h *Handler) UpdatePaymentInfo(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Payment info updated successfully"})
 }
+
+func (h *Handler) UpdateDocumentInfo(c *gin.Context) {
+	raw := c.Param("id")
+	_, err := uuid.Parse(raw)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid resident ID"})
+		return
+	}
+
+	// 1. Bind the entire multipart form at once.
+	var input struct {
+		ID     string `form:"id" binding:"required"`
+		Status string `form:"status"`
+	}
+	if err := c.ShouldBind(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input: " + err.Error()})
+		return
+	}
+
+	// 2. Optional pretty print.
+	if b, err := json.MarshalIndent(input, "", "  "); err == nil {
+		fmt.Println(string(b))
+	}
+
+	id, err := uuid.Parse(input.ID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid document ID"})
+		return
+	}
+
+	// 3. Handle reference image.
+	var urlPtr *string
+	if ref, err := c.FormFile("url"); err == nil {
+		filename := utils.MakeFileName(ref.Filename)
+		if err := c.SaveUploadedFile(ref, filepath.Join("uploads", filename)); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to upload document image"})
+			return
+		}
+		urlPtr = &filename
+	}
+
+	// 4. Update payment info.
+	if err := h.service.UpdateDocumentInfo(c.Request.Context(), id, input.Status, urlPtr); err != nil {
+		fmt.Println(err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update document info"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Document info updated successfully"})
+}
