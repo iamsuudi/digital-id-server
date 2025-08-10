@@ -255,3 +255,38 @@ func (s *Service) SearchUnpaidResidents(ctx context.Context, limit, offset int, 
 
 	return count, cities, nil
 }
+
+func (s *Service) GetUnverifiedResidents(ctx context.Context, limit, offset int) (int64, []repository.ListUnverifiedResidentsRow, error) {
+	count, err := s.q.CountListUnverifiedResidents(ctx)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	cities, err := s.q.ListUnverifiedResidents(ctx, repository.ListUnverifiedResidentsParams{
+		Limit:  int32(limit),
+		Offset: int32(offset),
+	})
+	if err != nil {
+		return 0, nil, err
+	}
+
+	return count, cities, nil
+}
+
+func (s *Service) SearchUnverifiedResidents(ctx context.Context, limit, offset int, query string) (int64, []repository.SearchUnverifiedResidentsRow, error) {
+	count, err := s.q.CountSearchUnverifiedResidents(ctx, query)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	cities, err := s.q.SearchUnverifiedResidents(ctx, repository.SearchUnverifiedResidentsParams{
+		Query:  query,
+		Limit:  int32(limit),
+		Offset: int32(offset),
+	})
+	if err != nil {
+		return 0, nil, err
+	}
+
+	return count, cities, nil
+}

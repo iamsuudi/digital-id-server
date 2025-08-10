@@ -39,6 +39,10 @@ FROM resident r
 JOIN biometric b   ON r.id = b.resident_id
 JOIN payment p     ON p.resident_id = r.id
 WHERE r.deleted_at IS NULL AND p.status = 'verified'
+AND EXISTS (
+    SELECT 1 FROM document d 
+    WHERE d.resident_id = r.id AND d.status = 'verified'
+)
 ORDER BY r.created_at ASC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
@@ -46,7 +50,11 @@ LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 SELECT COUNT(*)
 FROM resident r
 JOIN payment p     ON p.resident_id = r.id
-WHERE r.deleted_at IS NULL AND p.status = 'verified';
+WHERE r.deleted_at IS NULL AND p.status = 'verified'
+AND EXISTS (
+    SELECT 1 FROM document d 
+    WHERE d.resident_id = r.id AND d.status = 'verified'
+);
 
 -- name: SearchResidents :many
 SELECT r.*, b.face_url, CONCAT_WS(' ', r.first_name, r.second_name, r.last_name) AS full_name,
@@ -54,8 +62,11 @@ SELECT r.*, b.face_url, CONCAT_WS(' ', r.first_name, r.second_name, r.last_name)
 FROM resident r
 JOIN biometric b   ON r.id = b.resident_id
 JOIN payment p     ON p.resident_id = r.id
-WHERE r.deleted_at IS NULL AND p.status = 'verified' AND
-    similarity(CONCAT_WS(' ', r.first_name, r.second_name, r.last_name), sqlc.arg('query')) > 0.2
+WHERE r.deleted_at IS NULL AND p.status = 'verified'
+AND EXISTS (
+    SELECT 1 FROM document d 
+    WHERE d.resident_id = r.id AND d.status = 'verified'
+) AND similarity(CONCAT_WS(' ', r.first_name, r.second_name, r.last_name), sqlc.arg('query')) > 0.2
 ORDER BY sim DESC, r.created_at ASC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
@@ -63,8 +74,11 @@ LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 SELECT COUNT(*)
 FROM resident r
 JOIN payment p     ON p.resident_id = r.id
-WHERE r.deleted_at IS NULL AND p.status = 'verified' AND
-    similarity(CONCAT_WS(' ', r.first_name, r.second_name, r.last_name), sqlc.arg('query')) > 0.2;
+WHERE r.deleted_at IS NULL AND p.status = 'verified' 
+AND EXISTS (
+    SELECT 1 FROM document d 
+    WHERE d.resident_id = r.id AND d.status = 'verified'
+) AND similarity(CONCAT_WS(' ', r.first_name, r.second_name, r.last_name), sqlc.arg('query')) > 0.2;
 
 -- name: ListUnpaidResidents :many
 SELECT sqlc.embed(r), sqlc.embed(p), b.face_url, CONCAT_WS(' ', r.first_name, r.second_name, r.last_name) AS full_name
@@ -98,3 +112,75 @@ FROM resident r
 JOIN payment p     ON p.resident_id = r.id
 WHERE r.deleted_at IS NULL AND p.status != 'verified' AND
     similarity(CONCAT_WS(' ', r.first_name, r.second_name, r.last_name), sqlc.arg('query')) > 0.2;
+
+
+-- name: ListUnverifiedResidents :many
+SELECT 
+    r.*,
+    CONCAT_WS(' ', r.first_name, r.second_name, r.last_name) AS full_name,
+    CASE 
+        WHEN EXISTS (
+            SELECT 1 FROM document d 
+            WHERE d.resident_id = r.id AND d.status = 'pending'
+        ) THEN 'pending'
+        WHEN EXISTS (
+            SELECT 1 FROM document d 
+            WHERE d.resident_id = r.id AND d.status = 'rejected'
+        ) THEN 'rejected'
+        ELSE 'no documents'
+    END AS status
+FROM resident r
+JOIN payment p     ON p.resident_id = r.id
+WHERE r.deleted_at IS NULL AND p.status = 'verified'
+AND NOT EXISTS (
+    SELECT 1 FROM document d 
+    WHERE d.resident_id = r.id AND d.status = 'verified'
+)
+ORDER BY r.created_at ASC
+LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
+
+-- name: CountListUnverifiedResidents :one
+SELECT COUNT(*)
+FROM resident r
+JOIN payment p     ON p.resident_id = r.id
+WHERE r.deleted_at IS NULL AND p.status = 'verified'
+AND NOT EXISTS (
+    SELECT 1 FROM document d 
+    WHERE d.resident_id = r.id AND d.status = 'verified'
+);
+
+-- name: SearchUnverifiedResidents :many
+SELECT 
+    r.*,
+    CONCAT_WS(' ', r.first_name, r.second_name, r.last_name) AS full_name,
+    similarity(CONCAT_WS(' ', r.first_name, r.second_name, r.last_name), sqlc.arg('query')) AS sim,
+    CASE 
+        WHEN EXISTS (
+            SELECT 1 FROM document d 
+            WHERE d.resident_id = r.id AND d.status = 'pending'
+        ) THEN 'pending'
+        WHEN EXISTS (
+            SELECT 1 FROM document d 
+            WHERE d.resident_id = r.id AND d.status = 'rejected'
+        ) THEN 'rejected'
+        ELSE 'no documents'
+    END AS status
+FROM resident r
+JOIN payment p     ON p.resident_id = r.id
+WHERE r.deleted_at IS NULL AND p.status = 'verified'
+AND NOT EXISTS (
+    SELECT 1 FROM document d 
+    WHERE d.resident_id = r.id AND d.status = 'verified'
+) AND similarity(CONCAT_WS(' ', r.first_name, r.second_name, r.last_name), sqlc.arg('query')) > 0.2
+ORDER BY r.created_at ASC
+LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
+
+-- name: CountSearchUnverifiedResidents :one
+SELECT COUNT(*)
+FROM resident r
+JOIN payment p     ON p.resident_id = r.id
+WHERE r.deleted_at IS NULL AND p.status = 'verified'
+AND NOT EXISTS (
+    SELECT 1 FROM document d 
+    WHERE d.resident_id = r.id AND d.status = 'verified'
+) AND similarity(CONCAT_WS(' ', r.first_name, r.second_name, r.last_name), sqlc.arg('query')) > 0.2;
