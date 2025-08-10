@@ -19,5 +19,7 @@ func RegisterRoutes(rg *gin.RouterGroup, db *pgxpool.Pool, q *repository.Queries
 		r.POST("/", handler.RegisterResident)
 		r.GET("/:id", handler.GetResident)
 		r.GET("/:id/documents", handler.GetResidentDocuments)
+		r.GET("/:id/payment", handler.GetResidentPayment)
+		r.PUT("/:id/payment", handler.UpdatePaymentInfo)
 	}
 }

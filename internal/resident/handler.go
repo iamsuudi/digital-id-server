@@ -49,7 +49,7 @@ func (h *Handler) RegisterResident(c *gin.Context) {
 	docsUrls := make([]string, 0, len(docs))
 	for _, doc := range docs {
 		name := utils.MakeFileName(doc.Filename)
-		dst  := filepath.Join("uploads", name)
+		dst := filepath.Join("uploads", name)
 		if err := c.SaveUploadedFile(doc, dst); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save document"})
 			return
@@ -122,6 +122,28 @@ func (h *Handler) GetResidentDocuments(c *gin.Context) {
 	c.JSON(http.StatusOK, documents)
 }
 
+func (h *Handler) GetResidentPayment(c *gin.Context) {
+	raw := c.Param("id")
+	id, err := uuid.Parse(raw)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid resident ID"})
+		return
+	}
+
+	payment, err := h.service.GetResidentPayment(c.Request.Context(), id)
+	if err != nil {
+		fmt.Println(err.Error())
+		if errors.Is(err, pgx.ErrNoRows) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Resident not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch payment"})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, payment)
+}
+
 func (h *Handler) GetResidents(c *gin.Context) {
 	limit, offset, query := utils.PaginationHelper(c)
 
@@ -170,8 +192,8 @@ func (h *Handler) GetUnpaidResidents(c *gin.Context) {
 		}
 
 		c.JSON(http.StatusOK, gin.H{
-			"data": 	 data,
-			"count":     count,
+			"data":  data,
+			"count": count,
 		})
 	} else {
 		count, data, err := h.service.SearchUnpaidResidents(c, limit, offset, query)
@@ -184,8 +206,8 @@ func (h *Handler) GetUnpaidResidents(c *gin.Context) {
 		}
 
 		c.JSON(http.StatusOK, gin.H{
-			"data": 	 data,
-			"count":     count,
+			"data":  data,
+			"count": count,
 		})
 	}
 }
@@ -204,8 +226,8 @@ func (h *Handler) GetUnverifiedResidents(c *gin.Context) {
 		}
 
 		c.JSON(http.StatusOK, gin.H{
-			"data": 	 data,
-			"count":     count,
+			"data":  data,
+			"count": count,
 		})
 	} else {
 		count, data, err := h.service.SearchUnverifiedResidents(c, limit, offset, query)
@@ -218,8 +240,59 @@ func (h *Handler) GetUnverifiedResidents(c *gin.Context) {
 		}
 
 		c.JSON(http.StatusOK, gin.H{
-			"data": 	 data,
-			"count":     count,
+			"data":  data,
+			"count": count,
 		})
 	}
+}
+
+func (h *Handler) UpdatePaymentInfo(c *gin.Context) {
+	raw := c.Param("id")
+	_, err := uuid.Parse(raw)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid resident ID"})
+		return
+	}
+
+	// 1. Bind the entire multipart form at once.
+	var input struct {
+		Description string  `form:"description"`
+		ID          string  `form:"id" binding:"required"`
+		Amount      float64 `form:"amount"`
+		Method      string  `form:"method"`
+	}
+	if err := c.ShouldBind(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input: " + err.Error()})
+		return
+	}
+
+	// 2. Optional pretty print.
+	if b, err := json.MarshalIndent(input, "", "  "); err == nil {
+		fmt.Println(string(b))
+	}
+
+	id, err := uuid.Parse(input.ID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid payment ID"})
+		return
+	}
+
+	// 3. Handle reference image.
+	var receiptPtr *string
+	if ref, err := c.FormFile("reference"); err == nil {
+		filename := utils.MakeFileName(ref.Filename)
+		if err := c.SaveUploadedFile(ref, filepath.Join("uploads", filename)); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to reference image"})
+			return
+		}
+		receiptPtr = &filename
+	}
+
+	// 4. Update payment info.
+	if err := h.service.UpdatePaymentInfo(c.Request.Context(), id, input.Amount, "verified", input.Method, input.Description, receiptPtr); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update payment info"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Payment info updated successfully"})
 }
