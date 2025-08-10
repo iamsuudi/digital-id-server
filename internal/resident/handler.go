@@ -155,3 +155,37 @@ func (h *Handler) GetResidents(c *gin.Context) {
 		})
 	}
 }
+
+func (h *Handler) GetUnpaidResidents(c *gin.Context) {
+	limit, offset, query := utils.PaginationHelper(c)
+
+	if strings.TrimSpace(query) == "" {
+		count, data, err := h.service.GetUnpaidResidents(c.Request.Context(), limit, offset)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch data"})
+			return
+		}
+		if data == nil {
+			data = []repository.ListUnpaidResidentsRow{}
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"data": 	 data,
+			"count":     count,
+		})
+	} else {
+		count, data, err := h.service.SearchUnpaidResidents(c, limit, offset, query)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to search data"})
+			return
+		}
+		if data == nil {
+			data = []repository.SearchUnpaidResidentsRow{}
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"data": 	 data,
+			"count":     count,
+		})
+	}
+}

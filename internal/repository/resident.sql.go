@@ -14,8 +14,9 @@ import (
 
 const countListResidents = `-- name: CountListResidents :one
 SELECT COUNT(*)
-FROM resident
-WHERE deleted_at IS NULL
+FROM resident r
+JOIN payment p     ON p.resident_id = r.id
+WHERE r.deleted_at IS NULL AND p.status = 'verified'
 `
 
 func (q *Queries) CountListResidents(ctx context.Context) (int64, error) {
@@ -25,15 +26,45 @@ func (q *Queries) CountListResidents(ctx context.Context) (int64, error) {
 	return count, err
 }
 
+const countListUnpaidResidents = `-- name: CountListUnpaidResidents :one
+SELECT COUNT(*)
+FROM resident r
+JOIN payment p     ON p.resident_id = r.id
+WHERE r.deleted_at IS NULL AND p.status != 'verified'
+`
+
+func (q *Queries) CountListUnpaidResidents(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countListUnpaidResidents)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countSearchResidents = `-- name: CountSearchResidents :one
 SELECT COUNT(*)
-FROM resident
-WHERE deleted_at IS NULL AND
-    similarity(CONCAT_WS(' ', first_name, second_name, last_name), $1) > 0.2
+FROM resident r
+JOIN payment p     ON p.resident_id = r.id
+WHERE r.deleted_at IS NULL AND p.status = 'verified' AND
+    similarity(CONCAT_WS(' ', r.first_name, r.second_name, r.last_name), $1) > 0.2
 `
 
 func (q *Queries) CountSearchResidents(ctx context.Context, query string) (int64, error) {
 	row := q.db.QueryRow(ctx, countSearchResidents, query)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countSearchUnpaidResidents = `-- name: CountSearchUnpaidResidents :one
+SELECT COUNT(*)
+FROM resident r
+JOIN payment p     ON p.resident_id = r.id
+WHERE r.deleted_at IS NULL AND p.status != 'verified' AND
+    similarity(CONCAT_WS(' ', r.first_name, r.second_name, r.last_name), $1) > 0.2
+`
+
+func (q *Queries) CountSearchUnpaidResidents(ctx context.Context, query string) (int64, error) {
+	row := q.db.QueryRow(ctx, countSearchUnpaidResidents, query)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -94,15 +125,15 @@ func (q *Queries) DeleteResident(ctx context.Context, id uuid.UUID) error {
 }
 
 const getResident = `-- name: GetResident :one
-SELECT resident.id, resident.email, resident.first_name, resident.second_name, resident.last_name, resident.birth_date, resident.gender, resident.phone, resident.address_id, resident.created_at, resident.deleted_at, address.id, address.house_number, address.kebele_id, address.subcity_id, address.city_id, address.created_at, address.deleted_at, biometric.id, biometric.resident_id, biometric.fingerprint, biometric.blood_type, biometric.face_url, biometric.created_at, biometric.deleted_at, 
+SELECT resident.id, resident.email, resident.first_name, resident.second_name, resident.last_name, resident.birth_date, resident.gender, resident.phone, resident.address_id, resident.created_at, resident.deleted_at, address.id, address.house_number, address.kebele_id, address.subcity_id, address.city_id, address.created_at, address.deleted_at, biometric.id, biometric.resident_id, biometric.fingerprint, biometric.blood_type, biometric.face_url, biometric.created_at, biometric.deleted_at,
     additional.id, additional.resident_id, additional.marital_status, additional.religion, additional.ethnicity, additional.disability, additional.national_id, additional.education_level, additional.languages_spoken, additional.created_at, additional.deleted_at, employment.id, employment.resident_id, employment.status, employment.type, employment.occupation, employment.employer_name, employment.work_address, employment.created_at, employment.deleted_at, emergency.id, emergency.resident_id, emergency.name, emergency.relation, emergency.phone, emergency.email, emergency.created_at, emergency.deleted_at
 FROM resident
-LEFT JOIN address    ON resident.address_id = address.id
-LEFT JOIN biometric  ON resident.id = biometric.resident_id
-LEFT JOIN document   ON resident.id = document.resident_id
-LEFT JOIN employment ON resident.id = employment.resident_id
-LEFT JOIN emergency  ON resident.id = emergency.resident_id
-LEFT JOIN additional ON resident.id = additional.resident_id
+JOIN address    ON resident.address_id = address.id
+JOIN biometric  ON resident.id = biometric.resident_id
+JOIN document   ON resident.id = document.resident_id
+JOIN employment ON resident.id = employment.resident_id
+JOIN emergency  ON resident.id = emergency.resident_id
+JOIN additional ON resident.id = additional.resident_id
 WHERE resident.id = $1
 `
 
@@ -177,10 +208,12 @@ func (q *Queries) GetResident(ctx context.Context, id uuid.UUID) (GetResidentRow
 }
 
 const listResidents = `-- name: ListResidents :many
-SELECT id, email, first_name, second_name, last_name, birth_date, gender, phone, address_id, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
-FROM resident
-WHERE deleted_at IS NULL
-ORDER BY created_at ASC
+SELECT r.id, r.email, r.first_name, r.second_name, r.last_name, r.birth_date, r.gender, r.phone, r.address_id, r.created_at, r.deleted_at, b.face_url, CONCAT_WS(' ', r.first_name, r.second_name, r.last_name) AS full_name
+FROM resident r
+JOIN biometric b   ON r.id = b.resident_id
+JOIN payment p     ON p.resident_id = r.id
+WHERE r.deleted_at IS NULL AND p.status = 'verified'
+ORDER BY r.created_at ASC
 LIMIT $2 OFFSET $1
 `
 
@@ -201,6 +234,7 @@ type ListResidentsRow struct {
 	AddressID  *uuid.UUID `db:"address_id" json:"address_id"`
 	CreatedAt  time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt  *time.Time `db:"deleted_at" json:"deleted_at"`
+	FaceUrl    string     `db:"face_url" json:"face_url"`
 	FullName   string     `db:"full_name" json:"full_name"`
 }
 
@@ -225,6 +259,72 @@ func (q *Queries) ListResidents(ctx context.Context, arg ListResidentsParams) ([
 			&i.AddressID,
 			&i.CreatedAt,
 			&i.DeletedAt,
+			&i.FaceUrl,
+			&i.FullName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listUnpaidResidents = `-- name: ListUnpaidResidents :many
+SELECT r.id, r.email, r.first_name, r.second_name, r.last_name, r.birth_date, r.gender, r.phone, r.address_id, r.created_at, r.deleted_at, p.id, p.resident_id, p.amount, p.description, p.status, p.reference, p.method, p.created_at, p.deleted_at, b.face_url, CONCAT_WS(' ', r.first_name, r.second_name, r.last_name) AS full_name
+FROM resident r
+JOIN biometric b   ON r.id = b.resident_id
+JOIN payment p     ON p.resident_id = r.id
+WHERE r.deleted_at IS NULL AND p.status != 'verified'
+ORDER BY r.created_at ASC
+LIMIT $2 OFFSET $1
+`
+
+type ListUnpaidResidentsParams struct {
+	Offset int32 `db:"offset" json:"offset"`
+	Limit  int32 `db:"limit" json:"limit"`
+}
+
+type ListUnpaidResidentsRow struct {
+	Resident Resident `db:"resident" json:"resident"`
+	Payment  Payment  `db:"payment" json:"payment"`
+	FaceUrl  string   `db:"face_url" json:"face_url"`
+	FullName string   `db:"full_name" json:"full_name"`
+}
+
+func (q *Queries) ListUnpaidResidents(ctx context.Context, arg ListUnpaidResidentsParams) ([]ListUnpaidResidentsRow, error) {
+	rows, err := q.db.Query(ctx, listUnpaidResidents, arg.Offset, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListUnpaidResidentsRow{}
+	for rows.Next() {
+		var i ListUnpaidResidentsRow
+		if err := rows.Scan(
+			&i.Resident.ID,
+			&i.Resident.Email,
+			&i.Resident.FirstName,
+			&i.Resident.SecondName,
+			&i.Resident.LastName,
+			&i.Resident.BirthDate,
+			&i.Resident.Gender,
+			&i.Resident.Phone,
+			&i.Resident.AddressID,
+			&i.Resident.CreatedAt,
+			&i.Resident.DeletedAt,
+			&i.Payment.ID,
+			&i.Payment.ResidentID,
+			&i.Payment.Amount,
+			&i.Payment.Description,
+			&i.Payment.Status,
+			&i.Payment.Reference,
+			&i.Payment.Method,
+			&i.Payment.CreatedAt,
+			&i.Payment.DeletedAt,
+			&i.FaceUrl,
 			&i.FullName,
 		); err != nil {
 			return nil, err
@@ -238,12 +338,14 @@ func (q *Queries) ListResidents(ctx context.Context, arg ListResidentsParams) ([
 }
 
 const searchResidents = `-- name: SearchResidents :many
-SELECT id, email, first_name, second_name, last_name, birth_date, gender, phone, address_id, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name,
-    similarity(CONCAT_WS(' ', first_name, second_name, last_name), $1) AS sim
-FROM resident
-WHERE deleted_at IS NULL AND
-    similarity(CONCAT_WS(' ', first_name, second_name, last_name), $1) > 0.2
-ORDER BY sim DESC, created_at ASC
+SELECT r.id, r.email, r.first_name, r.second_name, r.last_name, r.birth_date, r.gender, r.phone, r.address_id, r.created_at, r.deleted_at, b.face_url, CONCAT_WS(' ', r.first_name, r.second_name, r.last_name) AS full_name,
+    similarity(CONCAT_WS(' ', r.first_name, r.second_name, r.last_name), $1) AS sim
+FROM resident r
+JOIN biometric b   ON r.id = b.resident_id
+JOIN payment p     ON p.resident_id = r.id
+WHERE r.deleted_at IS NULL AND p.status = 'verified' AND
+    similarity(CONCAT_WS(' ', r.first_name, r.second_name, r.last_name), $1) > 0.2
+ORDER BY sim DESC, r.created_at ASC
 LIMIT $3 OFFSET $2
 `
 
@@ -265,6 +367,7 @@ type SearchResidentsRow struct {
 	AddressID  *uuid.UUID `db:"address_id" json:"address_id"`
 	CreatedAt  time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt  *time.Time `db:"deleted_at" json:"deleted_at"`
+	FaceUrl    string     `db:"face_url" json:"face_url"`
 	FullName   string     `db:"full_name" json:"full_name"`
 	Sim        float32    `db:"sim" json:"sim"`
 }
@@ -290,6 +393,77 @@ func (q *Queries) SearchResidents(ctx context.Context, arg SearchResidentsParams
 			&i.AddressID,
 			&i.CreatedAt,
 			&i.DeletedAt,
+			&i.FaceUrl,
+			&i.FullName,
+			&i.Sim,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const searchUnpaidResidents = `-- name: SearchUnpaidResidents :many
+SELECT r.id, r.email, r.first_name, r.second_name, r.last_name, r.birth_date, r.gender, r.phone, r.address_id, r.created_at, r.deleted_at, p.id, p.resident_id, p.amount, p.description, p.status, p.reference, p.method, p.created_at, p.deleted_at, b.face_url, CONCAT_WS(' ', r.first_name, r.second_name, r.last_name) AS full_name,
+    similarity(CONCAT_WS(' ', r.first_name, r.second_name, r.last_name), $1) AS sim
+FROM resident r
+JOIN biometric b   ON r.id = b.resident_id
+JOIN payment p     ON p.resident_id = r.id
+WHERE r.deleted_at IS NULL AND p.status != 'verified' AND
+    similarity(CONCAT_WS(' ', r.first_name, r.second_name, r.last_name), $1) > 0.2
+ORDER BY r.created_at ASC
+LIMIT $3 OFFSET $2
+`
+
+type SearchUnpaidResidentsParams struct {
+	Query  string `db:"query" json:"query"`
+	Offset int32  `db:"offset" json:"offset"`
+	Limit  int32  `db:"limit" json:"limit"`
+}
+
+type SearchUnpaidResidentsRow struct {
+	Resident Resident `db:"resident" json:"resident"`
+	Payment  Payment  `db:"payment" json:"payment"`
+	FaceUrl  string   `db:"face_url" json:"face_url"`
+	FullName string   `db:"full_name" json:"full_name"`
+	Sim      float32  `db:"sim" json:"sim"`
+}
+
+func (q *Queries) SearchUnpaidResidents(ctx context.Context, arg SearchUnpaidResidentsParams) ([]SearchUnpaidResidentsRow, error) {
+	rows, err := q.db.Query(ctx, searchUnpaidResidents, arg.Query, arg.Offset, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []SearchUnpaidResidentsRow{}
+	for rows.Next() {
+		var i SearchUnpaidResidentsRow
+		if err := rows.Scan(
+			&i.Resident.ID,
+			&i.Resident.Email,
+			&i.Resident.FirstName,
+			&i.Resident.SecondName,
+			&i.Resident.LastName,
+			&i.Resident.BirthDate,
+			&i.Resident.Gender,
+			&i.Resident.Phone,
+			&i.Resident.AddressID,
+			&i.Resident.CreatedAt,
+			&i.Resident.DeletedAt,
+			&i.Payment.ID,
+			&i.Payment.ResidentID,
+			&i.Payment.Amount,
+			&i.Payment.Description,
+			&i.Payment.Status,
+			&i.Payment.Reference,
+			&i.Payment.Method,
+			&i.Payment.CreatedAt,
+			&i.Payment.DeletedAt,
+			&i.FaceUrl,
 			&i.FullName,
 			&i.Sim,
 		); err != nil {

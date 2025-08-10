@@ -134,7 +134,7 @@ func (s *Service) RegisterResident(ctx context.Context, input types.ResidentPayl
 	if err != nil {
 		return err
 	}
-	fmt.Println("Created employment")
+	fmt.Println("Employment created")
 
 	// 6. Create emergency
 	_, err = qtx.CreateEmergencyContact(ctx, repository.CreateEmergencyContactParams{
@@ -164,6 +164,16 @@ func (s *Service) RegisterResident(ctx context.Context, input types.ResidentPayl
 		return err
 	}
 	fmt.Println("Additional created")
+
+	// 7. Create payment
+	_, err = qtx.CreatePayment(ctx, repository.CreatePaymentParams{
+		ResidentID: residentID,
+		Status:     "unpaid",
+	})
+	if err != nil {
+		return err
+	}
+	fmt.Println("Payment created")
 
 	return tx.Commit(ctx)
 }
@@ -200,6 +210,41 @@ func (s *Service) SearchResidents(ctx context.Context, limit, offset int, query 
 	}
 
 	cities, err := s.q.SearchResidents(ctx, repository.SearchResidentsParams{
+		Query:  query,
+		Limit:  int32(limit),
+		Offset: int32(offset),
+	})
+	if err != nil {
+		return 0, nil, err
+	}
+
+	return count, cities, nil
+}
+
+func (s *Service) GetUnpaidResidents(ctx context.Context, limit, offset int) (int64, []repository.ListUnpaidResidentsRow, error) {
+	count, err := s.q.CountListUnpaidResidents(ctx)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	cities, err := s.q.ListUnpaidResidents(ctx, repository.ListUnpaidResidentsParams{
+		Limit:  int32(limit),
+		Offset: int32(offset),
+	})
+	if err != nil {
+		return 0, nil, err
+	}
+
+	return count, cities, nil
+}
+
+func (s *Service) SearchUnpaidResidents(ctx context.Context, limit, offset int, query string) (int64, []repository.SearchUnpaidResidentsRow, error) {
+	count, err := s.q.CountSearchUnpaidResidents(ctx, query)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	cities, err := s.q.SearchUnpaidResidents(ctx, repository.SearchUnpaidResidentsParams{
 		Query:  query,
 		Limit:  int32(limit),
 		Offset: int32(offset),
