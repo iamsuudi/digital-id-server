@@ -57,9 +57,10 @@ type Querier interface {
 	DeleteRefreshToken(ctx context.Context, token string) error
 	DeleteRefreshTokensByUser(ctx context.Context, userID uuid.UUID) error
 	DeleteResident(ctx context.Context, id uuid.UUID) error
+	DeleteResidentDocuments(ctx context.Context, residentID uuid.UUID) error
 	GetAdditional(ctx context.Context, id uuid.UUID) (Additional, error)
 	GetAdditionalByResident(ctx context.Context, residentID uuid.UUID) (Additional, error)
-	GetAddress(ctx context.Context, id uuid.UUID) (Address, error)
+	GetAddress(ctx context.Context, id uuid.UUID) (GetAddressRow, error)
 	GetAddressByLocations(ctx context.Context, arg GetAddressByLocationsParams) (Address, error)
 	GetAssignablePermissionsForActor(ctx context.Context, id uuid.UUID) ([]Permission, error)
 	GetAssignableRolesForActor(ctx context.Context, slug string) ([]GetAssignableRolesForActorRow, error)

@@ -51,6 +51,16 @@ func (q *Queries) DeleteDocument(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
+const deleteResidentDocuments = `-- name: DeleteResidentDocuments :exec
+DELETE FROM document
+WHERE resident_id = $1 AND deleted_at IS NULL
+`
+
+func (q *Queries) DeleteResidentDocuments(ctx context.Context, residentID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteResidentDocuments, residentID)
+	return err
+}
+
 const getDocument = `-- name: GetDocument :one
 SELECT id, resident_id, url, status, created_at, deleted_at
 FROM document

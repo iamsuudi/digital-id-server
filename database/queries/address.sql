@@ -7,15 +7,21 @@ INSERT INTO address (
 RETURNING *;
 
 -- name: GetAddress :one
-SELECT *
+SELECT sqlc.embed(address), sqlc.embed(c), sqlc.embed(s), sqlc.embed(k)
 FROM address
-WHERE id = $1 AND deleted_at IS NULL;
+JOIN city c ON address.city_id = c.id
+JOIN subcity s ON address.subcity_id = s.id
+JOIN kebele k ON address.kebele_id = k.id
+WHERE address.id = $1 AND address.deleted_at IS NULL;
 
 -- name: GetAddressByLocations :one
 SELECT *
 FROM address
-WHERE city_id = $1 AND subcity_id = $2 AND kebele_id = $3
-    AND house_number = $4 AND deleted_at IS NULL;
+WHERE city_id = $1 AND 
+    subcity_id = $2 AND 
+    kebele_id = $3 AND 
+    house_number = $4 AND 
+    deleted_at IS NULL;
 
 -- name: ListAddresses :many
 SELECT *

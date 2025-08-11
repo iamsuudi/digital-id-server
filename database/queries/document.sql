@@ -45,3 +45,7 @@ SELECT *
 FROM document
 WHERE resident_id = $1 AND deleted_at IS NULL
 ORDER BY created_at DESC;
+
+-- name: DeleteResidentDocuments :exec
+DELETE FROM document
+WHERE resident_id = $1 AND deleted_at IS NULL;

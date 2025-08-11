@@ -60,22 +60,53 @@ func (q *Queries) DeleteAddress(ctx context.Context, id uuid.UUID) error {
 }
 
 const getAddress = `-- name: GetAddress :one
-SELECT id, house_number, kebele_id, subcity_id, city_id, created_at, deleted_at
+SELECT address.id, address.house_number, address.kebele_id, address.subcity_id, address.city_id, address.created_at, address.deleted_at, c.id, c.name, c.lat, c.lon, c.created_at, c.deleted_at, s.id, s.name, s.lat, s.lon, s.city_id, s.created_at, s.deleted_at, k.id, k.name, k.lat, k.lon, k.subcity_id, k.city_id, k.created_at, k.deleted_at
 FROM address
-WHERE id = $1 AND deleted_at IS NULL
+JOIN city c ON address.city_id = c.id
+JOIN subcity s ON address.subcity_id = s.id
+JOIN kebele k ON address.kebele_id = k.id
+WHERE address.id = $1 AND address.deleted_at IS NULL
 `
 
-func (q *Queries) GetAddress(ctx context.Context, id uuid.UUID) (Address, error) {
+type GetAddressRow struct {
+	Address Address `db:"address" json:"address"`
+	City    City    `db:"city" json:"city"`
+	Subcity Subcity `db:"subcity" json:"subcity"`
+	Kebele  Kebele  `db:"kebele" json:"kebele"`
+}
+
+func (q *Queries) GetAddress(ctx context.Context, id uuid.UUID) (GetAddressRow, error) {
 	row := q.db.QueryRow(ctx, getAddress, id)
-	var i Address
+	var i GetAddressRow
 	err := row.Scan(
-		&i.ID,
-		&i.HouseNumber,
-		&i.KebeleID,
-		&i.SubcityID,
-		&i.CityID,
-		&i.CreatedAt,
-		&i.DeletedAt,
+		&i.Address.ID,
+		&i.Address.HouseNumber,
+		&i.Address.KebeleID,
+		&i.Address.SubcityID,
+		&i.Address.CityID,
+		&i.Address.CreatedAt,
+		&i.Address.DeletedAt,
+		&i.City.ID,
+		&i.City.Name,
+		&i.City.Lat,
+		&i.City.Lon,
+		&i.City.CreatedAt,
+		&i.City.DeletedAt,
+		&i.Subcity.ID,
+		&i.Subcity.Name,
+		&i.Subcity.Lat,
+		&i.Subcity.Lon,
+		&i.Subcity.CityID,
+		&i.Subcity.CreatedAt,
+		&i.Subcity.DeletedAt,
+		&i.Kebele.ID,
+		&i.Kebele.Name,
+		&i.Kebele.Lat,
+		&i.Kebele.Lon,
+		&i.Kebele.SubcityID,
+		&i.Kebele.CityID,
+		&i.Kebele.CreatedAt,
+		&i.Kebele.DeletedAt,
 	)
 	return i, err
 }
@@ -83,8 +114,11 @@ func (q *Queries) GetAddress(ctx context.Context, id uuid.UUID) (Address, error)
 const getAddressByLocations = `-- name: GetAddressByLocations :one
 SELECT id, house_number, kebele_id, subcity_id, city_id, created_at, deleted_at
 FROM address
-WHERE city_id = $1 AND subcity_id = $2 AND kebele_id = $3
-    AND house_number = $4 AND deleted_at IS NULL
+WHERE city_id = $1 AND 
+    subcity_id = $2 AND 
+    kebele_id = $3 AND 
+    house_number = $4 AND 
+    deleted_at IS NULL
 `
 
 type GetAddressByLocationsParams struct {

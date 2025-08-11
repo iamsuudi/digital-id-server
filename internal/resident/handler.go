@@ -346,3 +346,274 @@ func (h *Handler) UpdateDocumentInfo(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Document info updated successfully"})
 }
+
+func (h *Handler) UpdatePersonalInfo(c *gin.Context) {
+	raw := c.Param("id")
+	id, err := uuid.Parse(raw)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid resident ID"})
+		return
+	}
+
+	// 1. Bind the entire multipart form at once.
+	var input types.ResidentPersonalPayload
+	if err := c.ShouldBind(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input: " + err.Error()})
+		return
+	}
+
+	// 2. Optional pretty print.
+	if b, err := json.MarshalIndent(input, "", "  "); err == nil {
+		fmt.Println(string(b))
+	}
+
+	// 3. Update personal info.
+	if err := h.service.UpdatePersonalInfo(c.Request.Context(), id, input); err != nil {
+		fmt.Println(err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update personal info"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Personal info updated successfully"})
+}
+
+func (h *Handler) GetAddressInfo(c *gin.Context) {
+	raw := c.Param("id")
+	id, err := uuid.Parse(raw)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid resident ID"})
+		return
+	}
+
+	// 1. Get address info.
+	address, err := h.service.GetAddressInfo(c.Request.Context(), id)
+	if err != nil {
+		fmt.Println(err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get address info"})
+		return
+	}
+
+	c.JSON(http.StatusOK, address)
+}
+
+func (h *Handler) UpdateAddressInfo(c *gin.Context) {
+	raw := c.Param("id")
+	id, err := uuid.Parse(raw)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid resident ID"})
+		return
+	}
+
+	// 1. Bind the entire multipart form at once.
+	var input types.ResidentAddressPayload
+	if err := c.ShouldBind(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input: " + err.Error()})
+		return
+	}
+
+	// 2. Optional pretty print.
+	if b, err := json.MarshalIndent(input, "", "  "); err == nil {
+		fmt.Println(string(b))
+	}
+
+	// 3. Update address info.
+	cityID, err := uuid.Parse(input.CityID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid city ID"})
+		return
+	}
+	subcityID, err := uuid.Parse(input.SubCityID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid subcity ID"})
+		return
+	}
+	kebeleID, err := uuid.Parse(input.KebeleID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid kebele ID"})
+		return
+	}
+	if err := h.service.UpdateAddressInfo(c.Request.Context(), id, input.HouseNumber, kebeleID, subcityID, cityID); err != nil {
+		fmt.Println(err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update address info"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Address info updated successfully"})
+}
+
+func (h *Handler) UpdateAdditionalInfo(c *gin.Context) {
+	raw := c.Param("id")
+	_, err := uuid.Parse(raw)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid resident ID"})
+		return
+	}
+
+	// 1. Bind the entire multipart form at once.
+	var input types.ResidentAdditionalPayload
+	if err := c.ShouldBind(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input: " + err.Error()})
+		return
+	}
+
+	// 2. Optional pretty print.
+	if b, err := json.MarshalIndent(input, "", "  "); err == nil {
+		fmt.Println(string(b))
+	}
+
+	// 3. Update additional info.
+	id, err := uuid.Parse(input.ID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid resident ID"})
+		return
+	}
+	if err := h.service.UpdateAdditionalInfo(c.Request.Context(), id, input); err != nil {
+		fmt.Println(err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update additional info"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Additional info updated successfully"})
+}
+
+func (h *Handler) UpdateEmploymentInfo(c *gin.Context) {
+	raw := c.Param("id")
+	_, err := uuid.Parse(raw)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid resident ID"})
+		return
+	}
+
+	// 1. Bind the entire multipart form at once.
+	var input types.ResidentEmploymentPayload
+	if err := c.ShouldBind(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input: " + err.Error()})
+		return
+	}
+
+	// 2. Optional pretty print.
+	if b, err := json.MarshalIndent(input, "", "  "); err == nil {
+		fmt.Println(string(b))
+	}
+
+	// 3. Update employment info.
+	id, err := uuid.Parse(input.ID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid resident ID"})
+		return
+	}
+	if err := h.service.UpdateEmploymentInfo(c.Request.Context(), id, input); err != nil {
+		fmt.Println(err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update employment info"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Employment info updated successfully"})
+}
+
+func (h *Handler) UpdateEmergencyInfo(c *gin.Context) {
+	raw := c.Param("id")
+	_, err := uuid.Parse(raw)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid resident ID"})
+		return
+	}
+
+	// 1. Bind the entire multipart form at once.
+	var input types.ResidentEmergencyPayload
+	if err := c.ShouldBind(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input: " + err.Error()})
+		return
+	}
+
+	// 2. Optional pretty print.
+	if b, err := json.MarshalIndent(input, "", "  "); err == nil {
+		fmt.Println(string(b))
+	}
+
+	// 3. Update emergency info.
+	id, err := uuid.Parse(input.ID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid resident ID"})
+		return
+	}
+	if err := h.service.UpdateEmergencyContact(c.Request.Context(), id, input); err != nil {
+		fmt.Println(err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update emergency info"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Emergency info updated successfully"})
+}
+
+func (h *Handler) ReplaceDocuments(c *gin.Context) {
+	raw := c.Param("id")
+	id, err := uuid.Parse(raw)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid resident ID"})
+		return
+	}
+
+	// Collect uploaded documents.
+	form, err := c.MultipartForm()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	docs := form.File["documents"]
+	docsUrls := make([]string, 0, len(docs))
+	for _, doc := range docs {
+		name := utils.MakeFileName(doc.Filename)
+		dst := filepath.Join("uploads", name)
+		if err := c.SaveUploadedFile(doc, dst); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save document"})
+			return
+		}
+		docsUrls = append(docsUrls, name)
+	}
+
+	// Replace documents.
+	if err := h.service.ReplaceDocuments(c.Request.Context(), id, docsUrls); err != nil {
+		fmt.Println(err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update documents"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Documents updated successfully"})
+}
+
+func (h *Handler) UpdateBiometricInfo(c *gin.Context) {
+	raw := c.Param("id")
+	id, err := uuid.Parse(raw)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid resident ID"})
+		return
+	}
+
+	var input struct {
+		BloodType string `form:"blood_type"`
+	}
+	if err := c.ShouldBind(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input: " + err.Error()})
+		return
+	}
+
+	var faceUrl *string
+	if face, err := c.FormFile("face"); err == nil {
+		faceName := utils.MakeFileName(face.Filename)
+		if err := c.SaveUploadedFile(face, filepath.Join("uploads", faceName)); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save face image"})
+			return
+		}
+		faceUrl = &faceName
+	}
+
+	if err := h.service.UpdateBiometricInfo(c.Request.Context(), id, input.BloodType, faceUrl); err != nil {
+		fmt.Println(err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update biometric info"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Biometric info updated successfully"})
+}
