@@ -40,14 +40,16 @@ func (q *Queries) CreateBiometric(ctx context.Context, arg CreateBiometricParams
 
 const updateBiometric = `-- name: UpdateBiometric :exec
 UPDATE biometric
-SET face_url = $2, blood_type = $3
+SET
+    face_url = COALESCE($2, face_url),
+    blood_type = COALESCE($3, blood_type)
 WHERE resident_id = $1
 `
 
 type UpdateBiometricParams struct {
 	ResidentID uuid.UUID `db:"resident_id" json:"resident_id"`
-	FaceUrl    string    `db:"face_url" json:"face_url"`
-	BloodType  string    `db:"blood_type" json:"blood_type"`
+	FaceUrl    *string   `db:"face_url" json:"face_url"`
+	BloodType  *string   `db:"blood_type" json:"blood_type"`
 }
 
 func (q *Queries) UpdateBiometric(ctx context.Context, arg UpdateBiometricParams) error {

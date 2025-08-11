@@ -5,5 +5,7 @@ RETURNING *;
 
 -- name: UpdateBiometric :exec
 UPDATE biometric
-SET face_url = $2, blood_type = $3
+SET
+    face_url = COALESCE(sqlc.narg('face_url'), face_url),
+    blood_type = COALESCE(sqlc.narg('blood_type'), blood_type)
 WHERE resident_id = $1;

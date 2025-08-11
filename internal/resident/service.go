@@ -315,3 +315,153 @@ func (s *Service) UpdateDocumentInfo(ctx context.Context, id uuid.UUID, status s
 	})
 	return err
 }
+
+func (s *Service) UpdatePersonalInfo(ctx context.Context, id uuid.UUID, input types.ResidentPersonalPayload) error {
+	return s.q.UpdateResident(ctx, repository.UpdateResidentParams{
+		ID:         id,
+		Email:      input.Email,
+		FirstName:  input.FirstName,
+		SecondName: input.SecondName,
+		LastName:   input.LastName,
+		BirthDate:  input.BirthDate,
+		Gender:     input.Gender,
+		Phone:      input.Phone,
+	})
+}
+
+func (s *Service) UpdateAdditionalInfo(ctx context.Context, id uuid.UUID, input types.ResidentAdditionalPayload) error {
+	_, err := s.q.UpdateAdditional(ctx, repository.UpdateAdditionalParams{
+		ID:              id,
+		Religion:        &input.Religion,
+		Ethnicity:       &input.Ethnicity,
+		NationalID:      &input.NationalID,
+		Disability:      &input.Disability,
+		EducationLevel:  &input.EducationLevel,
+		LanguagesSpoken: input.LanguagesSpoken,
+		MaritalStatus:   &input.MaritalStatus,
+	})
+	return err
+}
+
+func (s *Service) UpdateEmploymentInfo(ctx context.Context, id uuid.UUID, input types.ResidentEmploymentPayload) error {
+	_, err := s.q.UpdateEmployment(ctx, repository.UpdateEmploymentParams{
+		ID:           id,
+		Status:       &input.EmploymentStatus,
+		Type:         &input.EmploymentType,
+		Occupation:   &input.Occupation,
+		EmployerName: &input.EmployerName,
+		WorkAddress:  &input.WorkAddress,
+	})
+	return err
+}
+
+func (s *Service) UpdateEmergencyContact(ctx context.Context, id uuid.UUID, input types.ResidentEmergencyPayload) error {
+	_, err := s.q.UpdateEmergencyContact(ctx, repository.UpdateEmergencyContactParams{
+		ID:       id,
+		Name:     &input.EmergencyName,
+		Relation: &input.EmergencyRelation,
+		Phone:    &input.EmergencyPhone,
+		Email:    &input.EmergencyEmail,
+	})
+	return err
+}
+
+func (s *Service) GetAddressInfo(ctx context.Context, id uuid.UUID) (repository.GetAddressRow, error) {
+	return s.q.GetAddress(ctx, id)
+}
+
+func (s *Service) UpdateAddressInfo(ctx context.Context, id uuid.UUID, houseNumber string, kebeleID, subcityID, cityID uuid.UUID) error {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	qtx := s.q.WithTx(tx)
+
+	addr, err := qtx.GetAddressByLocations(ctx, repository.GetAddressByLocationsParams{
+		HouseNumber: houseNumber,
+		KebeleID:    kebeleID,
+		SubcityID:   subcityID,
+		CityID:      cityID,
+	})
+	if err != nil {
+		fmt.Println("Address not found")
+		newAddr, err := qtx.CreateAddress(ctx, repository.CreateAddressParams{
+			HouseNumber: houseNumber,
+			KebeleID:    kebeleID,
+			SubcityID:   subcityID,
+			CityID:      cityID,
+		})
+		if err != nil {
+			return err
+		}
+		fmt.Println("New address created")
+		err = qtx.UpdateResidentAddress(ctx, repository.UpdateResidentAddressParams{
+			AddressID: &(newAddr.ID),
+			ID:        id,
+		})
+		if err != nil {
+			return err
+		}
+	} else {
+		fmt.Println("Address found")
+		err = qtx.UpdateResidentAddress(ctx, repository.UpdateResidentAddressParams{
+			AddressID: &addr.ID,
+			ID:        id,
+		})
+		if err != nil {
+			return err
+		}
+	}
+	fmt.Println("Committing transaction")
+	return tx.Commit(ctx)
+}
+
+func (s *Service) ReplaceDocuments(ctx context.Context, id uuid.UUID, docsUrl []string) error {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	qtx := s.q.WithTx(tx)
+
+	err = qtx.DeleteResidentDocuments(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	for _, doc := range docsUrl {
+		_, err = qtx.CreateDocument(ctx, repository.CreateDocumentParams{
+			Url:    doc,
+			Status: "Pending",
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit(ctx)
+}
+
+func (s *Service) UpdateBiometricInfo(ctx context.Context, id uuid.UUID, bloodType string, faceUrl *string) error {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	qtx := s.q.WithTx(tx)
+
+	err = qtx.UpdateBiometric(ctx, repository.UpdateBiometricParams{
+		BloodType:  &bloodType,
+		FaceUrl:    faceUrl,
+		ResidentID: id,
+	})
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
+}
