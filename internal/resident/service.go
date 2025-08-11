@@ -186,6 +186,10 @@ func (s *Service) GetResidentDocuments(ctx context.Context, id uuid.UUID) ([]rep
 	return s.q.GetResidentDocuments(ctx, id)
 }
 
+func (s *Service) GetResidentPayment(ctx context.Context, id uuid.UUID) (repository.Payment, error) {
+	return s.q.GetPaymentByResident(ctx, id)
+}
+
 func (s *Service) GetResidents(ctx context.Context, limit, offset int) (int64, []repository.ListResidentsRow, error) {
 	count, err := s.q.CountListResidents(ctx)
 	if err != nil {
@@ -289,4 +293,25 @@ func (s *Service) SearchUnverifiedResidents(ctx context.Context, limit, offset i
 	}
 
 	return count, cities, nil
+}
+
+func (s *Service) UpdatePaymentInfo(ctx context.Context, id uuid.UUID, amount float64, status, method, description string, receipt *string) error {
+	_, err := s.q.UpdatePayment(ctx, repository.UpdatePaymentParams{
+		ID:          id,
+		Amount:      &amount,
+		Status:      &status,
+		Method:      &method,
+		Description: &description,
+		Reference:   receipt,
+	})
+	return err
+}
+
+func (s *Service) UpdateDocumentInfo(ctx context.Context, id uuid.UUID, status string, url *string) error {
+	_, err := s.q.UpdateDocument(ctx, repository.UpdateDocumentParams{
+		ID:     id,
+		Status: &status,
+		Url:    url,
+	})
+	return err
 }

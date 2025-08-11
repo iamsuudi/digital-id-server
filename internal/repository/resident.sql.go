@@ -386,7 +386,7 @@ func (q *Queries) ListUnpaidResidents(ctx context.Context, arg ListUnpaidResiden
 
 const listUnverifiedResidents = `-- name: ListUnverifiedResidents :many
 SELECT 
-    r.id, r.email, r.first_name, r.second_name, r.last_name, r.birth_date, r.gender, r.phone, r.address_id, r.created_at, r.deleted_at,
+    r.id, r.email, r.first_name, r.second_name, r.last_name, r.birth_date, r.gender, r.phone, r.address_id, r.created_at, r.deleted_at, p.id, p.resident_id, p.amount, p.description, p.status, p.reference, p.method, p.created_at, p.deleted_at, b.face_url,
     CONCAT_WS(' ', r.first_name, r.second_name, r.last_name) AS full_name,
     CASE 
         WHEN EXISTS (
@@ -400,6 +400,7 @@ SELECT
         ELSE 'no documents'
     END AS status
 FROM resident r
+JOIN biometric b   ON r.id = b.resident_id
 JOIN payment p     ON p.resident_id = r.id
 WHERE r.deleted_at IS NULL AND p.status = 'verified'
 AND NOT EXISTS (
@@ -416,19 +417,11 @@ type ListUnverifiedResidentsParams struct {
 }
 
 type ListUnverifiedResidentsRow struct {
-	ID         uuid.UUID  `db:"id" json:"id"`
-	Email      string     `db:"email" json:"email"`
-	FirstName  string     `db:"first_name" json:"first_name"`
-	SecondName string     `db:"second_name" json:"second_name"`
-	LastName   string     `db:"last_name" json:"last_name"`
-	BirthDate  time.Time  `db:"birth_date" json:"birth_date"`
-	Gender     string     `db:"gender" json:"gender"`
-	Phone      string     `db:"phone" json:"phone"`
-	AddressID  *uuid.UUID `db:"address_id" json:"address_id"`
-	CreatedAt  time.Time  `db:"created_at" json:"created_at"`
-	DeletedAt  *time.Time `db:"deleted_at" json:"deleted_at"`
-	FullName   string     `db:"full_name" json:"full_name"`
-	Status     string     `db:"status" json:"status"`
+	Resident Resident `db:"resident" json:"resident"`
+	Payment  Payment  `db:"payment" json:"payment"`
+	FaceUrl  string   `db:"face_url" json:"face_url"`
+	FullName string   `db:"full_name" json:"full_name"`
+	Status   string   `db:"status" json:"status"`
 }
 
 func (q *Queries) ListUnverifiedResidents(ctx context.Context, arg ListUnverifiedResidentsParams) ([]ListUnverifiedResidentsRow, error) {
@@ -441,17 +434,27 @@ func (q *Queries) ListUnverifiedResidents(ctx context.Context, arg ListUnverifie
 	for rows.Next() {
 		var i ListUnverifiedResidentsRow
 		if err := rows.Scan(
-			&i.ID,
-			&i.Email,
-			&i.FirstName,
-			&i.SecondName,
-			&i.LastName,
-			&i.BirthDate,
-			&i.Gender,
-			&i.Phone,
-			&i.AddressID,
-			&i.CreatedAt,
-			&i.DeletedAt,
+			&i.Resident.ID,
+			&i.Resident.Email,
+			&i.Resident.FirstName,
+			&i.Resident.SecondName,
+			&i.Resident.LastName,
+			&i.Resident.BirthDate,
+			&i.Resident.Gender,
+			&i.Resident.Phone,
+			&i.Resident.AddressID,
+			&i.Resident.CreatedAt,
+			&i.Resident.DeletedAt,
+			&i.Payment.ID,
+			&i.Payment.ResidentID,
+			&i.Payment.Amount,
+			&i.Payment.Description,
+			&i.Payment.Status,
+			&i.Payment.Reference,
+			&i.Payment.Method,
+			&i.Payment.CreatedAt,
+			&i.Payment.DeletedAt,
+			&i.FaceUrl,
 			&i.FullName,
 			&i.Status,
 		); err != nil {
@@ -610,7 +613,7 @@ func (q *Queries) SearchUnpaidResidents(ctx context.Context, arg SearchUnpaidRes
 
 const searchUnverifiedResidents = `-- name: SearchUnverifiedResidents :many
 SELECT 
-    r.id, r.email, r.first_name, r.second_name, r.last_name, r.birth_date, r.gender, r.phone, r.address_id, r.created_at, r.deleted_at,
+    r.id, r.email, r.first_name, r.second_name, r.last_name, r.birth_date, r.gender, r.phone, r.address_id, r.created_at, r.deleted_at, p.id, p.resident_id, p.amount, p.description, p.status, p.reference, p.method, p.created_at, p.deleted_at, b.face_url,
     CONCAT_WS(' ', r.first_name, r.second_name, r.last_name) AS full_name,
     similarity(CONCAT_WS(' ', r.first_name, r.second_name, r.last_name), $1) AS sim,
     CASE 
@@ -625,6 +628,7 @@ SELECT
         ELSE 'no documents'
     END AS status
 FROM resident r
+JOIN biometric b   ON r.id = b.resident_id
 JOIN payment p     ON p.resident_id = r.id
 WHERE r.deleted_at IS NULL AND p.status = 'verified'
 AND NOT EXISTS (
@@ -642,20 +646,12 @@ type SearchUnverifiedResidentsParams struct {
 }
 
 type SearchUnverifiedResidentsRow struct {
-	ID         uuid.UUID  `db:"id" json:"id"`
-	Email      string     `db:"email" json:"email"`
-	FirstName  string     `db:"first_name" json:"first_name"`
-	SecondName string     `db:"second_name" json:"second_name"`
-	LastName   string     `db:"last_name" json:"last_name"`
-	BirthDate  time.Time  `db:"birth_date" json:"birth_date"`
-	Gender     string     `db:"gender" json:"gender"`
-	Phone      string     `db:"phone" json:"phone"`
-	AddressID  *uuid.UUID `db:"address_id" json:"address_id"`
-	CreatedAt  time.Time  `db:"created_at" json:"created_at"`
-	DeletedAt  *time.Time `db:"deleted_at" json:"deleted_at"`
-	FullName   string     `db:"full_name" json:"full_name"`
-	Sim        float32    `db:"sim" json:"sim"`
-	Status     string     `db:"status" json:"status"`
+	Resident Resident `db:"resident" json:"resident"`
+	Payment  Payment  `db:"payment" json:"payment"`
+	FaceUrl  string   `db:"face_url" json:"face_url"`
+	FullName string   `db:"full_name" json:"full_name"`
+	Sim      float32  `db:"sim" json:"sim"`
+	Status   string   `db:"status" json:"status"`
 }
 
 func (q *Queries) SearchUnverifiedResidents(ctx context.Context, arg SearchUnverifiedResidentsParams) ([]SearchUnverifiedResidentsRow, error) {
@@ -668,17 +664,27 @@ func (q *Queries) SearchUnverifiedResidents(ctx context.Context, arg SearchUnver
 	for rows.Next() {
 		var i SearchUnverifiedResidentsRow
 		if err := rows.Scan(
-			&i.ID,
-			&i.Email,
-			&i.FirstName,
-			&i.SecondName,
-			&i.LastName,
-			&i.BirthDate,
-			&i.Gender,
-			&i.Phone,
-			&i.AddressID,
-			&i.CreatedAt,
-			&i.DeletedAt,
+			&i.Resident.ID,
+			&i.Resident.Email,
+			&i.Resident.FirstName,
+			&i.Resident.SecondName,
+			&i.Resident.LastName,
+			&i.Resident.BirthDate,
+			&i.Resident.Gender,
+			&i.Resident.Phone,
+			&i.Resident.AddressID,
+			&i.Resident.CreatedAt,
+			&i.Resident.DeletedAt,
+			&i.Payment.ID,
+			&i.Payment.ResidentID,
+			&i.Payment.Amount,
+			&i.Payment.Description,
+			&i.Payment.Status,
+			&i.Payment.Reference,
+			&i.Payment.Method,
+			&i.Payment.CreatedAt,
+			&i.Payment.DeletedAt,
+			&i.FaceUrl,
 			&i.FullName,
 			&i.Sim,
 			&i.Status,
