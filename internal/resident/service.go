@@ -434,6 +434,7 @@ func (s *Service) ReplaceDocuments(ctx context.Context, id uuid.UUID, docsUrl []
 
 	for _, doc := range docsUrl {
 		_, err = qtx.CreateDocument(ctx, repository.CreateDocumentParams{
+			ResidentID: id,
 			Url:    doc,
 			Status: "Pending",
 		})
