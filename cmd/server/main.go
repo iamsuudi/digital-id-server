@@ -17,6 +17,7 @@ import (
 
 	"digital-id-server/internal/user"
 	"digital-id-server/shared/config"
+	// "digital-id-server/shared/email"
 )
 
 func main() {
@@ -30,13 +31,24 @@ func main() {
 	gin.DisableConsoleColor()
 
 	r := gin.Default()
-	
+
 	r.Static("/assets", "./uploads")
 
 	q := repository.New(db)
 	uService := user.NewService(db, q)
 	aService := auth.NewService(db, q)
 	cache := cache.New(aService, uService)
+
+	// eService, err := email.DefaultService()
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	// eService.Send(&email.EmailParams{
+	// 	To:      []string{"suudiabdulfetah@gmail.com"},
+	// 	Subject: "Welcome",
+	// 	Text:    "Welcome to Oict Digital ID",
+	// })
 
 	auth.RegisterRoutes(r.Group("/api/v1/auth"), db, q)
 	city.RegisterRoutes(r.Group("/api/v1/"), db, q)
