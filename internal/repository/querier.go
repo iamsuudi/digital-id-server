@@ -82,7 +82,9 @@ type Querier interface {
 	GetRandomLocation(ctx context.Context) (GetRandomLocationRow, error)
 	GetRefreshToken(ctx context.Context, token string) (RefreshTokens, error)
 	GetResident(ctx context.Context, id uuid.UUID) (GetResidentRow, error)
+	GetResidentAddress(ctx context.Context, id uuid.UUID) (GetResidentAddressRow, error)
 	GetResidentDocuments(ctx context.Context, residentID uuid.UUID) ([]Document, error)
+	GetSetting(ctx context.Context, id string) (Setting, error)
 	GetSubCitiesForCity(ctx context.Context, id uuid.UUID) ([]GetSubCitiesForCityRow, error)
 	GetSubCity(ctx context.Context, id uuid.UUID) (GetSubCityRow, error)
 	GetUniversalPermissionMatrixForUser(ctx context.Context, arg GetUniversalPermissionMatrixForUserParams) ([]GetUniversalPermissionMatrixForUserRow, error)
@@ -90,6 +92,7 @@ type Querier interface {
 	GetUserByID(ctx context.Context, id uuid.UUID) (GetUserByIDRow, error)
 	GetUserRole(ctx context.Context, id uuid.UUID) (string, error)
 	GetUserScope(ctx context.Context, id uuid.UUID) (GetUserScopeRow, error)
+	GetVerifiedResident(ctx context.Context, id uuid.UUID) (GetVerifiedResidentRow, error)
 	GrantPermissionToRole(ctx context.Context, arg GrantPermissionToRoleParams) error
 	GrantUserPlacement(ctx context.Context, arg GrantUserPlacementParams) error
 	HardDeleteAdditional(ctx context.Context, id uuid.UUID) error
@@ -153,6 +156,7 @@ type Querier interface {
 	UpdatePayment(ctx context.Context, arg UpdatePaymentParams) (Payment, error)
 	UpdateResident(ctx context.Context, arg UpdateResidentParams) error
 	UpdateResidentAddress(ctx context.Context, arg UpdateResidentAddressParams) error
+	UpdateSetting(ctx context.Context, idcardExpirationDuration int32) error
 	UpdateSubCity(ctx context.Context, arg UpdateSubCityParams) (Subcity, error)
 	UpdateUserInfo(ctx context.Context, arg UpdateUserInfoParams) error
 	UpdateUserRole(ctx context.Context, arg UpdateUserRoleParams) error

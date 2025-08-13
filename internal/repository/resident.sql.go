@@ -18,7 +18,7 @@ FROM resident r
 JOIN payment p     ON p.resident_id = r.id
 WHERE r.deleted_at IS NULL AND p.status = 'verified'
 AND EXISTS (
-    SELECT 1 FROM document d 
+    SELECT 1 FROM document d
     WHERE d.resident_id = r.id AND d.status = 'verified'
 )
 `
@@ -50,7 +50,7 @@ FROM resident r
 JOIN payment p     ON p.resident_id = r.id
 WHERE r.deleted_at IS NULL AND p.status = 'verified'
 AND NOT EXISTS (
-    SELECT 1 FROM document d 
+    SELECT 1 FROM document d
     WHERE d.resident_id = r.id AND d.status = 'verified'
 )
 `
@@ -66,9 +66,9 @@ const countSearchResidents = `-- name: CountSearchResidents :one
 SELECT COUNT(*)
 FROM resident r
 JOIN payment p     ON p.resident_id = r.id
-WHERE r.deleted_at IS NULL AND p.status = 'verified' 
+WHERE r.deleted_at IS NULL AND p.status = 'verified'
 AND EXISTS (
-    SELECT 1 FROM document d 
+    SELECT 1 FROM document d
     WHERE d.resident_id = r.id AND d.status = 'verified'
 ) AND similarity(CONCAT_WS(' ', r.first_name, r.second_name, r.last_name), $1) > 0.2
 `
@@ -101,7 +101,7 @@ FROM resident r
 JOIN payment p     ON p.resident_id = r.id
 WHERE r.deleted_at IS NULL AND p.status = 'verified'
 AND NOT EXISTS (
-    SELECT 1 FROM document d 
+    SELECT 1 FROM document d
     WHERE d.resident_id = r.id AND d.status = 'verified'
 ) AND similarity(CONCAT_WS(' ', r.first_name, r.second_name, r.last_name), $1) > 0.2
 `
@@ -250,6 +250,140 @@ func (q *Queries) GetResident(ctx context.Context, id uuid.UUID) (GetResidentRow
 	return i, err
 }
 
+const getResidentAddress = `-- name: GetResidentAddress :one
+SELECT slqc.embed(r), a.id, a.house_number, a.kebele_id, a.subcity_id, a.city_id, a.created_at, a.deleted_at, c.id, c.name, c.lat, c.lon, c.created_at, c.deleted_at, s.id, s.name, s.lat, s.lon, s.city_id, s.created_at, s.deleted_at, k.id, k.name, k.lat, k.lon, k.subcity_id, k.city_id, k.created_at, k.deleted_at
+FROM resident r
+JOIN address a ON r.a_id = a.id
+JOIN city c ON a.city_id = c.id
+JOIN subcity s ON a.subcity_id = s.id
+JOIN kebele k ON a.kebele_id = k.id
+WHERE r.id = $1 AND r.deleted_at IS NULL
+`
+
+type GetResidentAddressRow struct {
+	Embed   interface{} `db:"embed" json:"embed"`
+	Address Address     `db:"address" json:"address"`
+	City    City        `db:"city" json:"city"`
+	Subcity Subcity     `db:"subcity" json:"subcity"`
+	Kebele  Kebele      `db:"kebele" json:"kebele"`
+}
+
+func (q *Queries) GetResidentAddress(ctx context.Context, id uuid.UUID) (GetResidentAddressRow, error) {
+	row := q.db.QueryRow(ctx, getResidentAddress, id)
+	var i GetResidentAddressRow
+	err := row.Scan(
+		&i.Embed,
+		&i.Address.ID,
+		&i.Address.HouseNumber,
+		&i.Address.KebeleID,
+		&i.Address.SubcityID,
+		&i.Address.CityID,
+		&i.Address.CreatedAt,
+		&i.Address.DeletedAt,
+		&i.City.ID,
+		&i.City.Name,
+		&i.City.Lat,
+		&i.City.Lon,
+		&i.City.CreatedAt,
+		&i.City.DeletedAt,
+		&i.Subcity.ID,
+		&i.Subcity.Name,
+		&i.Subcity.Lat,
+		&i.Subcity.Lon,
+		&i.Subcity.CityID,
+		&i.Subcity.CreatedAt,
+		&i.Subcity.DeletedAt,
+		&i.Kebele.ID,
+		&i.Kebele.Name,
+		&i.Kebele.Lat,
+		&i.Kebele.Lon,
+		&i.Kebele.SubcityID,
+		&i.Kebele.CityID,
+		&i.Kebele.CreatedAt,
+		&i.Kebele.DeletedAt,
+	)
+	return i, err
+}
+
+const getVerifiedResident = `-- name: GetVerifiedResident :one
+SELECT resident.id, resident.email, resident.first_name, resident.second_name, resident.last_name, resident.birth_date, resident.gender, resident.phone, resident.address_id, resident.created_at, resident.deleted_at, address.id, address.house_number, address.kebele_id, address.subcity_id, address.city_id, address.created_at, address.deleted_at, biometric.id, biometric.resident_id, biometric.fingerprint, biometric.blood_type, biometric.face_url, biometric.created_at, biometric.deleted_at,
+    city.id, city.name, city.lat, city.lon, city.created_at, city.deleted_at, subcity.id, subcity.name, subcity.lat, subcity.lon, subcity.city_id, subcity.created_at, subcity.deleted_at, kebele.id, kebele.name, kebele.lat, kebele.lon, kebele.subcity_id, kebele.city_id, kebele.created_at, kebele.deleted_at
+FROM resident
+JOIN address    ON resident.address_id = address.id
+JOIN biometric  ON resident.id = biometric.resident_id
+JOIN document   ON resident.id = document.resident_id
+JOIN city       ON address.city_id = city.id
+JOIN subcity    ON address.subcity_id = subcity.id
+JOIN kebele     ON address.kebele_id = kebele.id
+WHERE resident.id = $1 AND EXISTS (
+    SELECT 1 FROM document d
+    WHERE d.resident_id = resident.id AND d.status = 'verified'
+)
+`
+
+type GetVerifiedResidentRow struct {
+	Resident  Resident  `db:"resident" json:"resident"`
+	Address   Address   `db:"address" json:"address"`
+	Biometric Biometric `db:"biometric" json:"biometric"`
+	City      City      `db:"city" json:"city"`
+	Subcity   Subcity   `db:"subcity" json:"subcity"`
+	Kebele    Kebele    `db:"kebele" json:"kebele"`
+}
+
+func (q *Queries) GetVerifiedResident(ctx context.Context, id uuid.UUID) (GetVerifiedResidentRow, error) {
+	row := q.db.QueryRow(ctx, getVerifiedResident, id)
+	var i GetVerifiedResidentRow
+	err := row.Scan(
+		&i.Resident.ID,
+		&i.Resident.Email,
+		&i.Resident.FirstName,
+		&i.Resident.SecondName,
+		&i.Resident.LastName,
+		&i.Resident.BirthDate,
+		&i.Resident.Gender,
+		&i.Resident.Phone,
+		&i.Resident.AddressID,
+		&i.Resident.CreatedAt,
+		&i.Resident.DeletedAt,
+		&i.Address.ID,
+		&i.Address.HouseNumber,
+		&i.Address.KebeleID,
+		&i.Address.SubcityID,
+		&i.Address.CityID,
+		&i.Address.CreatedAt,
+		&i.Address.DeletedAt,
+		&i.Biometric.ID,
+		&i.Biometric.ResidentID,
+		&i.Biometric.Fingerprint,
+		&i.Biometric.BloodType,
+		&i.Biometric.FaceUrl,
+		&i.Biometric.CreatedAt,
+		&i.Biometric.DeletedAt,
+		&i.City.ID,
+		&i.City.Name,
+		&i.City.Lat,
+		&i.City.Lon,
+		&i.City.CreatedAt,
+		&i.City.DeletedAt,
+		&i.Subcity.ID,
+		&i.Subcity.Name,
+		&i.Subcity.Lat,
+		&i.Subcity.Lon,
+		&i.Subcity.CityID,
+		&i.Subcity.CreatedAt,
+		&i.Subcity.DeletedAt,
+		&i.Kebele.ID,
+		&i.Kebele.Name,
+		&i.Kebele.Lat,
+		&i.Kebele.Lon,
+		&i.Kebele.SubcityID,
+		&i.Kebele.CityID,
+		&i.Kebele.CreatedAt,
+		&i.Kebele.DeletedAt,
+	)
+	return i, err
+}
+
 const listResidents = `-- name: ListResidents :many
 SELECT r.id, r.email, r.first_name, r.second_name, r.last_name, r.birth_date, r.gender, r.phone, r.address_id, r.created_at, r.deleted_at, b.face_url, CONCAT_WS(' ', r.first_name, r.second_name, r.last_name) AS full_name
 FROM resident r
@@ -257,7 +391,7 @@ JOIN biometric b   ON r.id = b.resident_id
 JOIN payment p     ON p.resident_id = r.id
 WHERE r.deleted_at IS NULL AND p.status = 'verified'
 AND EXISTS (
-    SELECT 1 FROM document d 
+    SELECT 1 FROM document d
     WHERE d.resident_id = r.id AND d.status = 'verified'
 )
 ORDER BY r.created_at ASC
@@ -385,16 +519,16 @@ func (q *Queries) ListUnpaidResidents(ctx context.Context, arg ListUnpaidResiden
 }
 
 const listUnverifiedResidents = `-- name: ListUnverifiedResidents :many
-SELECT 
+SELECT
     r.id, r.email, r.first_name, r.second_name, r.last_name, r.birth_date, r.gender, r.phone, r.address_id, r.created_at, r.deleted_at, p.id, p.resident_id, p.amount, p.description, p.status, p.reference, p.method, p.created_at, p.deleted_at, b.face_url,
     CONCAT_WS(' ', r.first_name, r.second_name, r.last_name) AS full_name,
-    CASE 
+    CASE
         WHEN EXISTS (
-            SELECT 1 FROM document d 
+            SELECT 1 FROM document d
             WHERE d.resident_id = r.id AND d.status = 'pending'
         ) THEN 'pending'
         WHEN EXISTS (
-            SELECT 1 FROM document d 
+            SELECT 1 FROM document d
             WHERE d.resident_id = r.id AND d.status = 'rejected'
         ) THEN 'rejected'
         ELSE 'no documents'
@@ -404,7 +538,7 @@ JOIN biometric b   ON r.id = b.resident_id
 JOIN payment p     ON p.resident_id = r.id
 WHERE r.deleted_at IS NULL AND p.status = 'verified'
 AND NOT EXISTS (
-    SELECT 1 FROM document d 
+    SELECT 1 FROM document d
     WHERE d.resident_id = r.id AND d.status = 'verified'
 )
 ORDER BY r.created_at ASC
@@ -476,7 +610,7 @@ JOIN biometric b   ON r.id = b.resident_id
 JOIN payment p     ON p.resident_id = r.id
 WHERE r.deleted_at IS NULL AND p.status = 'verified'
 AND EXISTS (
-    SELECT 1 FROM document d 
+    SELECT 1 FROM document d
     WHERE d.resident_id = r.id AND d.status = 'verified'
 ) AND similarity(CONCAT_WS(' ', r.first_name, r.second_name, r.last_name), $1) > 0.2
 ORDER BY sim DESC, r.created_at ASC
@@ -612,17 +746,17 @@ func (q *Queries) SearchUnpaidResidents(ctx context.Context, arg SearchUnpaidRes
 }
 
 const searchUnverifiedResidents = `-- name: SearchUnverifiedResidents :many
-SELECT 
+SELECT
     r.id, r.email, r.first_name, r.second_name, r.last_name, r.birth_date, r.gender, r.phone, r.address_id, r.created_at, r.deleted_at, p.id, p.resident_id, p.amount, p.description, p.status, p.reference, p.method, p.created_at, p.deleted_at, b.face_url,
     CONCAT_WS(' ', r.first_name, r.second_name, r.last_name) AS full_name,
     similarity(CONCAT_WS(' ', r.first_name, r.second_name, r.last_name), $1) AS sim,
-    CASE 
+    CASE
         WHEN EXISTS (
-            SELECT 1 FROM document d 
+            SELECT 1 FROM document d
             WHERE d.resident_id = r.id AND d.status = 'pending'
         ) THEN 'pending'
         WHEN EXISTS (
-            SELECT 1 FROM document d 
+            SELECT 1 FROM document d
             WHERE d.resident_id = r.id AND d.status = 'rejected'
         ) THEN 'rejected'
         ELSE 'no documents'
@@ -632,7 +766,7 @@ JOIN biometric b   ON r.id = b.resident_id
 JOIN payment p     ON p.resident_id = r.id
 WHERE r.deleted_at IS NULL AND p.status = 'verified'
 AND NOT EXISTS (
-    SELECT 1 FROM document d 
+    SELECT 1 FROM document d
     WHERE d.resident_id = r.id AND d.status = 'verified'
 ) AND similarity(CONCAT_WS(' ', r.first_name, r.second_name, r.last_name), $1) > 0.2
 ORDER BY r.created_at ASC
