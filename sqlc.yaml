@@ -33,6 +33,14 @@ sql:
               type: "string"
               pointer: true
             nullable: true
+          - column: "audit_log.diff"
+            go_type:
+              # for import, package and type please refer the go code above
+              import: "digital-id-server/shared/types"
+              package: "types"
+              # put your type here,
+              # if you want struct instead, put the CustomParams
+              type: "JSONB"
           - db_type: "pg_catalog.varchar"
             go_type: "string"
           - db_type: "pg_catalog.varchar"

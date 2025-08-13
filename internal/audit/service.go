@@ -2,12 +2,11 @@ package audit
 
 import (
 	"context"
-	"encoding/json"
-
-	"digital-id-server/internal/repository"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"digital-id-server/internal/repository"
 )
 
 type Service struct {
@@ -49,138 +48,11 @@ func (s *Service) ListAuditLogs(ctx context.Context, limit, offset int, city, su
 	return count, users, err
 }
 
-func (s *Service) ListUsersByRole(ctx context.Context, limit, offset int, query, role_slug string) (int64, []repository.ListUsersByRoleRow, error) {
-	count, err := s.q.CountListUsersByRole(ctx, role_slug)
-	if err != nil {
-		return 0, nil, err
-	}
-	if count == 0 {
-		return 0, nil, nil
-	}
-	users, err := s.q.ListUsersByRole(ctx, repository.ListUsersByRoleParams{
-		Limit:    int32(limit),
-		Offset:   int32(offset),
-		RoleSlug: role_slug,
-	})
-	if err != nil {
-		return 0, nil, err
-	}
-	return count, users, nil
-}
-
-func (s *Service) SearchUsersUnderScope(ctx context.Context, limit, offset int, query string, myRank *int32, city, subcity, kebele *uuid.UUID) (int64, []repository.SearchUsersUnderScopeRow, error) {
-	count, err := s.q.CountSearchUsersUnderScope(ctx, repository.CountSearchUsersUnderScopeParams{
-		Rank:      *myRank,
-		Query:     query,
+func (s *Service) GetAuditLog(ctx context.Context, id uuid.UUID, city, subcity, kebele *uuid.UUID) (repository.GetAuditLogRow, error) {
+	return s.q.GetAuditLog(ctx, repository.GetAuditLogParams{
+		ID:        id,
 		CityID:    city,
 		SubcityID: subcity,
 		KebeleID:  kebele,
-	})
-	if err != nil {
-		return 0, nil, err
-	}
-	if count == 0 {
-		return 0, nil, nil
-	}
-
-	users, err := s.q.SearchUsersUnderScope(ctx, repository.SearchUsersUnderScopeParams{
-		Rank:      *myRank,
-		Limit:     int32(limit),
-		Offset:    int32(offset),
-		Query:     query,
-		CityID:    city,
-		SubcityID: subcity,
-		KebeleID:  kebele,
-	})
-	if err != nil {
-		return count, nil, err
-	}
-
-	return count, users, nil
-}
-
-func (s *Service) SearchUsersByRole(ctx context.Context, limit, offset int, query, role_slug string) (int64, []repository.SearchUsersByRoleRow, error) {
-	count, err := s.q.CountSearchUsersByRole(ctx, repository.CountSearchUsersByRoleParams{
-		RoleSlug: role_slug,
-		Query:    query,
-	})
-	if err != nil {
-		return 0, nil, err
-	}
-
-	users, err := s.q.SearchUsersByRole(ctx, repository.SearchUsersByRoleParams{
-		Limit:    int32(limit),
-		Offset:   int32(offset),
-		Query:    query,
-		RoleSlug: role_slug,
-	})
-	if err != nil {
-		return 0, nil, err
-	}
-
-	return count, users, nil
-}
-
-func (s *Service) GetEffectivePermissions(ctx context.Context, id uuid.UUID) ([]repository.GetEffectivePermissionsForUserRow, error) {
-	return s.q.GetEffectivePermissionsForUser(ctx, id)
-}
-
-func (s *Service) UpdateUserRole(ctx context.Context, actorId, targetId uuid.UUID, role string) error {
-	tx, err := s.db.Begin(ctx)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback(ctx)
-
-	qtx := s.q.WithTx(tx)
-
-	// 1. read current role
-	oldRole, err := qtx.GetUserRole(ctx, targetId)
-	if err != nil {
-		return err
-	}
-
-	// 2. update role
-	if err = qtx.UpdateUserRole(ctx, repository.UpdateUserRoleParams{
-		ID:       targetId,
-		RoleSlug: role,
-	}); err != nil {
-		return err
-	}
-
-	// 3. write audit log
-	diff, _ := json.Marshal(map[string]interface{}{
-		"before": oldRole,
-		"after":  role,
-	})
-
-	if err = qtx.InsertAuditLog(ctx, repository.InsertAuditLogParams{
-		ActorID:      actorId,
-		TargetUserID: &targetId,
-		ActionType:   "UPDATE_USER_ROLE",
-		ObjectType:   "user",
-		DiffJson:     diff,
-	}); err != nil {
-		return err
-	}
-
-	return tx.Commit(ctx)
-}
-
-func (s *Service) UpdateUserInfo(ctx context.Context, id uuid.UUID, first, second, last, email, phone string) error {
-	return s.q.UpdateUserInfo(ctx, repository.UpdateUserInfoParams{
-		ID:         id,
-		FirstName:  first,
-		SecondName: second,
-		LastName:   last,
-		Email:      email,
-		Phone:      phone,
-	})
-}
-
-func (s *Service) CanManipulateUser(ctx context.Context, actorId, targetId uuid.UUID) (bool, error) {
-	return s.q.CanActorTouchTarget(ctx, repository.CanActorTouchTargetParams{
-		ActorID:  actorId,
-		TargetID: targetId,
 	})
 }
