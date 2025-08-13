@@ -2,12 +2,15 @@ package resident
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"time"
 
 	"digital-id-server/internal/repository"
 	"digital-id-server/shared/types"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -435,8 +438,8 @@ func (s *Service) ReplaceDocuments(ctx context.Context, id uuid.UUID, docsUrl []
 	for _, doc := range docsUrl {
 		_, err = qtx.CreateDocument(ctx, repository.CreateDocumentParams{
 			ResidentID: id,
-			Url:    doc,
-			Status: "Pending",
+			Url:        doc,
+			Status:     "Pending",
 		})
 		if err != nil {
 			return err
@@ -447,22 +450,39 @@ func (s *Service) ReplaceDocuments(ctx context.Context, id uuid.UUID, docsUrl []
 }
 
 func (s *Service) UpdateBiometricInfo(ctx context.Context, id uuid.UUID, bloodType string, faceUrl *string) error {
-	tx, err := s.db.Begin(ctx)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback(ctx)
-
-	qtx := s.q.WithTx(tx)
-
-	err = qtx.UpdateBiometric(ctx, repository.UpdateBiometricParams{
+	return s.q.UpdateBiometric(ctx, repository.UpdateBiometricParams{
 		BloodType:  &bloodType,
 		FaceUrl:    faceUrl,
 		ResidentID: id,
 	})
-	if err != nil {
-		return err
-	}
+}
 
-	return tx.Commit(ctx)
+func (s *Service) GetIdCard(ctx context.Context, resident repository.GetVerifiedResidentRow) (*repository.Idcard, error) {
+	card, err := s.q.GetIDCardByResident(ctx, resident.Resident.ID)
+
+	if err != nil && errors.Is(err, pgx.ErrNoRows) {
+		setting, err := s.q.GetSetting(ctx, "settings")
+
+		if err != nil {
+			fmt.Println("failed to fetch setting")
+			return nil, err
+		}
+		_, err = s.q.CreateIDCard(ctx, repository.CreateIDCardParams{
+			ResidentID: resident.Resident.ID,
+			IssueDate:  time.Now(),
+			Number:     fmt.Sprintf("%v", time.Now().Unix()),
+			ExpiryDate: time.Now().AddDate(int(setting.IdcardExpirationDuration), 0, 0),
+			IssuePlace: resident.City.Name,
+		})
+		if err != nil {
+			fmt.Println("failed to create id card")
+			return nil, err
+		}
+		newCard, _ := s.q.GetIDCardByResident(ctx, resident.Resident.ID)
+		return &newCard, err
+	} else if err != nil {
+		fmt.Println("failed fetch id card", err.Error())
+		return nil, err
+	}
+	return &card, nil
 }

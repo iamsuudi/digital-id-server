@@ -617,3 +617,28 @@ func (h *Handler) UpdateBiometricInfo(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Biometric info updated successfully"})
 }
+
+func (h *Handler) GetIDCard(c *gin.Context) {
+	raw := c.Param("id")
+	id, err := uuid.Parse(raw)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid resident ID"})
+		return
+	}
+	
+	resident, err := h.service.q.GetVerifiedResident(c.Request.Context(), id)
+	if err != nil {
+		fmt.Println(err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch resident"})
+		return
+	}
+
+	card, err := h.service.GetIdCard(c.Request.Context(), resident)
+	if err != nil {
+		fmt.Println(err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch id card"})
+		return
+	}
+
+	c.JSON(http.StatusOK, *card)
+}

@@ -481,6 +481,13 @@ type RolePermission struct {
 	PermissionName string `db:"permission_name" json:"permission_name"`
 }
 
+type Setting struct {
+	ID                       string     `db:"id" json:"id"`
+	IdcardExpirationDuration int32      `db:"idcard_expiration_duration" json:"idcard_expiration_duration"`
+	CreatedAt                *time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt                *time.Time `db:"updated_at" json:"updated_at"`
+}
+
 type Subcity struct {
 	ID        uuid.UUID  `db:"id" json:"id"`
 	Name      string     `db:"name" json:"name"`

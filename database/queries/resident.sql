@@ -15,6 +15,15 @@ WHERE id = $1;
 -- name: UpdateResidentAddress :exec
 UPDATE resident SET address_id = $1 WHERE id = $2;
 
+-- name: GetResidentAddress :one
+SELECT slqc.embed(r), sqlc.embed(a), sqlc.embed(c), sqlc.embed(s), sqlc.embed(k)
+FROM resident r
+JOIN address a ON r.a_id = a.id
+JOIN city c ON a.city_id = c.id
+JOIN subcity s ON a.subcity_id = s.id
+JOIN kebele k ON a.kebele_id = k.id
+WHERE r.id = $1 AND r.deleted_at IS NULL;
+
 -- name: GetResident :one
 SELECT sqlc.embed(resident), sqlc.embed(address), sqlc.embed(biometric),
     sqlc.embed(additional), sqlc.embed(employment), sqlc.embed(emergency)
@@ -26,6 +35,21 @@ JOIN employment ON resident.id = employment.resident_id
 JOIN emergency  ON resident.id = emergency.resident_id
 JOIN additional ON resident.id = additional.resident_id
 WHERE resident.id = $1;
+
+-- name: GetVerifiedResident :one
+SELECT sqlc.embed(resident), sqlc.embed(address), sqlc.embed(biometric),
+    sqlc.embed(city), sqlc.embed(subcity), sqlc.embed(kebele)
+FROM resident
+JOIN address    ON resident.address_id = address.id
+JOIN biometric  ON resident.id = biometric.resident_id
+JOIN document   ON resident.id = document.resident_id
+JOIN city       ON address.city_id = city.id
+JOIN subcity    ON address.subcity_id = subcity.id
+JOIN kebele     ON address.kebele_id = kebele.id
+WHERE resident.id = $1 AND EXISTS (
+    SELECT 1 FROM document d
+    WHERE d.resident_id = resident.id AND d.status = 'verified'
+);
 
 -- name: DeleteResident :exec
 DELETE FROM resident WHERE id = $1;
@@ -40,7 +64,7 @@ JOIN biometric b   ON r.id = b.resident_id
 JOIN payment p     ON p.resident_id = r.id
 WHERE r.deleted_at IS NULL AND p.status = 'verified'
 AND EXISTS (
-    SELECT 1 FROM document d 
+    SELECT 1 FROM document d
     WHERE d.resident_id = r.id AND d.status = 'verified'
 )
 ORDER BY r.created_at ASC
@@ -52,7 +76,7 @@ FROM resident r
 JOIN payment p     ON p.resident_id = r.id
 WHERE r.deleted_at IS NULL AND p.status = 'verified'
 AND EXISTS (
-    SELECT 1 FROM document d 
+    SELECT 1 FROM document d
     WHERE d.resident_id = r.id AND d.status = 'verified'
 );
 
@@ -64,7 +88,7 @@ JOIN biometric b   ON r.id = b.resident_id
 JOIN payment p     ON p.resident_id = r.id
 WHERE r.deleted_at IS NULL AND p.status = 'verified'
 AND EXISTS (
-    SELECT 1 FROM document d 
+    SELECT 1 FROM document d
     WHERE d.resident_id = r.id AND d.status = 'verified'
 ) AND similarity(CONCAT_WS(' ', r.first_name, r.second_name, r.last_name), sqlc.arg('query')) > 0.2
 ORDER BY sim DESC, r.created_at ASC
@@ -74,9 +98,9 @@ LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 SELECT COUNT(*)
 FROM resident r
 JOIN payment p     ON p.resident_id = r.id
-WHERE r.deleted_at IS NULL AND p.status = 'verified' 
+WHERE r.deleted_at IS NULL AND p.status = 'verified'
 AND EXISTS (
-    SELECT 1 FROM document d 
+    SELECT 1 FROM document d
     WHERE d.resident_id = r.id AND d.status = 'verified'
 ) AND similarity(CONCAT_WS(' ', r.first_name, r.second_name, r.last_name), sqlc.arg('query')) > 0.2;
 
@@ -115,16 +139,16 @@ WHERE r.deleted_at IS NULL AND p.status != 'verified' AND
 
 
 -- name: ListUnverifiedResidents :many
-SELECT 
+SELECT
     sqlc.embed(r), sqlc.embed(p), b.face_url,
     CONCAT_WS(' ', r.first_name, r.second_name, r.last_name) AS full_name,
-    CASE 
+    CASE
         WHEN EXISTS (
-            SELECT 1 FROM document d 
+            SELECT 1 FROM document d
             WHERE d.resident_id = r.id AND d.status = 'pending'
         ) THEN 'pending'
         WHEN EXISTS (
-            SELECT 1 FROM document d 
+            SELECT 1 FROM document d
             WHERE d.resident_id = r.id AND d.status = 'rejected'
         ) THEN 'rejected'
         ELSE 'no documents'
@@ -134,7 +158,7 @@ JOIN biometric b   ON r.id = b.resident_id
 JOIN payment p     ON p.resident_id = r.id
 WHERE r.deleted_at IS NULL AND p.status = 'verified'
 AND NOT EXISTS (
-    SELECT 1 FROM document d 
+    SELECT 1 FROM document d
     WHERE d.resident_id = r.id AND d.status = 'verified'
 )
 ORDER BY r.created_at ASC
@@ -146,22 +170,22 @@ FROM resident r
 JOIN payment p     ON p.resident_id = r.id
 WHERE r.deleted_at IS NULL AND p.status = 'verified'
 AND NOT EXISTS (
-    SELECT 1 FROM document d 
+    SELECT 1 FROM document d
     WHERE d.resident_id = r.id AND d.status = 'verified'
 );
 
 -- name: SearchUnverifiedResidents :many
-SELECT 
+SELECT
     sqlc.embed(r), sqlc.embed(p), b.face_url,
     CONCAT_WS(' ', r.first_name, r.second_name, r.last_name) AS full_name,
     similarity(CONCAT_WS(' ', r.first_name, r.second_name, r.last_name), sqlc.arg('query')) AS sim,
-    CASE 
+    CASE
         WHEN EXISTS (
-            SELECT 1 FROM document d 
+            SELECT 1 FROM document d
             WHERE d.resident_id = r.id AND d.status = 'pending'
         ) THEN 'pending'
         WHEN EXISTS (
-            SELECT 1 FROM document d 
+            SELECT 1 FROM document d
             WHERE d.resident_id = r.id AND d.status = 'rejected'
         ) THEN 'rejected'
         ELSE 'no documents'
@@ -171,7 +195,7 @@ JOIN biometric b   ON r.id = b.resident_id
 JOIN payment p     ON p.resident_id = r.id
 WHERE r.deleted_at IS NULL AND p.status = 'verified'
 AND NOT EXISTS (
-    SELECT 1 FROM document d 
+    SELECT 1 FROM document d
     WHERE d.resident_id = r.id AND d.status = 'verified'
 ) AND similarity(CONCAT_WS(' ', r.first_name, r.second_name, r.last_name), sqlc.arg('query')) > 0.2
 ORDER BY r.created_at ASC
@@ -183,6 +207,6 @@ FROM resident r
 JOIN payment p     ON p.resident_id = r.id
 WHERE r.deleted_at IS NULL AND p.status = 'verified'
 AND NOT EXISTS (
-    SELECT 1 FROM document d 
+    SELECT 1 FROM document d
     WHERE d.resident_id = r.id AND d.status = 'verified'
 ) AND similarity(CONCAT_WS(' ', r.first_name, r.second_name, r.last_name), sqlc.arg('query')) > 0.2;
