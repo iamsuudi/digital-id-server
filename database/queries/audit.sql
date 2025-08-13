@@ -1,5 +1,5 @@
 -- name: InsertAuditLog :exec
-INSERT INTO audit_log (actor_id, target_user_id, target_role_slug, action_type, object_type, object_id, diff_json)
+INSERT INTO audit_log (actor_id, target_user_id, target_role_slug, action_type, object_type, object_id, diff)
 VALUES ($1, $2, $3, $4, $5, $6, $7);
 
 -- name: ListAuditLogs :many

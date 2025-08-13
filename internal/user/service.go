@@ -2,7 +2,6 @@ package user
 
 import (
 	"context"
-	"encoding/json"
 
 	"digital-id-server/internal/repository"
 
@@ -151,17 +150,17 @@ func (s *Service) UpdateUserRole(ctx context.Context, actorId, targetId uuid.UUI
 	}
 
 	// 3. write audit log
-	diff, _ := json.Marshal(map[string]interface{}{
+	diff := map[string]any{
 		"before": oldRole,
 		"after":  role,
-	})
+	}
 
 	if err = qtx.InsertAuditLog(ctx, repository.InsertAuditLogParams{
 		ActorID:      actorId,
 		TargetUserID: &targetId,
 		ActionType:   "UPDATE_USER_ROLE",
 		ObjectType:   "user",
-		DiffJson:     diff,
+		Diff:         diff,
 	}); err != nil {
 		return err
 	}
