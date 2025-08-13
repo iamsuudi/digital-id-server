@@ -64,6 +64,8 @@ type Querier interface {
 	GetAddressByLocations(ctx context.Context, arg GetAddressByLocationsParams) (Address, error)
 	GetAssignablePermissionsForActor(ctx context.Context, id uuid.UUID) ([]Permission, error)
 	GetAssignableRolesForActor(ctx context.Context, slug string) ([]GetAssignableRolesForActorRow, error)
+	// Return audit log under scope
+	GetAuditLog(ctx context.Context, arg GetAuditLogParams) (GetAuditLogRow, error)
 	GetCity(ctx context.Context, id uuid.UUID) (GetCityRow, error)
 	GetDocument(ctx context.Context, id uuid.UUID) (Document, error)
 	GetDocumentByResident(ctx context.Context, residentID uuid.UUID) (Document, error)

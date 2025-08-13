@@ -47,3 +47,12 @@ func (s *Service) ListAuditLogs(ctx context.Context, limit, offset int, city, su
 	})
 	return count, users, err
 }
+
+func (s *Service) GetAuditLog(ctx context.Context, id uuid.UUID, city, subcity, kebele *uuid.UUID) (repository.GetAuditLogRow, error) {
+	return s.q.GetAuditLog(ctx, repository.GetAuditLogParams{
+		ID:        id,
+		CityID:    city,
+		SubcityID: subcity,
+		KebeleID:  kebele,
+	})
+}

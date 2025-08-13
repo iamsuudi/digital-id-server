@@ -36,6 +36,74 @@ func (q *Queries) CountListAuditLogs(ctx context.Context, arg CountListAuditLogs
 	return count, err
 }
 
+const getAuditLog = `-- name: GetAuditLog :one
+SELECT log.id, log.actor_id, log.target_user_id, log.target_resident_id, log.target_role_slug, log.action_type, log.object_type, log.object_id, log.diff, log.ts, ar.name AS actor_role,
+    CONCAT_WS(' ', au.first_name, au.second_name, au.last_name) AS actor_name,
+    CONCAT_WS(' ', tu.first_name, tu.second_name, tu.last_name) AS target_user_name
+FROM audit_log log
+JOIN "user" au ON au.id = log.actor_id
+JOIN role ar ON ar.slug = au.role_slug
+LEFT JOIN city c ON c.id = au.city_id
+LEFT JOIN subcity sc ON sc.id = au.subcity_id
+LEFT JOIN kebele k ON k.id = au.kebele_id
+LEFT JOIN "user" tu ON tu.id = log.target_user_id
+LEFT JOIN role r ON r.slug = log.target_role_slug
+WHERE log.actor_id IS NOT NULL AND log.id = $1 AND
+    ($2::uuid IS NULL OR au.city_id = $2::uuid) AND
+    ($3::uuid IS NULL OR au.subcity_id = $3::uuid) AND
+    ($4::uuid IS NULL OR au.kebele_id = $4::uuid)
+`
+
+type GetAuditLogParams struct {
+	ID        uuid.UUID  `db:"id" json:"id"`
+	CityID    *uuid.UUID `db:"city_id" json:"city_id"`
+	SubcityID *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	KebeleID  *uuid.UUID `db:"kebele_id" json:"kebele_id"`
+}
+
+type GetAuditLogRow struct {
+	ID               uuid.UUID   `db:"id" json:"id"`
+	ActorID          uuid.UUID   `db:"actor_id" json:"actor_id"`
+	TargetUserID     *uuid.UUID  `db:"target_user_id" json:"target_user_id"`
+	TargetResidentID *uuid.UUID  `db:"target_resident_id" json:"target_resident_id"`
+	TargetRoleSlug   *string     `db:"target_role_slug" json:"target_role_slug"`
+	ActionType       string      `db:"action_type" json:"action_type"`
+	ObjectType       string      `db:"object_type" json:"object_type"`
+	ObjectID         *int64      `db:"object_id" json:"object_id"`
+	Diff             types.JSONB `db:"diff" json:"diff"`
+	Ts               time.Time   `db:"ts" json:"ts"`
+	ActorRole        string      `db:"actor_role" json:"actor_role"`
+	ActorName        string      `db:"actor_name" json:"actor_name"`
+	TargetUserName   string      `db:"target_user_name" json:"target_user_name"`
+}
+
+// Return audit log under scope
+func (q *Queries) GetAuditLog(ctx context.Context, arg GetAuditLogParams) (GetAuditLogRow, error) {
+	row := q.db.QueryRow(ctx, getAuditLog,
+		arg.ID,
+		arg.CityID,
+		arg.SubcityID,
+		arg.KebeleID,
+	)
+	var i GetAuditLogRow
+	err := row.Scan(
+		&i.ID,
+		&i.ActorID,
+		&i.TargetUserID,
+		&i.TargetResidentID,
+		&i.TargetRoleSlug,
+		&i.ActionType,
+		&i.ObjectType,
+		&i.ObjectID,
+		&i.Diff,
+		&i.Ts,
+		&i.ActorRole,
+		&i.ActorName,
+		&i.TargetUserName,
+	)
+	return i, err
+}
+
 const insertAuditLog = `-- name: InsertAuditLog :exec
 INSERT INTO audit_log (actor_id, target_user_id, target_role_slug, action_type, object_type, object_id, diff)
 VALUES ($1, $2, $3, $4, $5, $6, $7)

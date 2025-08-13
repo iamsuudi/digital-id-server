@@ -1,6 +1,7 @@
 package audit
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -10,6 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx"
 )
 
 type Handler struct {
@@ -42,4 +44,30 @@ func (h *Handler) GetLogs(c *gin.Context) {
 		"logs":  logs,
 		"count": count,
 	})
+}
+
+func (h *Handler) GetLog(c *gin.Context) {
+	str, _ := c.Get("user_id")
+	id, _ := str.(uuid.UUID)
+	user, _ := h.cache.GetUser(c, id)
+
+	raw := c.Param("id")
+	logID, err := uuid.Parse(raw)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid audit log ID"})
+		return
+	}
+
+	log, err := h.service.GetAuditLog(c.Request.Context(), logID, user.CityID, user.SubcityID, user.KebeleID)
+	if err != nil {
+		fmt.Print(err)
+		if errors.Is(err, pgx.ErrNoRows) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Audit log not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch audit log"})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, log)
 }

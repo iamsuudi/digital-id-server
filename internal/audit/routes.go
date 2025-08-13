@@ -16,5 +16,6 @@ func RegisterRoutes(rg *gin.RouterGroup, db *pgxpool.Pool, q *repository.Queries
 	r := rg.Group("/logs", auth.Authenticate())
 	{
 		r.GET("/", handler.GetLogs)
+		r.GET("/:id", handler.GetLog)
 	}
 }
