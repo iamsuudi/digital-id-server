@@ -4,7 +4,7 @@ type UserRegisterInput struct {
 	FirstName  string `form:"first_name" binding:"required"`
 	SecondName string `form:"second_name" binding:"required"`
 	LastName   string `form:"last_name" binding:"required"`
-	Email      string `form:"email" binding:"required,email"`
+	Email      string `form:"email" binding:"required"`
 	Phone      string `form:"phone" binding:"required"`
 	Password   string `form:"password" binding:"required,min=6"`
 	RoleSlug   string `form:"role" binding:"required"`

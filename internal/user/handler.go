@@ -3,16 +3,19 @@ package user
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
 	"digital-id-server/internal/cache"
 	"digital-id-server/internal/repository"
+	"digital-id-server/shared/types"
 	"digital-id-server/shared/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Handler struct {
@@ -22,6 +25,29 @@ type Handler struct {
 
 func NewHandler(s *Service, c *cache.Cache) *Handler {
 	return &Handler{service: s, cache: c}
+}
+
+func (h *Handler) CreateUser(c *gin.Context) {
+	var input types.UserRegisterInput
+	err := c.Bind(&input)
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
+	if err != nil {
+		log.Fatalf("Failed to hash password: %v", err)
+	}
+
+	err = h.service.CreateUser(c.Request.Context(), input, string(hashedPassword))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "User created successfully"})
 }
 
 func (h *Handler) GetUser(c *gin.Context) {
