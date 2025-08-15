@@ -23,6 +23,8 @@ func NewService(dbConn *pgxpool.Pool, dbQueries *repository.Queries) *Service {
 func (s *Service) CreateCity(ctx context.Context, input types.CityInput) (repository.City, error) {
 	return s.q.CreateCity(ctx, repository.CreateCityParams{
 		Name: input.Name,
+		Lat: &input.Lat,
+		Lon: &input.Lon,
 	})
 }
 
