@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"digital-id-server/internal/repository"
+	"digital-id-server/shared/types"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -16,6 +17,19 @@ type Service struct {
 
 func NewService(dbConn *pgxpool.Pool, dbQueries *repository.Queries) *Service {
 	return &Service{db: dbConn, q: dbQueries}
+}
+
+func (s *Service) CreateUser(ctx context.Context, input types.UserRegisterInput, password string) (error) {
+	_, err := s.q.CreateUser(ctx, repository.CreateUserParams{
+		FirstName:  input.FirstName,
+		SecondName: input.SecondName,
+		LastName:   input.LastName,
+		Email:      input.Email,
+		Phone:      input.Phone,
+		PasswordHash: password,
+		RoleSlug:   input.RoleSlug,
+	})
+	return err; 
 }
 
 func (s *Service) GetUserById(ctx context.Context, id uuid.UUID) (repository.GetUserByIDRow, error) {
