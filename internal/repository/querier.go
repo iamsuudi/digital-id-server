@@ -41,6 +41,7 @@ type Querier interface {
 	CreateEmployment(ctx context.Context, arg CreateEmploymentParams) (Employment, error)
 	CreateIDCard(ctx context.Context, arg CreateIDCardParams) (Idcard, error)
 	CreateKebele(ctx context.Context, arg CreateKebeleParams) (Kebele, error)
+	CreatePasswordResetToken(ctx context.Context, arg CreatePasswordResetTokenParams) (PasswordResetTokens, error)
 	CreatePayment(ctx context.Context, arg CreatePaymentParams) (Payment, error)
 	CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) (uuid.UUID, error)
 	CreateResident(ctx context.Context, arg CreateResidentParams) (uuid.UUID, error)
@@ -52,6 +53,7 @@ type Querier interface {
 	DeleteDocument(ctx context.Context, id uuid.UUID) error
 	DeleteEmergencyContact(ctx context.Context, id uuid.UUID) error
 	DeleteEmployment(ctx context.Context, id uuid.UUID) error
+	DeleteExpiredTokens(ctx context.Context) error
 	DeleteIDCard(ctx context.Context, id uuid.UUID) error
 	DeletePayment(ctx context.Context, id uuid.UUID) error
 	DeleteRefreshToken(ctx context.Context, token string) error
@@ -94,6 +96,7 @@ type Querier interface {
 	GetUserByID(ctx context.Context, id uuid.UUID) (GetUserByIDRow, error)
 	GetUserRole(ctx context.Context, id uuid.UUID) (string, error)
 	GetUserScope(ctx context.Context, id uuid.UUID) (GetUserScopeRow, error)
+	GetValidPasswordResetToken(ctx context.Context, token string) (PasswordResetTokens, error)
 	GetVerifiedResident(ctx context.Context, id uuid.UUID) (GetVerifiedResidentRow, error)
 	GrantPermissionToRole(ctx context.Context, arg GrantPermissionToRoleParams) error
 	GrantUserPlacement(ctx context.Context, arg GrantUserPlacementParams) error
@@ -130,6 +133,7 @@ type Querier interface {
 	ListUsersByKebeleAndRole(ctx context.Context, arg ListUsersByKebeleAndRoleParams) ([]ListUsersByKebeleAndRoleRow, error)
 	ListUsersByRole(ctx context.Context, arg ListUsersByRoleParams) ([]ListUsersByRoleRow, error)
 	ListUsersUnderScope(ctx context.Context, arg ListUsersUnderScopeParams) ([]ListUsersUnderScopeRow, error)
+	MarkTokenAsUsed(ctx context.Context, id uuid.UUID) error
 	RemoveUserPermissionOverride(ctx context.Context, arg RemoveUserPermissionOverrideParams) error
 	RevokePermissionFromRole(ctx context.Context, arg RevokePermissionFromRoleParams) error
 	RevokeUserPlacement(ctx context.Context, arg RevokeUserPlacementParams) error
@@ -161,6 +165,7 @@ type Querier interface {
 	UpdateSetting(ctx context.Context, idcardExpirationDuration int32) error
 	UpdateSubCity(ctx context.Context, arg UpdateSubCityParams) (Subcity, error)
 	UpdateUserInfo(ctx context.Context, arg UpdateUserInfoParams) error
+	UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error
 	UpdateUserRole(ctx context.Context, arg UpdateUserRoleParams) error
 }
 

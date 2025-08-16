@@ -17,7 +17,7 @@ import (
 
 	"digital-id-server/internal/user"
 	"digital-id-server/shared/config"
-	// "digital-id-server/shared/email"
+	"digital-id-server/shared/email"
 )
 
 func main() {
@@ -39,10 +39,10 @@ func main() {
 	aService := auth.NewService(db, q)
 	cache := cache.New(aService, uService)
 
-	// eService, err := email.DefaultService()
-	// if err != nil {
-	// 	panic(err)
-	// }
+	e, err := email.DefaultService()
+	if err != nil {
+		panic(err)
+	}
 
 	// eService.Send(&email.EmailParams{
 	// 	To:      []string{"suudiabdulfetah@gmail.com"},
@@ -50,7 +50,7 @@ func main() {
 	// 	Text:    "Welcome to Oict Digital ID",
 	// })
 
-	auth.RegisterRoutes(r.Group("/api/v1/auth"), db, q)
+	auth.RegisterRoutes(r.Group("/api/v1/auth"), db, q, e)
 	city.RegisterRoutes(r.Group("/api/v1/"), db, q)
 	user.RegisterRoutes(r.Group("/api/v1"), db, q, cache)
 	role.RegisterRoutes(r.Group("/api/v1"), db, q)

@@ -431,6 +431,15 @@ type Kebele struct {
 	DeletedAt *time.Time `db:"deleted_at" json:"deleted_at"`
 }
 
+type PasswordResetTokens struct {
+	ID        uuid.UUID  `db:"id" json:"id"`
+	UserID    uuid.UUID  `db:"user_id" json:"user_id"`
+	Token     string     `db:"token" json:"token"`
+	ExpiresAt time.Time  `db:"expires_at" json:"expires_at"`
+	CreatedAt time.Time  `db:"created_at" json:"created_at"`
+	UsedAt    *time.Time `db:"used_at" json:"used_at"`
+}
+
 type Payment struct {
 	ID          uuid.UUID  `db:"id" json:"id"`
 	ResidentID  uuid.UUID  `db:"resident_id" json:"resident_id"`

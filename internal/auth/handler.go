@@ -3,8 +3,10 @@ package auth
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
+	"digital-id-server/shared/email"
 	"digital-id-server/shared/types"
 
 	"github.com/gin-gonic/gin"
@@ -13,10 +15,11 @@ import (
 
 type Handler struct {
 	Service *Service
+	E       *email.Service
 }
 
-func NewHandler(s *Service) *Handler {
-	return &Handler{Service: s}
+func NewHandler(s *Service, e *email.Service) *Handler {
+	return &Handler{Service: s, E: e}
 }
 
 func (h *Handler) Login(c *gin.Context) {
@@ -129,4 +132,65 @@ func (h *Handler) Me(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, user)
+}
+
+func (h *Handler) ForgetPassword(c *gin.Context) {
+	var input struct {
+		Email string `form:"email" binding:"required"`
+	}
+
+	if err := c.ShouldBind(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	token, err := h.Service.RequestPasswordReset(c.Request.Context(), input.Email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Send reset email
+	domain := os.Getenv("APP_DOMAIN")
+	resetLink := fmt.Sprintf("%s/reset-password?token=%s", domain, token)
+	htmlContent := `
+        <h2>Password Reset Request</h2>
+        <p>You requested a password reset for your account.</p>
+        <p>Click the link below to reset your password:</p>
+        <p><a href="` + resetLink + `">Reset Password</a></p>
+        <p>This link will expire in 30 minutes.</p>
+        <p>If you didn't request this, please ignore this email.</p>
+    `
+
+	_, err = h.E.Send(&email.EmailParams{
+		To:      []string{"suudiabdulfetah@gmail.com"},
+		Subject: "Password Reset Request",
+		HTML:    htmlContent,
+		Text:    "Reset your password: " + resetLink,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send email"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Password reset email sent"})
+}
+
+func (h *Handler) ResetPassword(c *gin.Context) {
+	var req struct {
+		Token       string `form:"token" binding:"required"`
+		NewPassword string `form:"new_password" binding:"required,min=8"`
+	}
+	if err := c.ShouldBind(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err := h.Service.ResetPassword(c.Request.Context(), req.Token, req.NewPassword)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid or expired token"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Password reset successfully"})
 }
