@@ -3,10 +3,11 @@ INSERT INTO "user" (first_name, second_name, last_name, email, phone, password_h
 VALUES ($1, $2, $3, $4, $5, $6, $7)
 RETURNING *, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name;
 
--- name: UpdateUserInfo :exec
+-- name: UpdateUserInfo :one
 UPDATE "user"
 SET first_name = $2, second_name = $3, last_name = $4, email = $5, phone = $6
-WHERE id = $1;
+WHERE id = $1
+RETURNING *;
 
 -- name: GetUserByEmail :one
 SELECT u.*, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS full_name,

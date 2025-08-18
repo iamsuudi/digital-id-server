@@ -206,8 +206,23 @@ func (s *Service) UpdateUserRole(ctx context.Context, actorId, targetId uuid.UUI
 	return tx.Commit(ctx)
 }
 
-func (s *Service) UpdateUserInfo(ctx context.Context, id uuid.UUID, first, second, last, email, phone string) error {
-	return s.q.UpdateUserInfo(ctx, repository.UpdateUserInfoParams{
+func (s *Service) UpdateUserInfo(ctx context.Context, actorID, id uuid.UUID, first, second, last, email, phone string) error {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	qtx := s.q.WithTx(tx)
+
+	// 1. Before
+	user, err := qtx.GetUserByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	// 2. After
+	updated, err := qtx.UpdateUserInfo(ctx, repository.UpdateUserInfoParams{
 		ID:         id,
 		FirstName:  first,
 		SecondName: second,
@@ -215,6 +230,25 @@ func (s *Service) UpdateUserInfo(ctx context.Context, id uuid.UUID, first, secon
 		Email:      email,
 		Phone:      phone,
 	})
+	if err != nil {
+		return err
+	}
+
+	// 3. Insert audit log
+	if err = qtx.InsertAuditLog(ctx, repository.InsertAuditLogParams{
+		ActorID:      actorID,
+		TargetUserID: &id,
+		ActionType:   "UPDATE_USER_INFO",
+		ObjectType:   "user",
+		Diff: map[string]any{
+			"before": user,
+			"after":  updated,
+		},
+	}); err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
 }
 
 func (s *Service) CanManipulateUser(ctx context.Context, actorId, targetId uuid.UUID) (bool, error) {

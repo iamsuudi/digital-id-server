@@ -226,7 +226,7 @@ func (h *Handler) UpdateUserInfo(c *gin.Context) {
 		return
 	}
 
-	err = h.service.UpdateUserInfo(c, targetId, input.FirstName, input.SecondName, input.LastName, input.Email, input.Phone)
+	err = h.service.UpdateUserInfo(c, actorId, targetId, input.FirstName, input.SecondName, input.LastName, input.Email, input.Phone)
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user info"})
