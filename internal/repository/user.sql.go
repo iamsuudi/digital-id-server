@@ -813,10 +813,11 @@ func (q *Queries) SoftDeleteUser(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
-const updateUserInfo = `-- name: UpdateUserInfo :exec
+const updateUserInfo = `-- name: UpdateUserInfo :one
 UPDATE "user"
 SET first_name = $2, second_name = $3, last_name = $4, email = $5, phone = $6
 WHERE id = $1
+RETURNING id, first_name, second_name, last_name, email, phone, password_hash, city_id, subcity_id, kebele_id, role_slug, created_at, deleted_at
 `
 
 type UpdateUserInfoParams struct {
@@ -828,8 +829,8 @@ type UpdateUserInfoParams struct {
 	Phone      string    `db:"phone" json:"phone"`
 }
 
-func (q *Queries) UpdateUserInfo(ctx context.Context, arg UpdateUserInfoParams) error {
-	_, err := q.db.Exec(ctx, updateUserInfo,
+func (q *Queries) UpdateUserInfo(ctx context.Context, arg UpdateUserInfoParams) (User, error) {
+	row := q.db.QueryRow(ctx, updateUserInfo,
 		arg.ID,
 		arg.FirstName,
 		arg.SecondName,
@@ -837,7 +838,23 @@ func (q *Queries) UpdateUserInfo(ctx context.Context, arg UpdateUserInfoParams) 
 		arg.Email,
 		arg.Phone,
 	)
-	return err
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.FirstName,
+		&i.SecondName,
+		&i.LastName,
+		&i.Email,
+		&i.Phone,
+		&i.PasswordHash,
+		&i.CityID,
+		&i.SubcityID,
+		&i.KebeleID,
+		&i.RoleSlug,
+		&i.CreatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
 }
 
 const updateUserRole = `-- name: UpdateUserRole :exec
