@@ -6,19 +6,20 @@ import (
 	"fmt"
 	"time"
 
+	"digital-id-server/internal/repository"
+	"digital-id-server/shared/types"
+
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
-	"digital-id-server/shared/types"
-	"digital-id-server/internal/repository"
 )
 
 type Service struct {
 	db *pgxpool.Pool
-	q  repository.Querier
+	q  *repository.Queries
 }
 
-func NewService(dbConn *pgxpool.Pool, dbQueries repository.Querier) *Service {
+func NewService(dbConn *pgxpool.Pool, dbQueries *repository.Queries) *Service {
 	return &Service{db: dbConn, q: dbQueries}
 }
 
@@ -74,7 +75,7 @@ func (s *Service) StoreRefreshToken(ctx context.Context, userID uuid.UUID, token
 func (s *Service) RefreshAccessToken(ctx context.Context, token string) (string, string, error) {
 	rt, err := s.q.GetRefreshToken(ctx, token)
 	if err != nil || time.Now().After(rt.ExpiresAt) {
-		return "", "",errors.New("invalid or expired refresh token")
+		return "", "", errors.New("invalid or expired refresh token")
 	}
 
 	user, err := s.q.GetUserByID(ctx, rt.UserID)
@@ -116,4 +117,68 @@ func (s *Service) GetUserByID(ctx context.Context, userID uuid.UUID) (repository
 		return repository.GetUserByIDRow{}, err
 	}
 	return user, nil
+}
+
+func (s *Service) RequestPasswordReset(ctx context.Context, email string) (string, error) {
+	// Get user by email
+	user, err := s.q.GetUserByEmail(ctx, email)
+	if err != nil {
+		return "", err
+	}
+
+	// Generate secure token
+	token := GenerateRandomToken(32)
+
+	// Set expiration time (1 hour from now)
+	expiresAt := time.Now().Add(30 * time.Minute)
+
+	// Create password reset token
+	_, err = s.q.CreatePasswordResetToken(ctx, repository.CreatePasswordResetTokenParams{
+		UserID:    user.ID,
+		Token:     token,
+		ExpiresAt: expiresAt,
+	})
+	return token, err
+}
+
+func (s *Service) ResetPassword(ctx context.Context, token, newPassword string) error {
+	// Get valid token
+	resetToken, err := s.q.GetValidPasswordResetToken(ctx, token)
+	if err != nil {
+		return err
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	qtx := s.q.WithTx(tx)
+
+	// Update user password
+	err = qtx.UpdateUserPassword(ctx, repository.UpdateUserPasswordParams{
+		PasswordHash: string(hashedPassword),
+		ID:           resetToken.UserID,
+	})
+	if err != nil {
+		return err
+	}
+
+	// Mark token as used
+	err = qtx.MarkTokenAsUsed(ctx, resetToken.ID)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
+}
+
+func (s *Service) CleanupExpiredTokens(ctx context.Context) error {
+	return s.q.DeleteExpiredTokens(ctx)
 }

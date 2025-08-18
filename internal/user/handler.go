@@ -28,6 +28,13 @@ func NewHandler(s *Service, c *cache.Cache) *Handler {
 }
 
 func (h *Handler) CreateUser(c *gin.Context) {
+	raw, _ := c.Get("user_id")
+	id, ok := raw.(uuid.UUID)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
 	var input types.UserRegisterInput
 	err := c.Bind(&input)
 	if err != nil {
@@ -41,7 +48,7 @@ func (h *Handler) CreateUser(c *gin.Context) {
 		log.Fatalf("Failed to hash password: %v", err)
 	}
 
-	err = h.service.CreateUser(c.Request.Context(), input, string(hashedPassword))
+	err = h.service.CreateUser(c.Request.Context(), id, input, string(hashedPassword))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
 		return
