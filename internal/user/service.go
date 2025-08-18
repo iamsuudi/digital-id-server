@@ -19,17 +19,41 @@ func NewService(dbConn *pgxpool.Pool, dbQueries *repository.Queries) *Service {
 	return &Service{db: dbConn, q: dbQueries}
 }
 
-func (s *Service) CreateUser(ctx context.Context, input types.UserRegisterInput, password string) (error) {
-	_, err := s.q.CreateUser(ctx, repository.CreateUserParams{
-		FirstName:  input.FirstName,
-		SecondName: input.SecondName,
-		LastName:   input.LastName,
-		Email:      input.Email,
-		Phone:      input.Phone,
+func (s *Service) CreateUser(ctx context.Context, actorID uuid.UUID, input types.UserRegisterInput, password string) error {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	qtx := s.q.WithTx(tx)
+
+	// 1. Create user
+	user, err := qtx.CreateUser(ctx, repository.CreateUserParams{
+		FirstName:    input.FirstName,
+		SecondName:   input.SecondName,
+		LastName:     input.LastName,
+		Email:        input.Email,
+		Phone:        input.Phone,
 		PasswordHash: password,
-		RoleSlug:   input.RoleSlug,
+		RoleSlug:     input.RoleSlug,
 	})
-	return err; 
+	// 2. write audit log
+	diff := map[string]any{
+		// "before": old,
+		"after": user,
+	}
+
+	if err = qtx.InsertAuditLog(ctx, repository.InsertAuditLogParams{
+		ActorID:      actorID,
+		TargetUserID: &user.ID,
+		ActionType:   "CREATE_USER",
+		ObjectType:   "user",
+		Diff:         diff,
+	}); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
 func (s *Service) GetUserById(ctx context.Context, id uuid.UUID) (repository.GetUserByIDRow, error) {
