@@ -1,6 +1,9 @@
 -- name: InsertAuditLog :exec
-INSERT INTO audit_log (actor_id, target_user_id, target_role_slug, action_type, object_type, object_id, diff)
-VALUES ($1, $2, $3, $4, $5, $6, $7);
+INSERT INTO audit_log (
+    actor_id, target_user_id, target_role_slug, target_resident_id, target_kebele_id,
+    target_subcity_id, target_city_id, action_type, object_type, object_id, diff
+)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,$10, $11);
 
 -- name: GetAuditLog :one
 -- Return audit log under scope
