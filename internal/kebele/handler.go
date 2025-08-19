@@ -31,13 +31,16 @@ func (h *Handler) CreateKebele(c *gin.Context) {
 		return
 	}
 
-	city, err := h.service.CreateKebele(c.Request.Context(), input)
+	raw, _ := c.Get("user_id")
+	actorID, _ := raw.(uuid.UUID)
+
+	kebele, err := h.service.CreateKebele(c.Request.Context(), actorID, input)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create city: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusCreated, city)
+	c.JSON(http.StatusCreated, kebele)
 }
 
 func (h *Handler) UpdateKebeleInfo(c *gin.Context) {
@@ -58,7 +61,10 @@ func (h *Handler) UpdateKebeleInfo(c *gin.Context) {
 		return
 	}
 
-	err = h.service.UpdateKebele(c.Request.Context(), id, input.Name, input.Lat, input.Lon)
+	raw, _ := c.Get("user_id")
+	actorID, _ := raw.(uuid.UUID)
+
+	err = h.service.UpdateKebeleInfo(c.Request.Context(), actorID, id, input.Name, input.Lat, input.Lon)
 	if err != nil {
 		fmt.Println(err.Error())
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -80,7 +86,10 @@ func (h *Handler) DeleteKebele(c *gin.Context) {
 		return
 	}
 
-	err = h.service.DeleteKebele(c.Request.Context(), id)
+	raw, _ := c.Get("user_id")
+	actorID, _ := raw.(uuid.UUID)
+
+	err = h.service.DeleteKebele(c.Request.Context(), actorID, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Kebele not found"})
@@ -110,14 +119,17 @@ func (h *Handler) AddStaff(c *gin.Context) {
 		return
 	}
 
+	raw, _ := c.Get("user_id")
+	actorID, _ := raw.(uuid.UUID)
+
 	switch input.Role {
 	case "executive":
 		{
-			err = h.service.AssignExecutive(c.Request.Context(), id, input.StaffID)
+			err = h.service.AssignExecutive(c.Request.Context(), actorID, id, input.StaffID)
 		}
 	default:
 		{
-			err = h.service.AddStaff(c.Request.Context(), id, input.StaffID)
+			err = h.service.AddStaff(c.Request.Context(), actorID, id, input.StaffID)
 		}
 	}
 
@@ -125,7 +137,7 @@ func (h *Handler) AddStaff(c *gin.Context) {
 		if errors.Is(err, pgx.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Kebele not found"})
 		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add kebele " + input.Role})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": input.Role})
 		}
 		return
 	}
@@ -143,19 +155,22 @@ func (h *Handler) RemoveStaff(c *gin.Context) {
 	}
 
 	idParam := c.Param("id")
-	_, err := uuid.Parse(idParam)
+	kebeleID, err := uuid.Parse(idParam)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid kebele ID"})
 		return
 	}
 
-	err = h.service.RemoveStaff(c.Request.Context(), input.StaffID)
+	raw, _ := c.Get("user_id")
+	actorID, _ := raw.(uuid.UUID)
+
+	err = h.service.RemoveStaff(c.Request.Context(), actorID, kebeleID, input.StaffID)
 	if err != nil {
 		fmt.Println(err.Error())
 		if errors.Is(err, pgx.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Kebele not found"})
 		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove staff"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}
 		return
 	}
