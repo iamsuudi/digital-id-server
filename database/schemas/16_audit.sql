@@ -14,12 +14,12 @@ CREATE TABLE audit_log (
     ts                  TIMESTAMP(3) NOT NULL DEFAULT now()
 );
 
-CREATE INDEX idx_audit_actor     ON audit_log(actor_id);
-CREATE INDEX idx_audit_target_user   ON audit_log(target_user_id);
+CREATE INDEX idx_audit_actor            ON audit_log(actor_id);
+CREATE INDEX idx_audit_target_user      ON audit_log(target_user_id);
 CREATE INDEX idx_audit_target_role      ON audit_log(target_role_slug);
-CREATE INDEX idx_audit_target_kebele      ON audit_log(target_kebele_id);
+CREATE INDEX idx_audit_target_kebele    ON audit_log(target_kebele_id);
 CREATE INDEX idx_audit_target_city      ON audit_log(target_city_id);
-CREATE INDEX idx_audit_target_subcity      ON audit_log(target_subcity_id);
-CREATE INDEX idx_audit_target_resident     ON audit_log(target_resident_id);
-CREATE INDEX idx_audit_ts        ON audit_log(ts DESC);
-CREATE INDEX idx_audit_object    ON audit_log(object_type, object_id);
+CREATE INDEX idx_audit_target_subcity   ON audit_log(target_subcity_id);
+CREATE INDEX idx_audit_target_resident  ON audit_log(target_resident_id);
+CREATE INDEX idx_audit_ts               ON audit_log(ts DESC);
+CREATE INDEX idx_audit_object           ON audit_log(object_type, object_id);

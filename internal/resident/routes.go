@@ -1,6 +1,7 @@
 package resident
 
 import (
+	"digital-id-server/internal/auth"
 	"digital-id-server/internal/repository"
 
 	"github.com/gin-gonic/gin"
@@ -11,7 +12,7 @@ func RegisterRoutes(rg *gin.RouterGroup, db *pgxpool.Pool, q *repository.Queries
 	service := NewService(db, q)
 	handler := NewHandler(service)
 
-	r := rg.Group("/residents")
+	r := rg.Group("/residents", auth.Authenticate())
 	{
 		r.GET("/", handler.GetResidents)
 		r.GET("/unpaid", handler.GetUnpaidResidents)

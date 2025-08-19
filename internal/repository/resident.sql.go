@@ -119,7 +119,7 @@ INSERT INTO resident (
 ) VALUES (
   $1, $2, $3, $4, $5, $6, $7, $8
 )
-RETURNING id
+RETURNING id, email, first_name, second_name, last_name, birth_date, gender, phone, address_id, created_at, deleted_at
 `
 
 type CreateResidentParams struct {
@@ -133,7 +133,7 @@ type CreateResidentParams struct {
 	AddressID  *uuid.UUID `db:"address_id" json:"address_id"`
 }
 
-func (q *Queries) CreateResident(ctx context.Context, arg CreateResidentParams) (uuid.UUID, error) {
+func (q *Queries) CreateResident(ctx context.Context, arg CreateResidentParams) (Resident, error) {
 	row := q.db.QueryRow(ctx, createResident,
 		arg.Email,
 		arg.FirstName,
@@ -144,9 +144,21 @@ func (q *Queries) CreateResident(ctx context.Context, arg CreateResidentParams) 
 		arg.Phone,
 		arg.AddressID,
 	)
-	var id uuid.UUID
-	err := row.Scan(&id)
-	return id, err
+	var i Resident
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.FirstName,
+		&i.SecondName,
+		&i.LastName,
+		&i.BirthDate,
+		&i.Gender,
+		&i.Phone,
+		&i.AddressID,
+		&i.CreatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
 }
 
 const deleteAllResidents = `-- name: DeleteAllResidents :exec
@@ -251,28 +263,26 @@ func (q *Queries) GetResident(ctx context.Context, id uuid.UUID) (GetResidentRow
 }
 
 const getResidentAddress = `-- name: GetResidentAddress :one
-SELECT slqc.embed(r), a.id, a.house_number, a.kebele_id, a.subcity_id, a.city_id, a.created_at, a.deleted_at, c.id, c.name, c.lat, c.lon, c.created_at, c.deleted_at, s.id, s.name, s.lat, s.lon, s.city_id, s.created_at, s.deleted_at, k.id, k.name, k.lat, k.lon, k.subcity_id, k.city_id, k.created_at, k.deleted_at
-FROM resident r
-JOIN address a ON r.a_id = a.id
+SELECT a.id, a.house_number, a.kebele_id, a.subcity_id, a.city_id, a.created_at, a.deleted_at, c.id, c.name, c.lat, c.lon, c.created_at, c.deleted_at, s.id, s.name, s.lat, s.lon, s.city_id, s.created_at, s.deleted_at, k.id, k.name, k.lat, k.lon, k.subcity_id, k.city_id, k.created_at, k.deleted_at
+FROM resident
+JOIN address a ON resident.address_id = a.id
 JOIN city c ON a.city_id = c.id
 JOIN subcity s ON a.subcity_id = s.id
 JOIN kebele k ON a.kebele_id = k.id
-WHERE r.id = $1 AND r.deleted_at IS NULL
+WHERE resident.id = $1 AND resident.deleted_at IS NULL
 `
 
 type GetResidentAddressRow struct {
-	Embed   interface{} `db:"embed" json:"embed"`
-	Address Address     `db:"address" json:"address"`
-	City    City        `db:"city" json:"city"`
-	Subcity Subcity     `db:"subcity" json:"subcity"`
-	Kebele  Kebele      `db:"kebele" json:"kebele"`
+	Address Address `db:"address" json:"address"`
+	City    City    `db:"city" json:"city"`
+	Subcity Subcity `db:"subcity" json:"subcity"`
+	Kebele  Kebele  `db:"kebele" json:"kebele"`
 }
 
 func (q *Queries) GetResidentAddress(ctx context.Context, id uuid.UUID) (GetResidentAddressRow, error) {
 	row := q.db.QueryRow(ctx, getResidentAddress, id)
 	var i GetResidentAddressRow
 	err := row.Scan(
-		&i.Embed,
 		&i.Address.ID,
 		&i.Address.HouseNumber,
 		&i.Address.KebeleID,
@@ -833,11 +843,12 @@ func (q *Queries) SearchUnverifiedResidents(ctx context.Context, arg SearchUnver
 	return items, nil
 }
 
-const updateResident = `-- name: UpdateResident :exec
+const updateResident = `-- name: UpdateResident :one
 UPDATE resident SET
   email = $2, first_name = $3, second_name = $4, last_name = $5,
   birth_date = $6, gender = $7, phone = $8
 WHERE id = $1
+RETURNING id, email, first_name, second_name, last_name, birth_date, gender, phone, address_id, created_at, deleted_at
 `
 
 type UpdateResidentParams struct {
@@ -851,8 +862,8 @@ type UpdateResidentParams struct {
 	Phone      string    `db:"phone" json:"phone"`
 }
 
-func (q *Queries) UpdateResident(ctx context.Context, arg UpdateResidentParams) error {
-	_, err := q.db.Exec(ctx, updateResident,
+func (q *Queries) UpdateResident(ctx context.Context, arg UpdateResidentParams) (Resident, error) {
+	row := q.db.QueryRow(ctx, updateResident,
 		arg.ID,
 		arg.Email,
 		arg.FirstName,
@@ -862,7 +873,21 @@ func (q *Queries) UpdateResident(ctx context.Context, arg UpdateResidentParams) 
 		arg.Gender,
 		arg.Phone,
 	)
-	return err
+	var i Resident
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.FirstName,
+		&i.SecondName,
+		&i.LastName,
+		&i.BirthDate,
+		&i.Gender,
+		&i.Phone,
+		&i.AddressID,
+		&i.CreatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
 }
 
 const updateResidentAddress = `-- name: UpdateResidentAddress :exec

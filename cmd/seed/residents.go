@@ -50,7 +50,7 @@ func seedResidents(ctx context.Context, db *pgxpool.Pool, q *repository.Queries)
 		qtx := q.WithTx(tx)
 
 		// 1. Create resident
-		residentID, err := qtx.CreateResident(ctx, repository.CreateResidentParams{
+		resident, err := qtx.CreateResident(ctx, repository.CreateResidentParams{
 			Email:      r.Email,
 			FirstName:  r.FirstName,
 			SecondName: r.SecondName,
@@ -66,7 +66,7 @@ func seedResidents(ctx context.Context, db *pgxpool.Pool, q *repository.Queries)
 
 		// 2. Create biometric
 		_, err = qtx.CreateBiometric(ctx, repository.CreateBiometricParams{
-			ResidentID: residentID,
+			ResidentID: resident.ID,
 			BloodType:  r.BloodType,
 			FaceUrl:    "face.png",
 		})
@@ -101,7 +101,7 @@ func seedResidents(ctx context.Context, db *pgxpool.Pool, q *repository.Queries)
 
 			err = qtx.UpdateResidentAddress(ctx, repository.UpdateResidentAddressParams{
 				AddressID: &(newAddr.ID),
-				ID:        residentID,
+				ID:        resident.ID,
 			})
 			if err != nil {
 				fmt.Printf("Couldn't assign address to resident: %v\n", err.Error())
@@ -110,7 +110,7 @@ func seedResidents(ctx context.Context, db *pgxpool.Pool, q *repository.Queries)
 		} else {
 			err = qtx.UpdateResidentAddress(ctx, repository.UpdateResidentAddressParams{
 				AddressID: &addr.ID,
-				ID:        residentID,
+				ID:        resident.ID,
 			})
 			if err != nil {
 				fmt.Printf("Couldn't assign address to resident: %v\n", err.Error())
@@ -121,7 +121,7 @@ func seedResidents(ctx context.Context, db *pgxpool.Pool, q *repository.Queries)
 		// 4. Create document
 		for _, doc := range []string{"doc1.png", "doc2.png"} {
 			_, err = qtx.CreateDocument(ctx, repository.CreateDocumentParams{
-				ResidentID: residentID,
+				ResidentID: resident.ID,
 				Url:        doc,
 				Status:     "Pending",
 			})
@@ -133,7 +133,7 @@ func seedResidents(ctx context.Context, db *pgxpool.Pool, q *repository.Queries)
 
 		// 5. Create employment
 		_, err = qtx.CreateEmployment(ctx, repository.CreateEmploymentParams{
-			ResidentID:   residentID,
+			ResidentID:   resident.ID,
 			Status:       r.EmploymentStatus,
 			Occupation:   &r.Occupation,
 			EmployerName: &r.EmployerName,
@@ -147,7 +147,7 @@ func seedResidents(ctx context.Context, db *pgxpool.Pool, q *repository.Queries)
 
 		// 6. Create emergency
 		_, err = qtx.CreateEmergencyContact(ctx, repository.CreateEmergencyContactParams{
-			ResidentID: residentID,
+			ResidentID: resident.ID,
 			Name:       r.EmergencyName,
 			Relation:   r.EmergencyRelation,
 			Phone:      r.EmergencyPhone,
@@ -160,7 +160,7 @@ func seedResidents(ctx context.Context, db *pgxpool.Pool, q *repository.Queries)
 
 		// 7. Create additional
 		_, err = qtx.CreateAdditional(ctx, repository.CreateAdditionalParams{
-			ResidentID:      residentID,
+			ResidentID:      resident.ID,
 			Religion:        &r.Religion,
 			Ethnicity:       &r.Ethnicity,
 			NationalID:      &r.NationalID,
@@ -172,7 +172,7 @@ func seedResidents(ctx context.Context, db *pgxpool.Pool, q *repository.Queries)
 
 		// 8. Create payment
 		_, err = qtx.CreatePayment(ctx, repository.CreatePaymentParams{
-			ResidentID: residentID,
+			ResidentID: resident.ID,
 			Status:     "unpaid",
 		})
 		if err != nil {

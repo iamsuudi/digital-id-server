@@ -38,12 +38,32 @@ func (q *Queries) CreateBiometric(ctx context.Context, arg CreateBiometricParams
 	return i, err
 }
 
-const updateBiometric = `-- name: UpdateBiometric :exec
+const getBiometric = `-- name: GetBiometric :one
+SELECT id, resident_id, fingerprint, blood_type, face_url, created_at, deleted_at FROM biometric WHERE resident_id = $1
+`
+
+func (q *Queries) GetBiometric(ctx context.Context, residentID uuid.UUID) (Biometric, error) {
+	row := q.db.QueryRow(ctx, getBiometric, residentID)
+	var i Biometric
+	err := row.Scan(
+		&i.ID,
+		&i.ResidentID,
+		&i.Fingerprint,
+		&i.BloodType,
+		&i.FaceUrl,
+		&i.CreatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const updateBiometric = `-- name: UpdateBiometric :one
 UPDATE biometric
 SET
     face_url = COALESCE($2, face_url),
     blood_type = COALESCE($3, blood_type)
 WHERE resident_id = $1
+RETURNING id, resident_id, fingerprint, blood_type, face_url, created_at, deleted_at
 `
 
 type UpdateBiometricParams struct {
@@ -52,7 +72,17 @@ type UpdateBiometricParams struct {
 	BloodType  *string   `db:"blood_type" json:"blood_type"`
 }
 
-func (q *Queries) UpdateBiometric(ctx context.Context, arg UpdateBiometricParams) error {
-	_, err := q.db.Exec(ctx, updateBiometric, arg.ResidentID, arg.FaceUrl, arg.BloodType)
-	return err
+func (q *Queries) UpdateBiometric(ctx context.Context, arg UpdateBiometricParams) (Biometric, error) {
+	row := q.db.QueryRow(ctx, updateBiometric, arg.ResidentID, arg.FaceUrl, arg.BloodType)
+	var i Biometric
+	err := row.Scan(
+		&i.ID,
+		&i.ResidentID,
+		&i.Fingerprint,
+		&i.BloodType,
+		&i.FaceUrl,
+		&i.CreatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
 }

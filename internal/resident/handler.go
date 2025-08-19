@@ -69,8 +69,11 @@ func (h *Handler) RegisterResident(c *gin.Context) {
 		return
 	}
 
-	// 5. Call service layer.
-	if err := h.service.RegisterResident(c.Request.Context(), input, docsUrls, faceName); err != nil {
+	ra, _ := c.Get("user_id")
+	actorID, _ := ra.(uuid.UUID)
+
+	// 5. Register.
+	if err := h.service.RegisterResident(c.Request.Context(), actorID, input, docsUrls, faceName); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to register: " + err.Error()})
 		return
 	}
@@ -288,9 +291,12 @@ func (h *Handler) UpdatePaymentInfo(c *gin.Context) {
 		receiptPtr = &filename
 	}
 
+	ra, _ := c.Get("user_id")
+	actorID, _ := ra.(uuid.UUID)
+
 	// 4. Update payment info.
-	if err := h.service.UpdatePaymentInfo(c.Request.Context(), id, input.Amount, "verified", input.Method, input.Description, receiptPtr); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update payment info"})
+	if err := h.service.UpdatePaymentInfo(c.Request.Context(), actorID, id, input.Amount, "verified", input.Method, input.Description, receiptPtr); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -331,16 +337,19 @@ func (h *Handler) UpdateDocumentInfo(c *gin.Context) {
 	if ref, err := c.FormFile("url"); err == nil {
 		filename := utils.MakeFileName(ref.Filename)
 		if err := c.SaveUploadedFile(ref, filepath.Join("uploads", filename)); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to upload document image"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 		urlPtr = &filename
 	}
 
-	// 4. Update payment info.
-	if err := h.service.UpdateDocumentInfo(c.Request.Context(), id, input.Status, urlPtr); err != nil {
+	ra, _ := c.Get("user_id")
+	actorID, _ := ra.(uuid.UUID)
+
+	// 4. Update document info.
+	if err := h.service.UpdateDocumentInfo(c.Request.Context(), actorID, id, input.Status, urlPtr); err != nil {
 		fmt.Println(err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update document info"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -367,10 +376,13 @@ func (h *Handler) UpdatePersonalInfo(c *gin.Context) {
 		fmt.Println(string(b))
 	}
 
+	ra, _ := c.Get("user_id")
+	actorID, _ := ra.(uuid.UUID)
+
 	// 3. Update personal info.
-	if err := h.service.UpdatePersonalInfo(c.Request.Context(), id, input); err != nil {
+	if err := h.service.UpdatePersonalInfo(c.Request.Context(), actorID, id, input); err != nil {
 		fmt.Println(err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update personal info"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -432,9 +444,13 @@ func (h *Handler) UpdateAddressInfo(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid kebele ID"})
 		return
 	}
-	if err := h.service.UpdateAddressInfo(c.Request.Context(), id, input.HouseNumber, kebeleID, subcityID, cityID); err != nil {
+
+	ra, _ := c.Get("user_id")
+	actorID, _ := ra.(uuid.UUID)
+
+	if err := h.service.UpdateAddressInfo(c.Request.Context(), actorID, id, input.HouseNumber, kebeleID, subcityID, cityID); err != nil {
 		fmt.Println(err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update address info"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -467,9 +483,13 @@ func (h *Handler) UpdateAdditionalInfo(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid resident ID"})
 		return
 	}
-	if err := h.service.UpdateAdditionalInfo(c.Request.Context(), id, input); err != nil {
+
+	ra, _ := c.Get("user_id")
+	actorID, _ := ra.(uuid.UUID)
+
+	if err := h.service.UpdateAdditionalInfo(c.Request.Context(), actorID, id, input); err != nil {
 		fmt.Println(err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update additional info"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -502,9 +522,13 @@ func (h *Handler) UpdateEmploymentInfo(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid resident ID"})
 		return
 	}
-	if err := h.service.UpdateEmploymentInfo(c.Request.Context(), id, input); err != nil {
+
+	ra, _ := c.Get("user_id")
+	actorID, _ := ra.(uuid.UUID)
+
+	if err := h.service.UpdateEmploymentInfo(c.Request.Context(), actorID, id, input); err != nil {
 		fmt.Println(err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update employment info"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -537,9 +561,13 @@ func (h *Handler) UpdateEmergencyInfo(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid resident ID"})
 		return
 	}
-	if err := h.service.UpdateEmergencyContact(c.Request.Context(), id, input); err != nil {
+
+	ra, _ := c.Get("user_id")
+	actorID, _ := ra.(uuid.UUID)
+
+	if err := h.service.UpdateEmergencyContact(c.Request.Context(), actorID, id, input); err != nil {
 		fmt.Println(err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update emergency info"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -573,10 +601,13 @@ func (h *Handler) ReplaceDocuments(c *gin.Context) {
 		docsUrls = append(docsUrls, name)
 	}
 
+	ra, _ := c.Get("user_id")
+	actorID, _ := ra.(uuid.UUID)
+
 	// Replace documents.
-	if err := h.service.ReplaceDocuments(c.Request.Context(), id, docsUrls); err != nil {
+	if err := h.service.ReplaceDocuments(c.Request.Context(), actorID, id, docsUrls); err != nil {
 		fmt.Println(err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update documents"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -609,9 +640,12 @@ func (h *Handler) UpdateBiometricInfo(c *gin.Context) {
 		faceUrl = &faceName
 	}
 
-	if err := h.service.UpdateBiometricInfo(c.Request.Context(), id, input.BloodType, faceUrl); err != nil {
+	ra, _ := c.Get("user_id")
+	actorID, _ := ra.(uuid.UUID)
+
+	if err := h.service.UpdateBiometricInfo(c.Request.Context(), actorID, id, input.BloodType, faceUrl); err != nil {
 		fmt.Println(err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update biometric info"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -625,7 +659,7 @@ func (h *Handler) GetIDCard(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid resident ID"})
 		return
 	}
-	
+
 	resident, err := h.service.q.GetVerifiedResident(c.Request.Context(), id)
 	if err != nil {
 		fmt.Println(err.Error())

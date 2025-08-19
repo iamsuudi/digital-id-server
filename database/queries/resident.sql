@@ -4,25 +4,26 @@ INSERT INTO resident (
 ) VALUES (
   $1, $2, $3, $4, $5, $6, $7, $8
 )
-RETURNING id;
+RETURNING *;
 
--- name: UpdateResident :exec
+-- name: UpdateResident :one
 UPDATE resident SET
   email = $2, first_name = $3, second_name = $4, last_name = $5,
   birth_date = $6, gender = $7, phone = $8
-WHERE id = $1;
+WHERE id = $1
+RETURNING *;
 
 -- name: UpdateResidentAddress :exec
 UPDATE resident SET address_id = $1 WHERE id = $2;
 
 -- name: GetResidentAddress :one
-SELECT slqc.embed(r), sqlc.embed(a), sqlc.embed(c), sqlc.embed(s), sqlc.embed(k)
-FROM resident r
-JOIN address a ON r.a_id = a.id
+SELECT sqlc.embed(a), sqlc.embed(c), sqlc.embed(s), sqlc.embed(k)
+FROM resident
+JOIN address a ON resident.address_id = a.id
 JOIN city c ON a.city_id = c.id
 JOIN subcity s ON a.subcity_id = s.id
 JOIN kebele k ON a.kebele_id = k.id
-WHERE r.id = $1 AND r.deleted_at IS NULL;
+WHERE resident.id = $1 AND resident.deleted_at IS NULL;
 
 -- name: GetResident :one
 SELECT sqlc.embed(resident), sqlc.embed(address), sqlc.embed(biometric),

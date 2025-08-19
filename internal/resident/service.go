@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"digital-id-server/internal/repository"
@@ -23,7 +24,7 @@ func NewService(dbConn *pgxpool.Pool, dbQueries *repository.Queries) *Service {
 	return &Service{db: dbConn, q: dbQueries}
 }
 
-func (s *Service) RegisterResident(ctx context.Context, input types.ResidentPayload, docsUrl []string, faceUrl string) error {
+func (s *Service) RegisterResident(ctx context.Context, actorID uuid.UUID, input types.ResidentPayload, docsUrl []string, faceUrl string) error {
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
 		return err
@@ -33,7 +34,7 @@ func (s *Service) RegisterResident(ctx context.Context, input types.ResidentPayl
 	qtx := s.q.WithTx(tx)
 
 	// 1. Create resident
-	residentID, err := qtx.CreateResident(ctx, repository.CreateResidentParams{
+	resident, err := qtx.CreateResident(ctx, repository.CreateResidentParams{
 		Email:      input.Email,
 		FirstName:  input.FirstName,
 		SecondName: input.SecondName,
@@ -48,7 +49,7 @@ func (s *Service) RegisterResident(ctx context.Context, input types.ResidentPayl
 
 	// 2. Create biometric
 	_, err = qtx.CreateBiometric(ctx, repository.CreateBiometricParams{
-		ResidentID: residentID,
+		ResidentID: resident.ID,
 		BloodType:  input.BloodType,
 		FaceUrl:    faceUrl,
 	})
@@ -96,7 +97,7 @@ func (s *Service) RegisterResident(ctx context.Context, input types.ResidentPayl
 		fmt.Println("New address created")
 		err = qtx.UpdateResidentAddress(ctx, repository.UpdateResidentAddressParams{
 			AddressID: &(newAddr.ID),
-			ID:        residentID,
+			ID:        resident.ID,
 		})
 		if err != nil {
 			return err
@@ -105,7 +106,7 @@ func (s *Service) RegisterResident(ctx context.Context, input types.ResidentPayl
 		fmt.Println("Address found")
 		err = qtx.UpdateResidentAddress(ctx, repository.UpdateResidentAddressParams{
 			AddressID: &addr.ID,
-			ID:        residentID,
+			ID:        resident.ID,
 		})
 		if err != nil {
 			return err
@@ -115,7 +116,7 @@ func (s *Service) RegisterResident(ctx context.Context, input types.ResidentPayl
 	// 4. Create document
 	for _, doc := range docsUrl {
 		_, err = qtx.CreateDocument(ctx, repository.CreateDocumentParams{
-			ResidentID: residentID,
+			ResidentID: resident.ID,
 			Url:        doc,
 			Status:     "Pending",
 		})
@@ -127,7 +128,7 @@ func (s *Service) RegisterResident(ctx context.Context, input types.ResidentPayl
 
 	// 5. Create employment
 	_, err = qtx.CreateEmployment(ctx, repository.CreateEmploymentParams{
-		ResidentID:   residentID,
+		ResidentID:   resident.ID,
 		Status:       input.EmploymentStatus,
 		Occupation:   &input.Occupation,
 		EmployerName: &input.EmployerName,
@@ -141,7 +142,7 @@ func (s *Service) RegisterResident(ctx context.Context, input types.ResidentPayl
 
 	// 6. Create emergency
 	_, err = qtx.CreateEmergencyContact(ctx, repository.CreateEmergencyContactParams{
-		ResidentID: residentID,
+		ResidentID: resident.ID,
 		Name:       input.EmergencyName,
 		Relation:   input.EmergencyRelation,
 		Phone:      input.EmergencyPhone,
@@ -154,7 +155,7 @@ func (s *Service) RegisterResident(ctx context.Context, input types.ResidentPayl
 
 	// 6. Create additional
 	_, err = qtx.CreateAdditional(ctx, repository.CreateAdditionalParams{
-		ResidentID:      residentID,
+		ResidentID:      resident.ID,
 		Religion:        &input.Religion,
 		Ethnicity:       &input.Ethnicity,
 		NationalID:      &input.NationalID,
@@ -170,13 +171,28 @@ func (s *Service) RegisterResident(ctx context.Context, input types.ResidentPayl
 
 	// 7. Create payment
 	_, err = qtx.CreatePayment(ctx, repository.CreatePaymentParams{
-		ResidentID: residentID,
+		ResidentID: resident.ID,
 		Status:     "unpaid",
 	})
 	if err != nil {
 		return err
 	}
 	fmt.Println("Payment created")
+
+	// 8. Insert audit log
+	err = qtx.InsertAuditLog(ctx, repository.InsertAuditLogParams{
+		ActorID:          actorID,
+		TargetResidentID: &resident.ID,
+		ActionType:       "CREATE_RESIDENT",
+		ObjectType:       "resident",
+		Diff: map[string]any{
+			"after": resident,
+		},
+	})
+	if err != nil {
+		return err
+	}
+	fmt.Println("Audit log created")
 
 	return tx.Commit(ctx)
 }
@@ -298,8 +314,22 @@ func (s *Service) SearchUnverifiedResidents(ctx context.Context, limit, offset i
 	return count, cities, nil
 }
 
-func (s *Service) UpdatePaymentInfo(ctx context.Context, id uuid.UUID, amount float64, status, method, description string, receipt *string) error {
-	_, err := s.q.UpdatePayment(ctx, repository.UpdatePaymentParams{
+func (s *Service) UpdatePaymentInfo(ctx context.Context, actorID, id uuid.UUID, amount float64, status, method, description string, receipt *string) error {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+	qtx := s.q.WithTx(tx)
+
+	// 1. Before
+	before, err := qtx.GetPayment(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	// 2. After
+	after, err := qtx.UpdatePayment(ctx, repository.UpdatePaymentParams{
 		ID:          id,
 		Amount:      &amount,
 		Status:      &status,
@@ -307,20 +337,86 @@ func (s *Service) UpdatePaymentInfo(ctx context.Context, id uuid.UUID, amount fl
 		Description: &description,
 		Reference:   receipt,
 	})
-	return err
+	if err != nil {
+		return err
+	}
+
+	// 3. Insert audit log
+	err = qtx.InsertAuditLog(ctx, repository.InsertAuditLogParams{
+		ActorID:          actorID,
+		ActionType:       fmt.Sprintf("%s_PAYMENT", strings.ToUpper(status)),
+		TargetResidentID: &before.ResidentID,
+		ObjectType:       "resident",
+		Diff: map[string]any{
+			"before": before,
+			"after":  after,
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
 }
 
-func (s *Service) UpdateDocumentInfo(ctx context.Context, id uuid.UUID, status string, url *string) error {
-	_, err := s.q.UpdateDocument(ctx, repository.UpdateDocumentParams{
+func (s *Service) UpdateDocumentInfo(ctx context.Context, actorID, id uuid.UUID, status string, url *string) error {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+	qtx := s.q.WithTx(tx)
+
+	// 1.before
+	before, err := qtx.GetDocument(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	// 2. after
+	after, err := qtx.UpdateDocument(ctx, repository.UpdateDocumentParams{
 		ID:     id,
 		Status: &status,
 		Url:    url,
 	})
-	return err
+	if err != nil {
+		return err
+	}
+
+	// 3. Insert audit log
+	err = qtx.InsertAuditLog(ctx, repository.InsertAuditLogParams{
+		ActorID:          actorID,
+		ActionType:       fmt.Sprintf("%s_DOCUMENT", strings.ToUpper(status)),
+		TargetResidentID: &before.ResidentID,
+		ObjectType:       "resident",
+		Diff: map[string]any{
+			"before": before,
+			"after":  after,
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
 }
 
-func (s *Service) UpdatePersonalInfo(ctx context.Context, id uuid.UUID, input types.ResidentPersonalPayload) error {
-	return s.q.UpdateResident(ctx, repository.UpdateResidentParams{
+func (s *Service) UpdatePersonalInfo(ctx context.Context, actorID, id uuid.UUID, input types.ResidentPersonalPayload) error {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+	qtx := s.q.WithTx(tx)
+
+	// 1.before
+	before, err := qtx.GetResident(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	// 2. after
+	after, err := qtx.UpdateResident(ctx, repository.UpdateResidentParams{
 		ID:         id,
 		Email:      input.Email,
 		FirstName:  input.FirstName,
@@ -330,10 +426,44 @@ func (s *Service) UpdatePersonalInfo(ctx context.Context, id uuid.UUID, input ty
 		Gender:     input.Gender,
 		Phone:      input.Phone,
 	})
+	if err != nil {
+		return err
+	}
+
+	// 3. Insert audit log
+	err = qtx.InsertAuditLog(ctx, repository.InsertAuditLogParams{
+		ActorID:          actorID,
+		ActionType:       "UPDATE_PERSONAL_INFO",
+		TargetResidentID: &id,
+		ObjectType:       "resident",
+		Diff: map[string]any{
+			"before": before.Resident,
+			"after":  after,
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
 }
 
-func (s *Service) UpdateAdditionalInfo(ctx context.Context, id uuid.UUID, input types.ResidentAdditionalPayload) error {
-	_, err := s.q.UpdateAdditional(ctx, repository.UpdateAdditionalParams{
+func (s *Service) UpdateAdditionalInfo(ctx context.Context, actorID, id uuid.UUID, input types.ResidentAdditionalPayload) error {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+	qtx := s.q.WithTx(tx)
+
+	// 1.before
+	before, err := qtx.GetAdditional(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	// 2. after
+	after, err := qtx.UpdateAdditional(ctx, repository.UpdateAdditionalParams{
 		ID:              id,
 		Religion:        &input.Religion,
 		Ethnicity:       &input.Ethnicity,
@@ -343,11 +473,44 @@ func (s *Service) UpdateAdditionalInfo(ctx context.Context, id uuid.UUID, input 
 		LanguagesSpoken: input.LanguagesSpoken,
 		MaritalStatus:   &input.MaritalStatus,
 	})
-	return err
+	if err != nil {
+		return err
+	}
+
+	// 3. Insert audit log
+	err = qtx.InsertAuditLog(ctx, repository.InsertAuditLogParams{
+		ActorID:          actorID,
+		ActionType:       "UPDATE_ADDITIONAL_INFO",
+		TargetResidentID: &before.ResidentID,
+		ObjectType:       "resident",
+		Diff: map[string]any{
+			"before": before,
+			"after":  after,
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
 }
 
-func (s *Service) UpdateEmploymentInfo(ctx context.Context, id uuid.UUID, input types.ResidentEmploymentPayload) error {
-	_, err := s.q.UpdateEmployment(ctx, repository.UpdateEmploymentParams{
+func (s *Service) UpdateEmploymentInfo(ctx context.Context, actorID, id uuid.UUID, input types.ResidentEmploymentPayload) error {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+	qtx := s.q.WithTx(tx)
+
+	// 1.before
+	before, err := qtx.GetEmployment(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	// 2. after
+	after, err := qtx.UpdateEmployment(ctx, repository.UpdateEmploymentParams{
 		ID:           id,
 		Status:       &input.EmploymentStatus,
 		Type:         &input.EmploymentType,
@@ -355,33 +518,89 @@ func (s *Service) UpdateEmploymentInfo(ctx context.Context, id uuid.UUID, input 
 		EmployerName: &input.EmployerName,
 		WorkAddress:  &input.WorkAddress,
 	})
-	return err
+	if err != nil {
+		return err
+	}
+
+	// 3. Insert audit log
+	err = qtx.InsertAuditLog(ctx, repository.InsertAuditLogParams{
+		ActorID:          actorID,
+		ActionType:       "UPDATE_EMPLOYMENT_INFO",
+		TargetResidentID: &before.ResidentID,
+		ObjectType:       "resident",
+		Diff: map[string]any{
+			"before": before,
+			"after":  after,
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
 }
 
-func (s *Service) UpdateEmergencyContact(ctx context.Context, id uuid.UUID, input types.ResidentEmergencyPayload) error {
-	_, err := s.q.UpdateEmergencyContact(ctx, repository.UpdateEmergencyContactParams{
+func (s *Service) UpdateEmergencyContact(ctx context.Context, actorID, id uuid.UUID, input types.ResidentEmergencyPayload) error {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+	qtx := s.q.WithTx(tx)
+
+	// 1.before
+	before, err := qtx.GetEmergencyContact(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	// 2. after
+	after, err := qtx.UpdateEmergencyContact(ctx, repository.UpdateEmergencyContactParams{
 		ID:       id,
 		Name:     &input.EmergencyName,
 		Relation: &input.EmergencyRelation,
 		Phone:    &input.EmergencyPhone,
 		Email:    &input.EmergencyEmail,
 	})
-	return err
+
+	// 3. Insert audit log
+	err = qtx.InsertAuditLog(ctx, repository.InsertAuditLogParams{
+		ActorID:          actorID,
+		ActionType:       "UPDATE_EMERGENCY_CONTACT",
+		TargetResidentID: &before.ResidentID,
+		ObjectType:       "resident",
+		Diff: map[string]any{
+			"before": before,
+			"after":  after,
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
 }
 
 func (s *Service) GetAddressInfo(ctx context.Context, id uuid.UUID) (repository.GetAddressRow, error) {
 	return s.q.GetAddress(ctx, id)
 }
 
-func (s *Service) UpdateAddressInfo(ctx context.Context, id uuid.UUID, houseNumber string, kebeleID, subcityID, cityID uuid.UUID) error {
+func (s *Service) UpdateAddressInfo(ctx context.Context, actorID, id uuid.UUID, houseNumber string, kebeleID, subcityID, cityID uuid.UUID) error {
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback(ctx)
-
 	qtx := s.q.WithTx(tx)
 
+	// 1.before
+	before, err := qtx.GetResidentAddress(ctx, id)
+	if err != nil {
+		fmt.Println("failed to fetch older address")
+		return err
+	}
+
+	// 2. after
 	addr, err := qtx.GetAddressByLocations(ctx, repository.GetAddressByLocationsParams{
 		HouseNumber: houseNumber,
 		KebeleID:    kebeleID,
@@ -405,6 +624,7 @@ func (s *Service) UpdateAddressInfo(ctx context.Context, id uuid.UUID, houseNumb
 			ID:        id,
 		})
 		if err != nil {
+			fmt.Println("Switching failed after new address creation")
 			return err
 		}
 	} else {
@@ -417,26 +637,65 @@ func (s *Service) UpdateAddressInfo(ctx context.Context, id uuid.UUID, houseNumb
 			return err
 		}
 	}
+
+	after, err := qtx.GetResidentAddress(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	// 3. Insert audit log
+	err = qtx.InsertAuditLog(ctx, repository.InsertAuditLogParams{
+		ActorID:          actorID,
+		ActionType:       "UPDATE_ADDRESS",
+		TargetResidentID: &id,
+		ObjectType:       "resident",
+		Diff: map[string]any{
+			"before": map[string]any{
+				"house_number": before.Address.HouseNumber,
+				"kebele":       before.Kebele.Name,
+				"subcity":      before.Subcity.Name,
+				"city":         before.City.Name,
+			},
+			"after": map[string]any{
+				"house_number": after.Address.HouseNumber,
+				"kebele":       after.Kebele.Name,
+				"subcity":      after.Subcity.Name,
+				"city":         after.City.Name,
+			},
+		},
+	})
+	if err != nil {
+		return err
+	}
+
 	fmt.Println("Committing transaction")
 	return tx.Commit(ctx)
 }
 
-func (s *Service) ReplaceDocuments(ctx context.Context, id uuid.UUID, docsUrl []string) error {
+func (s *Service) ReplaceDocuments(ctx context.Context, actorID, id uuid.UUID, docsUrl []string) error {
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback(ctx)
-
 	qtx := s.q.WithTx(tx)
 
+	// 1.before
+	before, err := qtx.GetResidentDocuments(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	// 2. after
 	err = qtx.DeleteResidentDocuments(ctx, id)
 	if err != nil {
 		return err
 	}
 
+	after := make([]repository.Document, len(docsUrl))
+
 	for _, doc := range docsUrl {
-		_, err = qtx.CreateDocument(ctx, repository.CreateDocumentParams{
+		doc, err := qtx.CreateDocument(ctx, repository.CreateDocumentParams{
 			ResidentID: id,
 			Url:        doc,
 			Status:     "Pending",
@@ -444,17 +703,67 @@ func (s *Service) ReplaceDocuments(ctx context.Context, id uuid.UUID, docsUrl []
 		if err != nil {
 			return err
 		}
+		after = append(after, doc)
+	}
+
+	// 3. Insert audit log
+	err = qtx.InsertAuditLog(ctx, repository.InsertAuditLogParams{
+		ActorID:          actorID,
+		ActionType:       "REPLACE_DOCUMENTS",
+		TargetResidentID: &id,
+		ObjectType:       "resident",
+		Diff: map[string]any{
+			"before": before,
+			"after":  after,
+		},
+	})
+	if err != nil {
+		return err
 	}
 
 	return tx.Commit(ctx)
 }
 
-func (s *Service) UpdateBiometricInfo(ctx context.Context, id uuid.UUID, bloodType string, faceUrl *string) error {
-	return s.q.UpdateBiometric(ctx, repository.UpdateBiometricParams{
+func (s *Service) UpdateBiometricInfo(ctx context.Context, actorID, id uuid.UUID, bloodType string, faceUrl *string) error {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+	qtx := s.q.WithTx(tx)
+
+	// 1.before
+	before, err := qtx.GetBiometric(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	// 2. after
+	after, err := qtx.UpdateBiometric(ctx, repository.UpdateBiometricParams{
 		BloodType:  &bloodType,
 		FaceUrl:    faceUrl,
 		ResidentID: id,
 	})
+	if err != nil {
+		return err
+	}
+
+	// 3. Insert audit log
+	err = qtx.InsertAuditLog(ctx, repository.InsertAuditLogParams{
+		ActorID:          actorID,
+		ActionType:       "UPDATE_BIOMETRIC",
+		TargetResidentID: &before.ResidentID,
+		ObjectType:       "resident",
+		Diff: map[string]any{
+			"before": before,
+			"after":  after,
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
 }
 
 func (s *Service) GetIdCard(ctx context.Context, resident repository.GetVerifiedResidentRow) (*repository.Idcard, error) {
