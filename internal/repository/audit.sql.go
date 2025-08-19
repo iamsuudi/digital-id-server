@@ -165,7 +165,7 @@ WHERE log.actor_id IS NOT NULL AND
     ($1::uuid IS NULL OR au.city_id = $1::uuid) AND
     ($2::uuid IS NULL OR au.subcity_id = $2::uuid) AND
     ($3::uuid IS NULL OR au.kebele_id = $3::uuid)
-ORDER BY log.ts ASC
+ORDER BY log.ts DESC
 LIMIT $5 OFFSET $4
 `
 

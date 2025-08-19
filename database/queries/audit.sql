@@ -40,7 +40,7 @@ WHERE log.actor_id IS NOT NULL AND
     (sqlc.narg('city_id')::uuid IS NULL OR au.city_id = sqlc.narg('city_id')::uuid) AND
     (sqlc.narg('subcity_id')::uuid IS NULL OR au.subcity_id = sqlc.narg('subcity_id')::uuid) AND
     (sqlc.narg('kebele_id')::uuid IS NULL OR au.kebele_id = sqlc.narg('kebele_id')::uuid)
-ORDER BY log.ts ASC
+ORDER BY log.ts DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: CountListAuditLogs :one
