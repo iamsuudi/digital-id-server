@@ -270,3 +270,19 @@ func (s *Service) SearchCities(ctx context.Context, limit, offset int, query str
 
 	return count, cities, nil
 }
+
+func (s *Service) ListAuditLogs(ctx context.Context, limit, offset int, id uuid.UUID) (int64, []repository.ListCityAuditLogsRow, error) {
+	count, err := s.q.CountListCityAuditLogs(ctx, &id)
+	if err != nil {
+		return 0, nil, err
+	}
+	if count == 0 {
+		return 0, nil, nil
+	}
+	logs, err := s.q.ListCityAuditLogs(ctx, repository.ListCityAuditLogsParams{
+		ID:     &id,
+		Limit:  int32(limit),
+		Offset: int32(offset),
+	})
+	return count, logs, err
+}

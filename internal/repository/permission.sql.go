@@ -81,6 +81,37 @@ func (q *Queries) GetEffectivePermissionsForUser(ctx context.Context, id uuid.UU
 	return items, nil
 }
 
+const getPermissionOverridesForUser = `-- name: GetPermissionOverridesForUser :many
+SELECT permission_name, is_granted
+FROM user_permission_override
+WHERE user_id = $1
+`
+
+type GetPermissionOverridesForUserRow struct {
+	PermissionName string `db:"permission_name" json:"permission_name"`
+	IsGranted      bool   `db:"is_granted" json:"is_granted"`
+}
+
+func (q *Queries) GetPermissionOverridesForUser(ctx context.Context, userID uuid.UUID) ([]GetPermissionOverridesForUserRow, error) {
+	rows, err := q.db.Query(ctx, getPermissionOverridesForUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetPermissionOverridesForUserRow{}
+	for rows.Next() {
+		var i GetPermissionOverridesForUserRow
+		if err := rows.Scan(&i.PermissionName, &i.IsGranted); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getUniversalPermissionMatrixForUser = `-- name: GetUniversalPermissionMatrixForUser :many
 SELECT
     p.name,

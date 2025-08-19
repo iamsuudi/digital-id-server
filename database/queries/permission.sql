@@ -44,6 +44,11 @@ WHERE o.is_granted = true
    OR (o.is_granted IS NULL AND i.permission_name IS NOT NULL)
 ORDER BY p.name;
 
+-- name: GetPermissionOverridesForUser :many
+SELECT permission_name, is_granted
+FROM user_permission_override
+WHERE user_id = $1;
+
 -- name: SetUserPermissionOverride :exec
 INSERT INTO user_permission_override (user_id, permission_name, is_granted, granted_by)
 VALUES ($1, $2, $3, $4)

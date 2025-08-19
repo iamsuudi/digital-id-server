@@ -18,6 +18,7 @@ func RegisterRoutes(rg *gin.RouterGroup, db *pgxpool.Pool, q *repository.Queries
 		r.POST("/", handler.CreateKebele)
 		r.DELETE("/:id", handler.DeleteKebele)
 		r.GET("/:id", handler.GetKebele)
+		r.GET("/:id/audit", handler.GetKebeleAudit)
 		r.PUT("/:id", handler.UpdateKebeleInfo)
 		r.GET("/:id/encoders", handler.GetKebeleEncoders)
 		r.GET("/:id/cashiers", handler.GetKebeleCashiers)

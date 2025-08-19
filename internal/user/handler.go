@@ -77,6 +77,33 @@ func (h *Handler) GetUser(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
+func (h *Handler) GetUserAudit(c *gin.Context) {
+	raw := c.Param("id")
+	id, err := uuid.Parse(raw)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	limit, offset, _ := utils.PaginationHelper(c)
+
+	count, logs, err := h.service.ListAuditLogs(c.Request.Context(), limit, offset, id)
+
+	if err != nil {
+		fmt.Print(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch logs"})
+		return
+	}
+	if logs == nil {
+		logs = []repository.ListUserAuditLogsRow{}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"logs":  logs,
+		"count": count,
+	})
+}
+
 func (h *Handler) GetUsers(c *gin.Context) {
 	limit, offset, query := utils.PaginationHelper(c)
 
