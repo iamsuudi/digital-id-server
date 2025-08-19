@@ -44,7 +44,7 @@ type Querier interface {
 	CreatePasswordResetToken(ctx context.Context, arg CreatePasswordResetTokenParams) (PasswordResetTokens, error)
 	CreatePayment(ctx context.Context, arg CreatePaymentParams) (Payment, error)
 	CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) (uuid.UUID, error)
-	CreateResident(ctx context.Context, arg CreateResidentParams) (uuid.UUID, error)
+	CreateResident(ctx context.Context, arg CreateResidentParams) (Resident, error)
 	CreateSubCity(ctx context.Context, arg CreateSubCityParams) (Subcity, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error)
 	DeleteAdditional(ctx context.Context, id uuid.UUID) error
@@ -68,6 +68,7 @@ type Querier interface {
 	GetAssignableRolesForActor(ctx context.Context, slug string) ([]GetAssignableRolesForActorRow, error)
 	// Return audit log under scope
 	GetAuditLog(ctx context.Context, arg GetAuditLogParams) (GetAuditLogRow, error)
+	GetBiometric(ctx context.Context, residentID uuid.UUID) (Biometric, error)
 	GetCity(ctx context.Context, id uuid.UUID) (GetCityRow, error)
 	GetDocument(ctx context.Context, id uuid.UUID) (Document, error)
 	GetDocumentByResident(ctx context.Context, residentID uuid.UUID) (Document, error)
@@ -152,7 +153,7 @@ type Querier interface {
 	SoftDeleteUser(ctx context.Context, id uuid.UUID) error
 	UpdateAdditional(ctx context.Context, arg UpdateAdditionalParams) (Additional, error)
 	UpdateAddress(ctx context.Context, arg UpdateAddressParams) (Address, error)
-	UpdateBiometric(ctx context.Context, arg UpdateBiometricParams) error
+	UpdateBiometric(ctx context.Context, arg UpdateBiometricParams) (Biometric, error)
 	UpdateCity(ctx context.Context, arg UpdateCityParams) (City, error)
 	UpdateDocument(ctx context.Context, arg UpdateDocumentParams) (Document, error)
 	UpdateEmergencyContact(ctx context.Context, arg UpdateEmergencyContactParams) (Emergency, error)
@@ -160,7 +161,7 @@ type Querier interface {
 	UpdateIDCard(ctx context.Context, arg UpdateIDCardParams) (Idcard, error)
 	UpdateKebele(ctx context.Context, arg UpdateKebeleParams) (Kebele, error)
 	UpdatePayment(ctx context.Context, arg UpdatePaymentParams) (Payment, error)
-	UpdateResident(ctx context.Context, arg UpdateResidentParams) error
+	UpdateResident(ctx context.Context, arg UpdateResidentParams) (Resident, error)
 	UpdateResidentAddress(ctx context.Context, arg UpdateResidentAddressParams) error
 	UpdateSetting(ctx context.Context, idcardExpirationDuration int32) error
 	UpdateSubCity(ctx context.Context, arg UpdateSubCityParams) (Subcity, error)

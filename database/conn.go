@@ -6,13 +6,13 @@ import (
 	"log"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"digital-id-server/shared/config"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func Connect() *pgxpool.Pool {
 	cfg := config.GetDatabaseConfig()
-	
+
 	dsn := fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s?sslmode=disable",
 		cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.Name,
