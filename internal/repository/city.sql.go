@@ -65,7 +65,7 @@ func (q *Queries) CreateCity(ctx context.Context, arg CreateCityParams) (City, e
 }
 
 const getCity = `-- name: GetCity :one
-SELECT c.id, c.name, c.lat, c.lon, c.created_at, c.deleted_at, u.id as admin_id, 
+SELECT c.id, c.name, c.lat, c.lon, c.created_at, c.deleted_at, u.id as admin_id,
     CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS admin_name
 FROM city c
 LEFT JOIN "user" u ON u.city_id = c.id AND u.role_slug = 'admin'
@@ -100,7 +100,7 @@ func (q *Queries) GetCity(ctx context.Context, id uuid.UUID) (GetCityRow, error)
 }
 
 const getSubCitiesForCity = `-- name: GetSubCitiesForCity :many
-SELECT s.id, s.name, s.lat, s.lon, s.city_id, s.created_at, s.deleted_at, c.name as city_name, u.id as manager_id, 
+SELECT s.id, s.name, s.lat, s.lon, s.city_id, s.created_at, s.deleted_at, c.name as city_name, u.id as manager_id,
     CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS manager_name
 FROM subcity s
 JOIN city c ON c.id = s.city_id
@@ -154,7 +154,7 @@ func (q *Queries) GetSubCitiesForCity(ctx context.Context, id uuid.UUID) ([]GetS
 }
 
 const listCities = `-- name: ListCities :many
-SELECT c.id, c.name, c.lat, c.lon, c.created_at, c.deleted_at, u.id as admin_id, 
+SELECT c.id, c.name, c.lat, c.lon, c.created_at, c.deleted_at, u.id as admin_id,
     CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS admin_name
 FROM city c
 LEFT JOIN "user" u ON u.city_id = c.id AND u.role_slug = 'admin'
@@ -303,10 +303,11 @@ func (q *Queries) SoftDeleteCity(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
-const updateCity = `-- name: UpdateCity :exec
+const updateCity = `-- name: UpdateCity :one
 UPDATE city
 SET name = $2, lat = $3, lon = $4
 WHERE id = $1
+RETURNING id, name, lat, lon, created_at, deleted_at
 `
 
 type UpdateCityParams struct {
@@ -316,12 +317,21 @@ type UpdateCityParams struct {
 	Lon  *float64  `db:"lon" json:"lon"`
 }
 
-func (q *Queries) UpdateCity(ctx context.Context, arg UpdateCityParams) error {
-	_, err := q.db.Exec(ctx, updateCity,
+func (q *Queries) UpdateCity(ctx context.Context, arg UpdateCityParams) (City, error) {
+	row := q.db.QueryRow(ctx, updateCity,
 		arg.ID,
 		arg.Name,
 		arg.Lat,
 		arg.Lon,
 	)
-	return err
+	var i City
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Lat,
+		&i.Lon,
+		&i.CreatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
 }

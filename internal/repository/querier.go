@@ -153,7 +153,7 @@ type Querier interface {
 	UpdateAdditional(ctx context.Context, arg UpdateAdditionalParams) (Additional, error)
 	UpdateAddress(ctx context.Context, arg UpdateAddressParams) (Address, error)
 	UpdateBiometric(ctx context.Context, arg UpdateBiometricParams) error
-	UpdateCity(ctx context.Context, arg UpdateCityParams) error
+	UpdateCity(ctx context.Context, arg UpdateCityParams) (City, error)
 	UpdateDocument(ctx context.Context, arg UpdateDocumentParams) (Document, error)
 	UpdateEmergencyContact(ctx context.Context, arg UpdateEmergencyContactParams) (Emergency, error)
 	UpdateEmployment(ctx context.Context, arg UpdateEmploymentParams) (Employment, error)

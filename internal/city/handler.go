@@ -30,9 +30,13 @@ func (h *Handler) CreateCity(c *gin.Context) {
 		return
 	}
 
-	city, err := h.service.CreateCity(c.Request.Context(), input)
+	raw, _ := c.Get("user_id")
+	actorID, _ := raw.(uuid.UUID)
+
+	city, err := h.service.CreateCity(c.Request.Context(), actorID, input)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create city: " + err.Error()})
+		fmt.Println(err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -57,7 +61,10 @@ func (h *Handler) UpdateCityInfo(c *gin.Context) {
 		return
 	}
 
-	err = h.service.UpdateCityInfo(c.Request.Context(), id, input.Name, input.Lat, input.Lon)
+	raw, _ := c.Get("user_id")
+	actorID, _ := raw.(uuid.UUID)
+
+	err = h.service.UpdateCityInfo(c.Request.Context(), actorID, id, input.Name, input.Lat, input.Lon)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "SubCity not found"})
@@ -78,7 +85,10 @@ func (h *Handler) DeleteCity(c *gin.Context) {
 		return
 	}
 
-	err = h.service.DeleteCity(c.Request.Context(), id)
+	raw, _ := c.Get("user_id")
+	actorID, _ := raw.(uuid.UUID)
+
+	err = h.service.DeleteCity(c.Request.Context(), actorID, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "City not found"})
@@ -128,7 +138,10 @@ func (h *Handler) AddStaff(c *gin.Context) {
 		return
 	}
 
-	err = h.service.AssignAdmin(c.Request.Context(), id, input.StaffID)
+	raw, _ := c.Get("user_id")
+	actorID, _ := raw.(uuid.UUID)
+
+	err = h.service.AssignAdmin(c.Request.Context(), actorID, id, input.StaffID)
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -158,7 +171,10 @@ func (h *Handler) RemoveStaff(c *gin.Context) {
 		return
 	}
 
-	err = h.service.RemoveStaff(c.Request.Context(), input.StaffID)
+	raw, _ := c.Get("user_id")
+	actorID, _ := raw.(uuid.UUID)
+
+	err = h.service.RemoveStaff(c.Request.Context(), actorID, input.StaffID)
 	if err != nil {
 		fmt.Println(err.Error())
 		if errors.Is(err, pgx.ErrNoRows) {

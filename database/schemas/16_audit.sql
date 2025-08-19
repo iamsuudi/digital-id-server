@@ -3,6 +3,9 @@ CREATE TABLE audit_log (
     actor_id            UUID NOT NULL REFERENCES "user"(id) ON DELETE SET NULL,
     target_user_id      UUID REFERENCES "user"(id) ON DELETE SET NULL,
     target_resident_id  UUID REFERENCES resident(id) ON DELETE SET NULL,
+    target_kebele_id    UUID REFERENCES kebele(id) ON DELETE SET NULL,
+    target_subcity_id   UUID REFERENCES subcity(id) ON DELETE SET NULL,
+    target_city_id      UUID REFERENCES city(id) ON DELETE SET NULL,
     target_role_slug    TEXT,
     action_type         TEXT NOT NULL,
     object_type         TEXT NOT NULL,
@@ -12,7 +15,11 @@ CREATE TABLE audit_log (
 );
 
 CREATE INDEX idx_audit_actor     ON audit_log(actor_id);
-CREATE INDEX idx_audit_target    ON audit_log(target_user_id);
-CREATE INDEX idx_audit_role      ON audit_log(target_role_slug);
+CREATE INDEX idx_audit_target_user   ON audit_log(target_user_id);
+CREATE INDEX idx_audit_target_role      ON audit_log(target_role_slug);
+CREATE INDEX idx_audit_target_kebele      ON audit_log(target_kebele_id);
+CREATE INDEX idx_audit_target_city      ON audit_log(target_city_id);
+CREATE INDEX idx_audit_target_subcity      ON audit_log(target_subcity_id);
+CREATE INDEX idx_audit_target_resident     ON audit_log(target_resident_id);
 CREATE INDEX idx_audit_ts        ON audit_log(ts DESC);
 CREATE INDEX idx_audit_object    ON audit_log(object_type, object_id);

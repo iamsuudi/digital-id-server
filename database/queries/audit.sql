@@ -1,6 +1,9 @@
 -- name: InsertAuditLog :exec
-INSERT INTO audit_log (actor_id, target_user_id, target_role_slug, action_type, object_type, object_id, diff)
-VALUES ($1, $2, $3, $4, $5, $6, $7);
+INSERT INTO audit_log (
+    actor_id, target_user_id, target_role_slug, target_resident_id, target_kebele_id,
+    target_subcity_id, target_city_id, action_type, object_type, object_id, diff
+)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,$10, $11);
 
 -- name: GetAuditLog :one
 -- Return audit log under scope
@@ -37,7 +40,7 @@ WHERE log.actor_id IS NOT NULL AND
     (sqlc.narg('city_id')::uuid IS NULL OR au.city_id = sqlc.narg('city_id')::uuid) AND
     (sqlc.narg('subcity_id')::uuid IS NULL OR au.subcity_id = sqlc.narg('subcity_id')::uuid) AND
     (sqlc.narg('kebele_id')::uuid IS NULL OR au.kebele_id = sqlc.narg('kebele_id')::uuid)
-ORDER BY log.ts ASC
+ORDER BY log.ts DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: CountListAuditLogs :one

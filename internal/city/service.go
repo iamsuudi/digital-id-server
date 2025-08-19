@@ -20,33 +20,116 @@ func NewService(dbConn *pgxpool.Pool, dbQueries *repository.Queries) *Service {
 	return &Service{db: dbConn, q: dbQueries}
 }
 
-func (s *Service) CreateCity(ctx context.Context, input types.CityInput) (repository.City, error) {
-	return s.q.CreateCity(ctx, repository.CreateCityParams{
+func (s *Service) CreateCity(ctx context.Context, actorID uuid.UUID, input types.CityInput) (repository.City, error) {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return repository.City{}, err
+	}
+	defer tx.Rollback(ctx)
+
+	qtx := s.q.WithTx(tx)
+
+	city, err := qtx.CreateCity(ctx, repository.CreateCityParams{
 		Name: input.Name,
-		Lat: &input.Lat,
-		Lon: &input.Lon,
+		Lat:  &input.Lat,
+		Lon:  &input.Lon,
 	})
+	if err != nil {
+		return repository.City{}, err
+	}
+
+	err = qtx.InsertAuditLog(ctx, repository.InsertAuditLogParams{
+		ActorID:      actorID,
+		ActionType:   "CREATE_CITY",
+		TargetCityID: &(city.ID),
+		ObjectType:   "city",
+		Diff: map[string]any{
+			"after": city,
+		},
+	})
+	if err != nil {
+		return repository.City{}, err
+	}
+
+	return city, tx.Commit(ctx)
 }
 
-func (s *Service) DeleteCity(ctx context.Context, id uuid.UUID) error {
-	return s.q.SoftDeleteCity(ctx, id)
+func (s *Service) DeleteCity(ctx context.Context, actorID, id uuid.UUID) error {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	qtx := s.q.WithTx(tx)
+
+	// 1. Before
+	city, err := qtx.GetCity(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	// 2. Delete
+	err = s.q.SoftDeleteCity(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	// 3. Insert audit log
+	qtx.InsertAuditLog(ctx, repository.InsertAuditLogParams{
+		ActorID:    actorID,
+		ActionType: "DELETE_CITY",
+		ObjectType: "city",
+		Diff: map[string]any{
+			"before": city,
+		},
+	})
+	return tx.Commit(ctx)
 }
 
-func (s *Service) RemoveStaff(ctx context.Context, staffID uuid.UUID) error {
-	return s.q.RevokeUserPlacement(ctx, repository.RevokeUserPlacementParams{
+func (s *Service) RemoveStaff(ctx context.Context, actorID, staffID uuid.UUID) error {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+	qtx := s.q.WithTx(tx)
+
+	//  Before
+	user, err := qtx.GetUserByID(ctx, staffID)
+	if err != nil {
+		return err
+	}
+	city, err := qtx.GetCity(ctx, *user.CityID)
+	if err != nil {
+		return err
+	}
+
+	// After
+	err = qtx.RevokeUserPlacement(ctx, repository.RevokeUserPlacementParams{
 		CityID: nil,
 		ID:     staffID,
 	})
-}
 
-func (s *Service) AddStaff(ctx context.Context, CityID, staffID uuid.UUID) error {
-	return s.q.GrantUserPlacement(ctx, repository.GrantUserPlacementParams{
-		ID:     staffID,
-		CityID: &(CityID),
+	// Insert audit log
+	err = qtx.InsertAuditLog(ctx, repository.InsertAuditLogParams{
+		ActorID:      actorID,
+		ActionType:   "REMOVE_ADMIN",
+		TargetCityID: &(city.ID),
+		ObjectType:   "city",
+		Diff: map[string]any{
+			"before": map[string]any{
+				"user_name": city.AdminName,
+				"city":      city.Name,
+				"position":  "Admin",
+			},
+		},
 	})
+
+	return tx.Commit(ctx)
 }
 
-func (s *Service) AssignAdmin(ctx context.Context, cityID, adminID uuid.UUID) error {
+func (s *Service) AssignAdmin(ctx context.Context, actorID, cityID, adminID uuid.UUID) error {
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
 		return err
@@ -79,16 +162,68 @@ func (s *Service) AssignAdmin(ctx context.Context, cityID, adminID uuid.UUID) er
 		return err
 	}
 
+	user, err := qtx.GetUserByID(ctx, adminID)
+	if err != nil {
+		return err
+	}
+
+	// 3. Insert audit log
+	err = qtx.InsertAuditLog(ctx, repository.InsertAuditLogParams{
+		ActorID:      actorID,
+		ActionType:   "ASSIGN_ADMIN",
+		TargetCityID: &(cityID),
+		ObjectType:   "city",
+		Diff: map[string]any{
+			"before": map[string]any{
+				"user_name": city.AdminName,
+				"city":      city.Name,
+				"position":  "Admin",
+			},
+			"after": map[string]any{
+				"user_name": user.FullName,
+				"city":      city.Name,
+				"position":  "Admin",
+			},
+		},
+	})
+
 	return tx.Commit(ctx)
 }
 
-func (s *Service) UpdateCityInfo(ctx context.Context, id uuid.UUID, name string, lat, lon *float64) error {
-	return s.q.UpdateCity(ctx, repository.UpdateCityParams{
+func (s *Service) UpdateCityInfo(ctx context.Context, actorID, id uuid.UUID, name string, lat, lon *float64) error {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+	qtx := s.q.WithTx(tx)
+
+	// 1. Before
+	before, err := qtx.GetCity(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	// 2. After
+	updated, err := qtx.UpdateCity(ctx, repository.UpdateCityParams{
 		ID:   id,
 		Name: name,
 		Lat:  lat,
 		Lon:  lon,
 	})
+
+	// 3. Insert audit log
+	err = qtx.InsertAuditLog(ctx, repository.InsertAuditLogParams{
+		ActorID:      actorID,
+		TargetCityID: &id,
+		ActionType:   "UPDATE_CITY",
+		ObjectType:   "city",
+		Diff: map[string]any{
+			"before": before,
+			"after":  updated,
+		},
+	})
+	return tx.Commit(ctx)
 }
 
 func (s *Service) GetSubCities(ctx context.Context, id uuid.UUID) ([]repository.GetSubCitiesForCityRow, error) {

@@ -30,7 +30,10 @@ func (h *Handler) CreateSubCity(c *gin.Context) {
 		return
 	}
 
-	city, err := h.service.CreateSubCity(c.Request.Context(), input)
+	raw, _ := c.Get("user_id")
+	actorID, _ := raw.(uuid.UUID)
+
+	city, err := h.service.CreateSubCity(c.Request.Context(), actorID, input)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create city: " + err.Error()})
 		return
@@ -57,7 +60,10 @@ func (h *Handler) UpdateSubCityInfo(c *gin.Context) {
 		return
 	}
 
-	err = h.service.UpdateSubCity(c.Request.Context(), id, input.Name, input.Lat, input.Lon)
+	raw, _ := c.Get("user_id")
+	actorID, _ := raw.(uuid.UUID)
+
+	err = h.service.UpdateSubCity(c.Request.Context(), actorID, id, input.Name, input.Lat, input.Lon)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "SubCity not found"})
@@ -78,7 +84,10 @@ func (h *Handler) DeleteSubCity(c *gin.Context) {
 		return
 	}
 
-	err = h.service.DeleteSubCity(c.Request.Context(), id)
+	raw, _ := c.Get("user_id")
+	actorID, _ := raw.(uuid.UUID)
+
+	err = h.service.DeleteSubCity(c.Request.Context(), actorID, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "SubCity not found"})
@@ -128,7 +137,10 @@ func (h *Handler) AddStaff(c *gin.Context) {
 		return
 	}
 
-	err = h.service.AssignManager(c.Request.Context(), id, input.StaffID)
+	raw, _ := c.Get("user_id")
+	actorID, _ := raw.(uuid.UUID)
+
+	err = h.service.AssignManager(c.Request.Context(), actorID, id, input.StaffID)
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -158,7 +170,10 @@ func (h *Handler) RemoveStaff(c *gin.Context) {
 		return
 	}
 
-	err = h.service.RemoveStaff(c.Request.Context(), input.StaffID)
+	raw, _ := c.Get("user_id")
+	actorID, _ := raw.(uuid.UUID)
+
+	err = h.service.RemoveStaff(c.Request.Context(), actorID, input.StaffID)
 	if err != nil {
 		fmt.Println(err.Error())
 		if errors.Is(err, pgx.ErrNoRows) {

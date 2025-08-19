@@ -350,6 +350,9 @@ type AuditLog struct {
 	ActorID          uuid.UUID   `db:"actor_id" json:"actor_id"`
 	TargetUserID     *uuid.UUID  `db:"target_user_id" json:"target_user_id"`
 	TargetResidentID *uuid.UUID  `db:"target_resident_id" json:"target_resident_id"`
+	TargetKebeleID   *uuid.UUID  `db:"target_kebele_id" json:"target_kebele_id"`
+	TargetSubcityID  *uuid.UUID  `db:"target_subcity_id" json:"target_subcity_id"`
+	TargetCityID     *uuid.UUID  `db:"target_city_id" json:"target_city_id"`
 	TargetRoleSlug   *string     `db:"target_role_slug" json:"target_role_slug"`
 	ActionType       string      `db:"action_type" json:"action_type"`
 	ObjectType       string      `db:"object_type" json:"object_type"`

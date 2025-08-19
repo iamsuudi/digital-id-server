@@ -37,7 +37,7 @@ func (q *Queries) CountListAuditLogs(ctx context.Context, arg CountListAuditLogs
 }
 
 const getAuditLog = `-- name: GetAuditLog :one
-SELECT log.id, log.actor_id, log.target_user_id, log.target_resident_id, log.target_role_slug, log.action_type, log.object_type, log.object_id, log.diff, log.ts, ar.name AS actor_role,
+SELECT log.id, log.actor_id, log.target_user_id, log.target_resident_id, log.target_kebele_id, log.target_subcity_id, log.target_city_id, log.target_role_slug, log.action_type, log.object_type, log.object_id, log.diff, log.ts, ar.name AS actor_role,
     CONCAT_WS(' ', au.first_name, au.second_name, au.last_name) AS actor_name,
     CONCAT_WS(' ', tu.first_name, tu.second_name, tu.last_name) AS target_user_name
 FROM audit_log log
@@ -66,6 +66,9 @@ type GetAuditLogRow struct {
 	ActorID          uuid.UUID   `db:"actor_id" json:"actor_id"`
 	TargetUserID     *uuid.UUID  `db:"target_user_id" json:"target_user_id"`
 	TargetResidentID *uuid.UUID  `db:"target_resident_id" json:"target_resident_id"`
+	TargetKebeleID   *uuid.UUID  `db:"target_kebele_id" json:"target_kebele_id"`
+	TargetSubcityID  *uuid.UUID  `db:"target_subcity_id" json:"target_subcity_id"`
+	TargetCityID     *uuid.UUID  `db:"target_city_id" json:"target_city_id"`
 	TargetRoleSlug   *string     `db:"target_role_slug" json:"target_role_slug"`
 	ActionType       string      `db:"action_type" json:"action_type"`
 	ObjectType       string      `db:"object_type" json:"object_type"`
@@ -91,6 +94,9 @@ func (q *Queries) GetAuditLog(ctx context.Context, arg GetAuditLogParams) (GetAu
 		&i.ActorID,
 		&i.TargetUserID,
 		&i.TargetResidentID,
+		&i.TargetKebeleID,
+		&i.TargetSubcityID,
+		&i.TargetCityID,
 		&i.TargetRoleSlug,
 		&i.ActionType,
 		&i.ObjectType,
@@ -105,18 +111,25 @@ func (q *Queries) GetAuditLog(ctx context.Context, arg GetAuditLogParams) (GetAu
 }
 
 const insertAuditLog = `-- name: InsertAuditLog :exec
-INSERT INTO audit_log (actor_id, target_user_id, target_role_slug, action_type, object_type, object_id, diff)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+INSERT INTO audit_log (
+    actor_id, target_user_id, target_role_slug, target_resident_id, target_kebele_id,
+    target_subcity_id, target_city_id, action_type, object_type, object_id, diff
+)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,$10, $11)
 `
 
 type InsertAuditLogParams struct {
-	ActorID        uuid.UUID   `db:"actor_id" json:"actor_id"`
-	TargetUserID   *uuid.UUID  `db:"target_user_id" json:"target_user_id"`
-	TargetRoleSlug *string     `db:"target_role_slug" json:"target_role_slug"`
-	ActionType     string      `db:"action_type" json:"action_type"`
-	ObjectType     string      `db:"object_type" json:"object_type"`
-	ObjectID       *int64      `db:"object_id" json:"object_id"`
-	Diff           types.JSONB `db:"diff" json:"diff"`
+	ActorID          uuid.UUID   `db:"actor_id" json:"actor_id"`
+	TargetUserID     *uuid.UUID  `db:"target_user_id" json:"target_user_id"`
+	TargetRoleSlug   *string     `db:"target_role_slug" json:"target_role_slug"`
+	TargetResidentID *uuid.UUID  `db:"target_resident_id" json:"target_resident_id"`
+	TargetKebeleID   *uuid.UUID  `db:"target_kebele_id" json:"target_kebele_id"`
+	TargetSubcityID  *uuid.UUID  `db:"target_subcity_id" json:"target_subcity_id"`
+	TargetCityID     *uuid.UUID  `db:"target_city_id" json:"target_city_id"`
+	ActionType       string      `db:"action_type" json:"action_type"`
+	ObjectType       string      `db:"object_type" json:"object_type"`
+	ObjectID         *int64      `db:"object_id" json:"object_id"`
+	Diff             types.JSONB `db:"diff" json:"diff"`
 }
 
 func (q *Queries) InsertAuditLog(ctx context.Context, arg InsertAuditLogParams) error {
@@ -124,6 +137,10 @@ func (q *Queries) InsertAuditLog(ctx context.Context, arg InsertAuditLogParams) 
 		arg.ActorID,
 		arg.TargetUserID,
 		arg.TargetRoleSlug,
+		arg.TargetResidentID,
+		arg.TargetKebeleID,
+		arg.TargetSubcityID,
+		arg.TargetCityID,
 		arg.ActionType,
 		arg.ObjectType,
 		arg.ObjectID,
@@ -133,7 +150,7 @@ func (q *Queries) InsertAuditLog(ctx context.Context, arg InsertAuditLogParams) 
 }
 
 const listAuditLogs = `-- name: ListAuditLogs :many
-SELECT log.id, log.actor_id, log.target_user_id, log.target_resident_id, log.target_role_slug, log.action_type, log.object_type, log.object_id, log.diff, log.ts, ar.name AS actor_role,
+SELECT log.id, log.actor_id, log.target_user_id, log.target_resident_id, log.target_kebele_id, log.target_subcity_id, log.target_city_id, log.target_role_slug, log.action_type, log.object_type, log.object_id, log.diff, log.ts, ar.name AS actor_role,
     CONCAT_WS(' ', au.first_name, au.second_name, au.last_name) AS actor_name,
     CONCAT_WS(' ', tu.first_name, tu.second_name, tu.last_name) AS target_user_name
 FROM audit_log log
@@ -148,7 +165,7 @@ WHERE log.actor_id IS NOT NULL AND
     ($1::uuid IS NULL OR au.city_id = $1::uuid) AND
     ($2::uuid IS NULL OR au.subcity_id = $2::uuid) AND
     ($3::uuid IS NULL OR au.kebele_id = $3::uuid)
-ORDER BY log.ts ASC
+ORDER BY log.ts DESC
 LIMIT $5 OFFSET $4
 `
 
@@ -165,6 +182,9 @@ type ListAuditLogsRow struct {
 	ActorID          uuid.UUID   `db:"actor_id" json:"actor_id"`
 	TargetUserID     *uuid.UUID  `db:"target_user_id" json:"target_user_id"`
 	TargetResidentID *uuid.UUID  `db:"target_resident_id" json:"target_resident_id"`
+	TargetKebeleID   *uuid.UUID  `db:"target_kebele_id" json:"target_kebele_id"`
+	TargetSubcityID  *uuid.UUID  `db:"target_subcity_id" json:"target_subcity_id"`
+	TargetCityID     *uuid.UUID  `db:"target_city_id" json:"target_city_id"`
 	TargetRoleSlug   *string     `db:"target_role_slug" json:"target_role_slug"`
 	ActionType       string      `db:"action_type" json:"action_type"`
 	ObjectType       string      `db:"object_type" json:"object_type"`
@@ -197,6 +217,9 @@ func (q *Queries) ListAuditLogs(ctx context.Context, arg ListAuditLogsParams) ([
 			&i.ActorID,
 			&i.TargetUserID,
 			&i.TargetResidentID,
+			&i.TargetKebeleID,
+			&i.TargetSubcityID,
+			&i.TargetCityID,
 			&i.TargetRoleSlug,
 			&i.ActionType,
 			&i.ObjectType,
@@ -218,7 +241,7 @@ func (q *Queries) ListAuditLogs(ctx context.Context, arg ListAuditLogsParams) ([
 }
 
 const listUserAuditLogs = `-- name: ListUserAuditLogs :many
-SELECT log.id, log.actor_id, log.target_user_id, log.target_resident_id, log.target_role_slug, log.action_type, log.object_type, log.object_id, log.diff, log.ts, CONCAT_WS(' ', au.first_name, au.second_name, au.last_name) AS actor_name
+SELECT log.id, log.actor_id, log.target_user_id, log.target_resident_id, log.target_kebele_id, log.target_subcity_id, log.target_city_id, log.target_role_slug, log.action_type, log.object_type, log.object_id, log.diff, log.ts, CONCAT_WS(' ', au.first_name, au.second_name, au.last_name) AS actor_name
 FROM audit_log log
 JOIN "user" au ON au.id = log.actor_id
 LEFT JOIN city c ON c.id = au.city_id
@@ -247,6 +270,9 @@ type ListUserAuditLogsRow struct {
 	ActorID          uuid.UUID   `db:"actor_id" json:"actor_id"`
 	TargetUserID     *uuid.UUID  `db:"target_user_id" json:"target_user_id"`
 	TargetResidentID *uuid.UUID  `db:"target_resident_id" json:"target_resident_id"`
+	TargetKebeleID   *uuid.UUID  `db:"target_kebele_id" json:"target_kebele_id"`
+	TargetSubcityID  *uuid.UUID  `db:"target_subcity_id" json:"target_subcity_id"`
+	TargetCityID     *uuid.UUID  `db:"target_city_id" json:"target_city_id"`
 	TargetRoleSlug   *string     `db:"target_role_slug" json:"target_role_slug"`
 	ActionType       string      `db:"action_type" json:"action_type"`
 	ObjectType       string      `db:"object_type" json:"object_type"`
@@ -277,6 +303,9 @@ func (q *Queries) ListUserAuditLogs(ctx context.Context, arg ListUserAuditLogsPa
 			&i.ActorID,
 			&i.TargetUserID,
 			&i.TargetResidentID,
+			&i.TargetKebeleID,
+			&i.TargetSubcityID,
+			&i.TargetCityID,
 			&i.TargetRoleSlug,
 			&i.ActionType,
 			&i.ObjectType,
