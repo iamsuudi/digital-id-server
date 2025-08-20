@@ -84,9 +84,9 @@ func (h *Handler) OverridePermission(c *gin.Context) {
 	id, _ := raw.(uuid.UUID)
 
 	var input struct {
-		TargetID uuid.UUID `json:"id" binding:"required"`
-		Permission string `json:"permission" binding:"required"`
-		Override bool `json:"override"`
+		TargetID   uuid.UUID `json:"id" binding:"required"`
+		Permission string    `json:"permission" binding:"required"`
+		Override   bool      `json:"override"`
 	}
 	err := c.BindJSON(&input)
 	if err != nil {
@@ -106,9 +106,12 @@ func (h *Handler) OverridePermission(c *gin.Context) {
 }
 
 func (h *Handler) RemoveOverride(c *gin.Context) {
+	raw, _ := c.Get("user_id")
+	id, _ := raw.(uuid.UUID)
+
 	var input struct {
-		TargetID uuid.UUID `json:"id" binding:"required"`
-		Permission string `json:"permission" binding:"required"`
+		TargetID   uuid.UUID `json:"id" binding:"required"`
+		Permission string    `json:"permission" binding:"required"`
 	}
 	err := c.BindJSON(&input)
 	if err != nil {
@@ -116,7 +119,7 @@ func (h *Handler) RemoveOverride(c *gin.Context) {
 		return
 	}
 
-	err = h.service.RemoveUserPermissionOverride(c, input.TargetID, input.Permission)
+	err = h.service.RemoveUserPermissionOverride(c, id, input.TargetID, input.Permission)
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove permission override"})

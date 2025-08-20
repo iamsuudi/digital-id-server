@@ -11,7 +11,7 @@ CREATE TABLE audit_log (
     object_type         TEXT NOT NULL,
     object_id           BIGINT,
     diff                JSONB,
-    ts                  TIMESTAMP(3) NOT NULL DEFAULT now()
+    ts                  TIMESTAMPTZ(3) NOT NULL DEFAULT now()
 );
 
 CREATE INDEX idx_audit_actor            ON audit_log(actor_id);

@@ -36,6 +36,84 @@ func (q *Queries) CountListAuditLogs(ctx context.Context, arg CountListAuditLogs
 	return count, err
 }
 
+const countListCityAuditLogs = `-- name: CountListCityAuditLogs :one
+SELECT COUNT(*)
+FROM audit_log log
+WHERE log.target_city_id = $1
+`
+
+func (q *Queries) CountListCityAuditLogs(ctx context.Context, id *uuid.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, countListCityAuditLogs, id)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countListKebeleAuditLogs = `-- name: CountListKebeleAuditLogs :one
+SELECT COUNT(*)
+FROM audit_log log
+WHERE log.target_kebele_id = $1
+`
+
+func (q *Queries) CountListKebeleAuditLogs(ctx context.Context, id *uuid.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, countListKebeleAuditLogs, id)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countListResidentAuditLogs = `-- name: CountListResidentAuditLogs :one
+SELECT COUNT(*)
+FROM audit_log log
+WHERE log.target_resident_id = $1
+`
+
+func (q *Queries) CountListResidentAuditLogs(ctx context.Context, id *uuid.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, countListResidentAuditLogs, id)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countListRoleAuditLogs = `-- name: CountListRoleAuditLogs :one
+SELECT COUNT(*)
+FROM audit_log log
+WHERE log.target_role_slug = $1
+`
+
+func (q *Queries) CountListRoleAuditLogs(ctx context.Context, slug *string) (int64, error) {
+	row := q.db.QueryRow(ctx, countListRoleAuditLogs, slug)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countListSubCityAuditLogs = `-- name: CountListSubCityAuditLogs :one
+SELECT COUNT(*)
+FROM audit_log log
+WHERE log.target_subcity_id = $1
+`
+
+func (q *Queries) CountListSubCityAuditLogs(ctx context.Context, id *uuid.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, countListSubCityAuditLogs, id)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countListUserAuditLogs = `-- name: CountListUserAuditLogs :one
+SELECT COUNT(*)
+FROM audit_log log
+WHERE log.target_user_id = $1
+`
+
+func (q *Queries) CountListUserAuditLogs(ctx context.Context, id *uuid.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, countListUserAuditLogs, id)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const getAuditLog = `-- name: GetAuditLog :one
 SELECT log.id, log.actor_id, log.target_user_id, log.target_resident_id, log.target_kebele_id, log.target_subcity_id, log.target_city_id, log.target_role_slug, log.action_type, log.object_type, log.object_id, log.diff, log.ts, ar.name AS actor_role,
     CONCAT_WS(' ', au.first_name, au.second_name, au.last_name) AS actor_name,
@@ -240,29 +318,376 @@ func (q *Queries) ListAuditLogs(ctx context.Context, arg ListAuditLogsParams) ([
 	return items, nil
 }
 
-const listUserAuditLogs = `-- name: ListUserAuditLogs :many
-SELECT log.id, log.actor_id, log.target_user_id, log.target_resident_id, log.target_kebele_id, log.target_subcity_id, log.target_city_id, log.target_role_slug, log.action_type, log.object_type, log.object_id, log.diff, log.ts, CONCAT_WS(' ', au.first_name, au.second_name, au.last_name) AS actor_name
+const listCityAuditLogs = `-- name: ListCityAuditLogs :many
+SELECT log.id, log.actor_id, log.target_user_id, log.target_resident_id, log.target_kebele_id, log.target_subcity_id, log.target_city_id, log.target_role_slug, log.action_type, log.object_type, log.object_id, log.diff, log.ts, ar.name AS actor_role, CONCAT_WS(' ', au.first_name, au.second_name, au.last_name) AS actor_name
 FROM audit_log log
+JOIN city t ON t.id = log.target_city_id
 JOIN "user" au ON au.id = log.actor_id
-LEFT JOIN city c ON c.id = au.city_id
-LEFT JOIN subcity sc ON sc.id = au.subcity_id
-LEFT JOIN kebele k ON k.id = au.kebele_id
-LEFT JOIN "user" tu ON tu.id = log.target_user_id
-LEFT JOIN role r ON r.slug = log.target_role_slug
-WHERE log.target_user_id IS NOT NULL AND
-    ($1::uuid IS NULL OR au.city_id = $1::uuid) AND
-    ($2::uuid IS NULL OR au.subcity_id = $2::uuid) AND
-    ($3::uuid IS NULL OR au.kebele_id = $3::uuid)
-ORDER BY log.ts ASC
-LIMIT $5 OFFSET $4
+JOIN role ar ON ar.slug = au.role_slug
+WHERE log.target_city_id = $1
+ORDER BY log.ts DESC
+LIMIT $3 OFFSET $2
+`
+
+type ListCityAuditLogsParams struct {
+	ID     *uuid.UUID `db:"id" json:"id"`
+	Offset int32      `db:"offset" json:"offset"`
+	Limit  int32      `db:"limit" json:"limit"`
+}
+
+type ListCityAuditLogsRow struct {
+	ID               uuid.UUID   `db:"id" json:"id"`
+	ActorID          uuid.UUID   `db:"actor_id" json:"actor_id"`
+	TargetUserID     *uuid.UUID  `db:"target_user_id" json:"target_user_id"`
+	TargetResidentID *uuid.UUID  `db:"target_resident_id" json:"target_resident_id"`
+	TargetKebeleID   *uuid.UUID  `db:"target_kebele_id" json:"target_kebele_id"`
+	TargetSubcityID  *uuid.UUID  `db:"target_subcity_id" json:"target_subcity_id"`
+	TargetCityID     *uuid.UUID  `db:"target_city_id" json:"target_city_id"`
+	TargetRoleSlug   *string     `db:"target_role_slug" json:"target_role_slug"`
+	ActionType       string      `db:"action_type" json:"action_type"`
+	ObjectType       string      `db:"object_type" json:"object_type"`
+	ObjectID         *int64      `db:"object_id" json:"object_id"`
+	Diff             types.JSONB `db:"diff" json:"diff"`
+	Ts               time.Time   `db:"ts" json:"ts"`
+	ActorRole        string      `db:"actor_role" json:"actor_role"`
+	ActorName        string      `db:"actor_name" json:"actor_name"`
+}
+
+func (q *Queries) ListCityAuditLogs(ctx context.Context, arg ListCityAuditLogsParams) ([]ListCityAuditLogsRow, error) {
+	rows, err := q.db.Query(ctx, listCityAuditLogs, arg.ID, arg.Offset, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListCityAuditLogsRow{}
+	for rows.Next() {
+		var i ListCityAuditLogsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ActorID,
+			&i.TargetUserID,
+			&i.TargetResidentID,
+			&i.TargetKebeleID,
+			&i.TargetSubcityID,
+			&i.TargetCityID,
+			&i.TargetRoleSlug,
+			&i.ActionType,
+			&i.ObjectType,
+			&i.ObjectID,
+			&i.Diff,
+			&i.Ts,
+			&i.ActorRole,
+			&i.ActorName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listKebeleAuditLogs = `-- name: ListKebeleAuditLogs :many
+SELECT log.id, log.actor_id, log.target_user_id, log.target_resident_id, log.target_kebele_id, log.target_subcity_id, log.target_city_id, log.target_role_slug, log.action_type, log.object_type, log.object_id, log.diff, log.ts, ar.name AS actor_role, CONCAT_WS(' ', au.first_name, au.second_name, au.last_name) AS actor_name
+FROM audit_log log
+JOIN kebele t ON t.id = log.target_kebele_id
+JOIN "user" au ON au.id = log.actor_id
+JOIN role ar ON ar.slug = au.role_slug
+WHERE log.target_kebele_id = $1
+ORDER BY log.ts DESC
+LIMIT $3 OFFSET $2
+`
+
+type ListKebeleAuditLogsParams struct {
+	ID     *uuid.UUID `db:"id" json:"id"`
+	Offset int32      `db:"offset" json:"offset"`
+	Limit  int32      `db:"limit" json:"limit"`
+}
+
+type ListKebeleAuditLogsRow struct {
+	ID               uuid.UUID   `db:"id" json:"id"`
+	ActorID          uuid.UUID   `db:"actor_id" json:"actor_id"`
+	TargetUserID     *uuid.UUID  `db:"target_user_id" json:"target_user_id"`
+	TargetResidentID *uuid.UUID  `db:"target_resident_id" json:"target_resident_id"`
+	TargetKebeleID   *uuid.UUID  `db:"target_kebele_id" json:"target_kebele_id"`
+	TargetSubcityID  *uuid.UUID  `db:"target_subcity_id" json:"target_subcity_id"`
+	TargetCityID     *uuid.UUID  `db:"target_city_id" json:"target_city_id"`
+	TargetRoleSlug   *string     `db:"target_role_slug" json:"target_role_slug"`
+	ActionType       string      `db:"action_type" json:"action_type"`
+	ObjectType       string      `db:"object_type" json:"object_type"`
+	ObjectID         *int64      `db:"object_id" json:"object_id"`
+	Diff             types.JSONB `db:"diff" json:"diff"`
+	Ts               time.Time   `db:"ts" json:"ts"`
+	ActorRole        string      `db:"actor_role" json:"actor_role"`
+	ActorName        string      `db:"actor_name" json:"actor_name"`
+}
+
+func (q *Queries) ListKebeleAuditLogs(ctx context.Context, arg ListKebeleAuditLogsParams) ([]ListKebeleAuditLogsRow, error) {
+	rows, err := q.db.Query(ctx, listKebeleAuditLogs, arg.ID, arg.Offset, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListKebeleAuditLogsRow{}
+	for rows.Next() {
+		var i ListKebeleAuditLogsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ActorID,
+			&i.TargetUserID,
+			&i.TargetResidentID,
+			&i.TargetKebeleID,
+			&i.TargetSubcityID,
+			&i.TargetCityID,
+			&i.TargetRoleSlug,
+			&i.ActionType,
+			&i.ObjectType,
+			&i.ObjectID,
+			&i.Diff,
+			&i.Ts,
+			&i.ActorRole,
+			&i.ActorName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listResidentAuditLogs = `-- name: ListResidentAuditLogs :many
+SELECT log.id, log.actor_id, log.target_user_id, log.target_resident_id, log.target_kebele_id, log.target_subcity_id, log.target_city_id, log.target_role_slug, log.action_type, log.object_type, log.object_id, log.diff, log.ts, ar.name AS actor_role, CONCAT_WS(' ', au.first_name, au.second_name, au.last_name) AS actor_name
+FROM audit_log log
+JOIN resident tr ON tr.id = log.target_resident_id
+JOIN "user" au ON au.id = log.actor_id
+JOIN role ar ON ar.slug = au.role_slug
+WHERE log.target_resident_id = $1
+ORDER BY log.ts DESC
+LIMIT $3 OFFSET $2
+`
+
+type ListResidentAuditLogsParams struct {
+	ID     *uuid.UUID `db:"id" json:"id"`
+	Offset int32      `db:"offset" json:"offset"`
+	Limit  int32      `db:"limit" json:"limit"`
+}
+
+type ListResidentAuditLogsRow struct {
+	ID               uuid.UUID   `db:"id" json:"id"`
+	ActorID          uuid.UUID   `db:"actor_id" json:"actor_id"`
+	TargetUserID     *uuid.UUID  `db:"target_user_id" json:"target_user_id"`
+	TargetResidentID *uuid.UUID  `db:"target_resident_id" json:"target_resident_id"`
+	TargetKebeleID   *uuid.UUID  `db:"target_kebele_id" json:"target_kebele_id"`
+	TargetSubcityID  *uuid.UUID  `db:"target_subcity_id" json:"target_subcity_id"`
+	TargetCityID     *uuid.UUID  `db:"target_city_id" json:"target_city_id"`
+	TargetRoleSlug   *string     `db:"target_role_slug" json:"target_role_slug"`
+	ActionType       string      `db:"action_type" json:"action_type"`
+	ObjectType       string      `db:"object_type" json:"object_type"`
+	ObjectID         *int64      `db:"object_id" json:"object_id"`
+	Diff             types.JSONB `db:"diff" json:"diff"`
+	Ts               time.Time   `db:"ts" json:"ts"`
+	ActorRole        string      `db:"actor_role" json:"actor_role"`
+	ActorName        string      `db:"actor_name" json:"actor_name"`
+}
+
+func (q *Queries) ListResidentAuditLogs(ctx context.Context, arg ListResidentAuditLogsParams) ([]ListResidentAuditLogsRow, error) {
+	rows, err := q.db.Query(ctx, listResidentAuditLogs, arg.ID, arg.Offset, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListResidentAuditLogsRow{}
+	for rows.Next() {
+		var i ListResidentAuditLogsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ActorID,
+			&i.TargetUserID,
+			&i.TargetResidentID,
+			&i.TargetKebeleID,
+			&i.TargetSubcityID,
+			&i.TargetCityID,
+			&i.TargetRoleSlug,
+			&i.ActionType,
+			&i.ObjectType,
+			&i.ObjectID,
+			&i.Diff,
+			&i.Ts,
+			&i.ActorRole,
+			&i.ActorName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listRoleAuditLogs = `-- name: ListRoleAuditLogs :many
+SELECT log.id, log.actor_id, log.target_user_id, log.target_resident_id, log.target_kebele_id, log.target_subcity_id, log.target_city_id, log.target_role_slug, log.action_type, log.object_type, log.object_id, log.diff, log.ts, ar.name AS actor_role, CONCAT_WS(' ', au.first_name, au.second_name, au.last_name) AS actor_name
+FROM audit_log log
+JOIN role t ON t.slug = log.target_role_slug
+JOIN "user" au ON au.id = log.actor_id
+JOIN role ar ON ar.slug = au.role_slug
+WHERE log.target_role_slug = $1
+ORDER BY log.ts DESC
+LIMIT $3 OFFSET $2
+`
+
+type ListRoleAuditLogsParams struct {
+	Slug   *string `db:"slug" json:"slug"`
+	Offset int32   `db:"offset" json:"offset"`
+	Limit  int32   `db:"limit" json:"limit"`
+}
+
+type ListRoleAuditLogsRow struct {
+	ID               uuid.UUID   `db:"id" json:"id"`
+	ActorID          uuid.UUID   `db:"actor_id" json:"actor_id"`
+	TargetUserID     *uuid.UUID  `db:"target_user_id" json:"target_user_id"`
+	TargetResidentID *uuid.UUID  `db:"target_resident_id" json:"target_resident_id"`
+	TargetKebeleID   *uuid.UUID  `db:"target_kebele_id" json:"target_kebele_id"`
+	TargetSubcityID  *uuid.UUID  `db:"target_subcity_id" json:"target_subcity_id"`
+	TargetCityID     *uuid.UUID  `db:"target_city_id" json:"target_city_id"`
+	TargetRoleSlug   *string     `db:"target_role_slug" json:"target_role_slug"`
+	ActionType       string      `db:"action_type" json:"action_type"`
+	ObjectType       string      `db:"object_type" json:"object_type"`
+	ObjectID         *int64      `db:"object_id" json:"object_id"`
+	Diff             types.JSONB `db:"diff" json:"diff"`
+	Ts               time.Time   `db:"ts" json:"ts"`
+	ActorRole        string      `db:"actor_role" json:"actor_role"`
+	ActorName        string      `db:"actor_name" json:"actor_name"`
+}
+
+func (q *Queries) ListRoleAuditLogs(ctx context.Context, arg ListRoleAuditLogsParams) ([]ListRoleAuditLogsRow, error) {
+	rows, err := q.db.Query(ctx, listRoleAuditLogs, arg.Slug, arg.Offset, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListRoleAuditLogsRow{}
+	for rows.Next() {
+		var i ListRoleAuditLogsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ActorID,
+			&i.TargetUserID,
+			&i.TargetResidentID,
+			&i.TargetKebeleID,
+			&i.TargetSubcityID,
+			&i.TargetCityID,
+			&i.TargetRoleSlug,
+			&i.ActionType,
+			&i.ObjectType,
+			&i.ObjectID,
+			&i.Diff,
+			&i.Ts,
+			&i.ActorRole,
+			&i.ActorName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listSubCityAuditLogs = `-- name: ListSubCityAuditLogs :many
+SELECT log.id, log.actor_id, log.target_user_id, log.target_resident_id, log.target_kebele_id, log.target_subcity_id, log.target_city_id, log.target_role_slug, log.action_type, log.object_type, log.object_id, log.diff, log.ts, ar.name AS actor_role, CONCAT_WS(' ', au.first_name, au.second_name, au.last_name) AS actor_name
+FROM audit_log log
+JOIN subcity t ON t.id = log.target_subcity_id
+JOIN "user" au ON au.id = log.actor_id
+JOIN role ar ON ar.slug = au.role_slug
+WHERE log.target_subcity_id = $1
+ORDER BY log.ts DESC
+LIMIT $3 OFFSET $2
+`
+
+type ListSubCityAuditLogsParams struct {
+	ID     *uuid.UUID `db:"id" json:"id"`
+	Offset int32      `db:"offset" json:"offset"`
+	Limit  int32      `db:"limit" json:"limit"`
+}
+
+type ListSubCityAuditLogsRow struct {
+	ID               uuid.UUID   `db:"id" json:"id"`
+	ActorID          uuid.UUID   `db:"actor_id" json:"actor_id"`
+	TargetUserID     *uuid.UUID  `db:"target_user_id" json:"target_user_id"`
+	TargetResidentID *uuid.UUID  `db:"target_resident_id" json:"target_resident_id"`
+	TargetKebeleID   *uuid.UUID  `db:"target_kebele_id" json:"target_kebele_id"`
+	TargetSubcityID  *uuid.UUID  `db:"target_subcity_id" json:"target_subcity_id"`
+	TargetCityID     *uuid.UUID  `db:"target_city_id" json:"target_city_id"`
+	TargetRoleSlug   *string     `db:"target_role_slug" json:"target_role_slug"`
+	ActionType       string      `db:"action_type" json:"action_type"`
+	ObjectType       string      `db:"object_type" json:"object_type"`
+	ObjectID         *int64      `db:"object_id" json:"object_id"`
+	Diff             types.JSONB `db:"diff" json:"diff"`
+	Ts               time.Time   `db:"ts" json:"ts"`
+	ActorRole        string      `db:"actor_role" json:"actor_role"`
+	ActorName        string      `db:"actor_name" json:"actor_name"`
+}
+
+func (q *Queries) ListSubCityAuditLogs(ctx context.Context, arg ListSubCityAuditLogsParams) ([]ListSubCityAuditLogsRow, error) {
+	rows, err := q.db.Query(ctx, listSubCityAuditLogs, arg.ID, arg.Offset, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListSubCityAuditLogsRow{}
+	for rows.Next() {
+		var i ListSubCityAuditLogsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ActorID,
+			&i.TargetUserID,
+			&i.TargetResidentID,
+			&i.TargetKebeleID,
+			&i.TargetSubcityID,
+			&i.TargetCityID,
+			&i.TargetRoleSlug,
+			&i.ActionType,
+			&i.ObjectType,
+			&i.ObjectID,
+			&i.Diff,
+			&i.Ts,
+			&i.ActorRole,
+			&i.ActorName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listUserAuditLogs = `-- name: ListUserAuditLogs :many
+SELECT log.id, log.actor_id, log.target_user_id, log.target_resident_id, log.target_kebele_id, log.target_subcity_id, log.target_city_id, log.target_role_slug, log.action_type, log.object_type, log.object_id, log.diff, log.ts, ar.name AS actor_role, CONCAT_WS(' ', au.first_name, au.second_name, au.last_name) AS actor_name
+FROM audit_log log
+JOIN "user" tu ON tu.id = log.target_user_id
+JOIN "user" au ON au.id = log.actor_id
+JOIN role ar ON ar.slug = au.role_slug
+WHERE log.target_user_id = $1
+ORDER BY log.ts DESC
+LIMIT $3 OFFSET $2
 `
 
 type ListUserAuditLogsParams struct {
-	CityID    *uuid.UUID `db:"city_id" json:"city_id"`
-	SubcityID *uuid.UUID `db:"subcity_id" json:"subcity_id"`
-	KebeleID  *uuid.UUID `db:"kebele_id" json:"kebele_id"`
-	Offset    int32      `db:"offset" json:"offset"`
-	Limit     int32      `db:"limit" json:"limit"`
+	ID     *uuid.UUID `db:"id" json:"id"`
+	Offset int32      `db:"offset" json:"offset"`
+	Limit  int32      `db:"limit" json:"limit"`
 }
 
 type ListUserAuditLogsRow struct {
@@ -279,18 +704,12 @@ type ListUserAuditLogsRow struct {
 	ObjectID         *int64      `db:"object_id" json:"object_id"`
 	Diff             types.JSONB `db:"diff" json:"diff"`
 	Ts               time.Time   `db:"ts" json:"ts"`
+	ActorRole        string      `db:"actor_role" json:"actor_role"`
 	ActorName        string      `db:"actor_name" json:"actor_name"`
 }
 
-// Returns user related audit logs
 func (q *Queries) ListUserAuditLogs(ctx context.Context, arg ListUserAuditLogsParams) ([]ListUserAuditLogsRow, error) {
-	rows, err := q.db.Query(ctx, listUserAuditLogs,
-		arg.CityID,
-		arg.SubcityID,
-		arg.KebeleID,
-		arg.Offset,
-		arg.Limit,
-	)
+	rows, err := q.db.Query(ctx, listUserAuditLogs, arg.ID, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
@@ -312,6 +731,7 @@ func (q *Queries) ListUserAuditLogs(ctx context.Context, arg ListUserAuditLogsPa
 			&i.ObjectID,
 			&i.Diff,
 			&i.Ts,
+			&i.ActorRole,
 			&i.ActorName,
 		); err != nil {
 			return nil, err

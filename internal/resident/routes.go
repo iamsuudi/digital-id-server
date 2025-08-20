@@ -19,6 +19,7 @@ func RegisterRoutes(rg *gin.RouterGroup, db *pgxpool.Pool, q *repository.Queries
 		r.GET("/unverified", handler.GetUnverifiedResidents)
 		r.POST("/", handler.RegisterResident)
 		r.GET("/:id", handler.GetResident)
+		r.GET("/:id/audit", handler.GetResidentAudit)
 		r.GET("/:id/card", handler.GetIDCard)
 		r.GET("/:id/payment", handler.GetResidentPayment)
 		r.GET("/:id/documents", handler.GetResidentDocuments)

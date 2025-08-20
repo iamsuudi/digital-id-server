@@ -795,3 +795,19 @@ func (s *Service) GetIdCard(ctx context.Context, resident repository.GetVerified
 	}
 	return &card, nil
 }
+
+func (s *Service) ListAuditLogs(ctx context.Context, limit, offset int, id uuid.UUID) (int64, []repository.ListResidentAuditLogsRow, error) {
+	count, err := s.q.CountListResidentAuditLogs(ctx, &id)
+	if err != nil {
+		return 0, nil, err
+	}
+	if count == 0 {
+		return 0, nil, nil
+	}
+	logs, err := s.q.ListResidentAuditLogs(ctx, repository.ListResidentAuditLogsParams{
+		ID:     &id,
+		Limit:  int32(limit),
+		Offset: int32(offset),
+	})
+	return count, logs, err
+}

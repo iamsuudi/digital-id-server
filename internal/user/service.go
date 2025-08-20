@@ -257,3 +257,19 @@ func (s *Service) CanManipulateUser(ctx context.Context, actorId, targetId uuid.
 		TargetID: targetId,
 	})
 }
+
+func (s *Service) ListAuditLogs(ctx context.Context, limit, offset int, id uuid.UUID) (int64, []repository.ListUserAuditLogsRow, error) {
+	count, err := s.q.CountListUserAuditLogs(ctx, &id)
+	if err != nil {
+		return 0, nil, err
+	}
+	if count == 0 {
+		return 0, nil, nil
+	}
+	users, err := s.q.ListUserAuditLogs(ctx, repository.ListUserAuditLogsParams{
+		ID:     &id,
+		Limit:  int32(limit),
+		Offset: int32(offset),
+	})
+	return count, users, err
+}

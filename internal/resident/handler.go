@@ -676,3 +676,30 @@ func (h *Handler) GetIDCard(c *gin.Context) {
 
 	c.JSON(http.StatusOK, *card)
 }
+
+func (h *Handler) GetResidentAudit(c *gin.Context) {
+	raw := c.Param("id")
+	id, err := uuid.Parse(raw)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid resident ID"})
+		return
+	}
+
+	limit, offset, _ := utils.PaginationHelper(c)
+
+	count, logs, err := h.service.ListAuditLogs(c.Request.Context(), limit, offset, id)
+
+	if err != nil {
+		fmt.Print(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch logs"})
+		return
+	}
+	if logs == nil {
+		logs = []repository.ListResidentAuditLogsRow{}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"logs":  logs,
+		"count": count,
+	})
+}

@@ -241,3 +241,30 @@ func (h *Handler) GetSubCities(c *gin.Context) {
 		})
 	}
 }
+
+func (h *Handler) GetSubCityAudit(c *gin.Context) {
+	raw := c.Param("id")
+	id, err := uuid.Parse(raw)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid subcity ID"})
+		return
+	}
+
+	limit, offset, _ := utils.PaginationHelper(c)
+
+	count, logs, err := h.service.ListAuditLogs(c.Request.Context(), limit, offset, id)
+
+	if err != nil {
+		fmt.Print(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch logs"})
+		return
+	}
+	if logs == nil {
+		logs = []repository.ListSubCityAuditLogsRow{}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"logs":  logs,
+		"count": count,
+	})
+}
