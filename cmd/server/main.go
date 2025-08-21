@@ -2,6 +2,7 @@ package main
 
 import (
 	"digital-id-server/database"
+	"digital-id-server/internal/analytics"
 	"digital-id-server/internal/audit"
 	"digital-id-server/internal/auth"
 	"digital-id-server/internal/cache"
@@ -59,6 +60,7 @@ func main() {
 	kebele.RegisterRoutes(r.Group("/api/v1"), db, q)
 	audit.RegisterRoutes(r.Group("/api/v1"), db, q, cache)
 	resident.RegisterRoutes(r.Group("/api/v1"), db, q)
+	analytics.RegisterRoutes(r.Group("/api/v1"), db, q, cache)
 
 	r.Run(":8080")
 }
