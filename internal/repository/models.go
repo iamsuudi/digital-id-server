@@ -11,6 +11,7 @@ import (
 
 	types "digital-id-server/shared/types"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type DocumentStatus string
@@ -481,6 +482,22 @@ type Resident struct {
 	AddressID  *uuid.UUID `db:"address_id" json:"address_id"`
 	CreatedAt  time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt  *time.Time `db:"deleted_at" json:"deleted_at"`
+}
+
+type ResidentAnalytics struct {
+	ID         uuid.UUID      `db:"id" json:"id"`
+	Email      string         `db:"email" json:"email"`
+	FirstName  string         `db:"first_name" json:"first_name"`
+	SecondName string         `db:"second_name" json:"second_name"`
+	LastName   string         `db:"last_name" json:"last_name"`
+	BirthDate  time.Time      `db:"birth_date" json:"birth_date"`
+	Gender     string         `db:"gender" json:"gender"`
+	Phone      string         `db:"phone" json:"phone"`
+	AddressID  *uuid.UUID     `db:"address_id" json:"address_id"`
+	CreatedAt  time.Time      `db:"created_at" json:"created_at"`
+	DeletedAt  *time.Time     `db:"deleted_at" json:"deleted_at"`
+	Age        pgtype.Numeric `db:"age" json:"age"`
+	AgeGroup   string         `db:"age_group" json:"age_group"`
 }
 
 type Role struct {
