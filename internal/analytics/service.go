@@ -29,3 +29,7 @@ func (s *Service) GetAgeGroupDistribution(ctx context.Context) ([]repository.Get
 func (s *Service) GetGenderDistribution(ctx context.Context) ([]repository.GetGenderDistributionRow, error) {
 	return s.q.GetGenderDistribution(ctx)
 }
+
+func (s *Service) GetGenderAgeGroupDistribution(ctx context.Context) ([]repository.GetGenderAgeGroupDistributionRow, error) {
+	return s.q.GetGenderAgeGroupDistribution(ctx)
+}

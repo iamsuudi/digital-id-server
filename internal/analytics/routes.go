@@ -17,5 +17,6 @@ func RegisterRoutes(rg *gin.RouterGroup, db *pgxpool.Pool, q *repository.Queries
 	{
 		r.GET("/age-group", handler.AgeGroup)
 		r.GET("/gender", handler.Gender)
+		r.GET("/gender-age-group", handler.GenderAgeGroup)
 	}
 }

@@ -43,3 +43,16 @@ func (h *Handler) Gender(c *gin.Context) {
 
 	c.JSON(http.StatusOK, data)
 }
+
+func (h *Handler) GenderAgeGroup(c *gin.Context) {
+	data, err := h.service.GetGenderAgeGroupDistribution(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if data == nil {
+		data = []repository.GetGenderAgeGroupDistributionRow{}
+	}
+
+	c.JSON(http.StatusOK, data)
+}
