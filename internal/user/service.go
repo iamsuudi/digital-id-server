@@ -30,15 +30,27 @@ func (s *Service) CreateUser(ctx context.Context, actorID uuid.UUID, input types
 
 	// 1. Create user
 	user, err := qtx.CreateUser(ctx, repository.CreateUserParams{
-		FirstName:    input.FirstName,
-		SecondName:   input.SecondName,
-		LastName:     input.LastName,
-		Email:        input.Email,
-		Phone:        input.Phone,
-		PasswordHash: password,
-		RoleSlug:     input.RoleSlug,
+		FirstName:  input.FirstName,
+		SecondName: input.SecondName,
+		LastName:   input.LastName,
+		Email:      input.Email,
+		Phone:      input.Phone,
+		RoleSlug:   input.RoleSlug,
 	})
-	// 2. write audit log
+	if err != nil {
+		return err
+	}
+
+	// 2. Create account
+	err = qtx.CreateAccount(ctx, repository.CreateAccountParams{
+		UserID:       user.ID,
+		PasswordHash: password,
+	})
+	if err != nil {
+		return err
+	}
+
+	// 3. write audit log
 	diff := map[string]any{
 		// "before": old,
 		"after": user,

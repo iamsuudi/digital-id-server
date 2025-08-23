@@ -1,6 +1,14 @@
+-- name: CreateAccount :exec
+INSERT INTO account (user_id, password_hash)
+VALUES ($1, $2);
+
+-- name: GetAccount :one
+SELECT * FROM account
+WHERE account.user_id = $1;
+
 -- name: CreateUser :one
-INSERT INTO "user" (first_name, second_name, last_name, email, phone, password_hash, role_slug)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+INSERT INTO "user" (first_name, second_name, last_name, email, phone, role_slug)
+VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING *, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name;
 
 -- name: UpdateUserInfo :one

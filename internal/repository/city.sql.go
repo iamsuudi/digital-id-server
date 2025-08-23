@@ -209,7 +209,7 @@ func (q *Queries) ListCities(ctx context.Context, arg ListCitiesParams) ([]ListC
 }
 
 const searchCities = `-- name: SearchCities :many
-SELECT c.id, name, lat, lon, c.created_at, c.deleted_at, u.id, first_name, second_name, last_name, email, phone, password_hash, city_id, subcity_id, kebele_id, role_slug, u.created_at, u.deleted_at, u.id as admin_id, similarity(c.name, $1) AS sim,
+SELECT c.id, name, lat, lon, c.created_at, c.deleted_at, u.id, first_name, second_name, last_name, email, phone, city_id, subcity_id, kebele_id, role_slug, u.created_at, u.deleted_at, u.id as admin_id, similarity(c.name, $1) AS sim,
     CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS admin_name
 FROM city c
 LEFT JOIN "user" u ON u.city_id = c.id AND u.role_slug = 'admin'
@@ -225,28 +225,27 @@ type SearchCitiesParams struct {
 }
 
 type SearchCitiesRow struct {
-	ID           uuid.UUID  `db:"id" json:"id"`
-	Name         string     `db:"name" json:"name"`
-	Lat          *float64   `db:"lat" json:"lat"`
-	Lon          *float64   `db:"lon" json:"lon"`
-	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
-	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
-	ID_2         *uuid.UUID `db:"id_2" json:"id_2"`
-	FirstName    *string    `db:"first_name" json:"first_name"`
-	SecondName   *string    `db:"second_name" json:"second_name"`
-	LastName     *string    `db:"last_name" json:"last_name"`
-	Email        *string    `db:"email" json:"email"`
-	Phone        *string    `db:"phone" json:"phone"`
-	PasswordHash *string    `db:"password_hash" json:"password_hash"`
-	CityID       *uuid.UUID `db:"city_id" json:"city_id"`
-	SubcityID    *uuid.UUID `db:"subcity_id" json:"subcity_id"`
-	KebeleID     *uuid.UUID `db:"kebele_id" json:"kebele_id"`
-	RoleSlug     *string    `db:"role_slug" json:"role_slug"`
-	CreatedAt_2  *time.Time `db:"created_at_2" json:"created_at_2"`
-	DeletedAt_2  *time.Time `db:"deleted_at_2" json:"deleted_at_2"`
-	AdminID      *uuid.UUID `db:"admin_id" json:"admin_id"`
-	Sim          float32    `db:"sim" json:"sim"`
-	AdminName    string     `db:"admin_name" json:"admin_name"`
+	ID          uuid.UUID  `db:"id" json:"id"`
+	Name        string     `db:"name" json:"name"`
+	Lat         *float64   `db:"lat" json:"lat"`
+	Lon         *float64   `db:"lon" json:"lon"`
+	CreatedAt   time.Time  `db:"created_at" json:"created_at"`
+	DeletedAt   *time.Time `db:"deleted_at" json:"deleted_at"`
+	ID_2        *uuid.UUID `db:"id_2" json:"id_2"`
+	FirstName   *string    `db:"first_name" json:"first_name"`
+	SecondName  *string    `db:"second_name" json:"second_name"`
+	LastName    *string    `db:"last_name" json:"last_name"`
+	Email       *string    `db:"email" json:"email"`
+	Phone       *string    `db:"phone" json:"phone"`
+	CityID      *uuid.UUID `db:"city_id" json:"city_id"`
+	SubcityID   *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	KebeleID    *uuid.UUID `db:"kebele_id" json:"kebele_id"`
+	RoleSlug    *string    `db:"role_slug" json:"role_slug"`
+	CreatedAt_2 *time.Time `db:"created_at_2" json:"created_at_2"`
+	DeletedAt_2 *time.Time `db:"deleted_at_2" json:"deleted_at_2"`
+	AdminID     *uuid.UUID `db:"admin_id" json:"admin_id"`
+	Sim         float32    `db:"sim" json:"sim"`
+	AdminName   string     `db:"admin_name" json:"admin_name"`
 }
 
 func (q *Queries) SearchCities(ctx context.Context, arg SearchCitiesParams) ([]SearchCitiesRow, error) {
@@ -271,7 +270,6 @@ func (q *Queries) SearchCities(ctx context.Context, arg SearchCitiesParams) ([]S
 			&i.LastName,
 			&i.Email,
 			&i.Phone,
-			&i.PasswordHash,
 			&i.CityID,
 			&i.SubcityID,
 			&i.KebeleID,

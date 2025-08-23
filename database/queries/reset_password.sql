@@ -17,9 +17,9 @@ SET used_at = NOW()
 WHERE id = $1;
 
 -- name: UpdateUserPassword :exec
-UPDATE "user"
+UPDATE account
 SET password_hash = $1
-WHERE id = $2;
+WHERE user_id = $2;
 
 -- name: DeleteExpiredTokens :exec
 DELETE FROM password_reset_tokens

@@ -14,7 +14,6 @@ CREATE TABLE "user" (
     last_name        TEXT NOT NULL,
     email            TEXT UNIQUE NOT NULL,
     phone            TEXT NOT NULL,
-    password_hash    TEXT NOT NULL,
     city_id          UUID REFERENCES city(id)    ON DELETE SET NULL,
     subcity_id       UUID REFERENCES subcity(id) ON DELETE SET NULL,
     kebele_id        UUID REFERENCES kebele(id)  ON DELETE SET NULL,
@@ -22,6 +21,14 @@ CREATE TABLE "user" (
 
     created_at    TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at    TIMESTAMP(3)
+);
+
+CREATE TABLE account (
+    id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    password_hash   TEXT NOT NULL,
+    user_id         UUID NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+    created_at      TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at      TIMESTAMP(3)
 );
 
 -- 4. permissions -------------------------------------------------

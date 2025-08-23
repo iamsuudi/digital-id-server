@@ -84,17 +84,17 @@ func (q *Queries) MarkTokenAsUsed(ctx context.Context, id uuid.UUID) error {
 }
 
 const updateUserPassword = `-- name: UpdateUserPassword :exec
-UPDATE "user"
+UPDATE account
 SET password_hash = $1
-WHERE id = $2
+WHERE user_id = $2
 `
 
 type UpdateUserPasswordParams struct {
 	PasswordHash string    `db:"password_hash" json:"password_hash"`
-	ID           uuid.UUID `db:"id" json:"id"`
+	UserID       uuid.UUID `db:"user_id" json:"user_id"`
 }
 
 func (q *Queries) UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error {
-	_, err := q.db.Exec(ctx, updateUserPassword, arg.PasswordHash, arg.ID)
+	_, err := q.db.Exec(ctx, updateUserPassword, arg.PasswordHash, arg.UserID)
 	return err
 }

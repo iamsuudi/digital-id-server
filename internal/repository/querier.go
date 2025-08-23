@@ -38,6 +38,7 @@ type Querier interface {
 	CountSearchUnverifiedResidents(ctx context.Context, query string) (int64, error)
 	CountSearchUsersByRole(ctx context.Context, arg CountSearchUsersByRoleParams) (int64, error)
 	CountSearchUsersUnderScope(ctx context.Context, arg CountSearchUsersUnderScopeParams) (int64, error)
+	CreateAccount(ctx context.Context, arg CreateAccountParams) error
 	CreateAdditional(ctx context.Context, arg CreateAdditionalParams) (Additional, error)
 	CreateAddress(ctx context.Context, arg CreateAddressParams) (Address, error)
 	CreateBiometric(ctx context.Context, arg CreateBiometricParams) (Biometric, error)
@@ -66,6 +67,7 @@ type Querier interface {
 	DeleteRefreshTokensByUser(ctx context.Context, userID uuid.UUID) error
 	DeleteResident(ctx context.Context, id uuid.UUID) error
 	DeleteResidentDocuments(ctx context.Context, residentID uuid.UUID) error
+	GetAccount(ctx context.Context, userID uuid.UUID) (Account, error)
 	GetAdditional(ctx context.Context, id uuid.UUID) (Additional, error)
 	GetAdditionalByResident(ctx context.Context, residentID uuid.UUID) (Additional, error)
 	GetAddress(ctx context.Context, id uuid.UUID) (GetAddressRow, error)

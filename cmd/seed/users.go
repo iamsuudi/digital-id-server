@@ -7,9 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/crypto/bcrypt"
-	"digital-id-server/shared/types"
 	"digital-id-server/internal/repository"
+	"digital-id-server/shared/types"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 // CreateUsers returns the proportional user list with plain passwords.
@@ -69,17 +70,23 @@ func seedUsers(ctx context.Context, queries *repository.Queries) {
 			log.Fatalf("Failed to hash password: %v", err)
 		}
 
-		_, err = queries.CreateUser(ctx, repository.CreateUserParams{
-			FirstName:    user.FirstName,
-			SecondName:   user.SecondName,
-			LastName:     user.LastName,
-			Email:        user.Email,
-			Phone:        user.Phone,
-			PasswordHash: string(hashedPassword),
-			RoleSlug:     user.RoleSlug,
+		user, err := queries.CreateUser(ctx, repository.CreateUserParams{
+			FirstName:  user.FirstName,
+			SecondName: user.SecondName,
+			LastName:   user.LastName,
+			Email:      user.Email,
+			Phone:      user.Phone,
+			RoleSlug:   user.RoleSlug,
 		})
 		if err != nil {
 			log.Fatalf("Failed to seed user: %v", err)
+		}
+		err = queries.CreateAccount(ctx, repository.CreateAccountParams{
+			UserID:       user.ID,
+			PasswordHash: string(hashedPassword),
+		})
+		if err != nil {
+			log.Fatalf("Failed to seed account: %v", err)
 		}
 		// log.Printf("✅ User: %s seeded with role: %s.", created.FirstName, created.Role)
 	}
