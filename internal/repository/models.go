@@ -322,6 +322,14 @@ func (ns NullReligion) Value() (driver.Value, error) {
 	return string(ns.Religion), nil
 }
 
+type Account struct {
+	ID           uuid.UUID  `db:"id" json:"id"`
+	PasswordHash string     `db:"password_hash" json:"password_hash"`
+	UserID       uuid.UUID  `db:"user_id" json:"user_id"`
+	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
+	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
+}
+
 type Additional struct {
 	ID              uuid.UUID  `db:"id" json:"id"`
 	ResidentID      uuid.UUID  `db:"resident_id" json:"resident_id"`
@@ -530,19 +538,18 @@ type Subcity struct {
 }
 
 type User struct {
-	ID           uuid.UUID  `db:"id" json:"id"`
-	FirstName    string     `db:"first_name" json:"first_name"`
-	SecondName   string     `db:"second_name" json:"second_name"`
-	LastName     string     `db:"last_name" json:"last_name"`
-	Email        string     `db:"email" json:"email"`
-	Phone        string     `db:"phone" json:"phone"`
-	PasswordHash string     `db:"password_hash" json:"password_hash"`
-	CityID       *uuid.UUID `db:"city_id" json:"city_id"`
-	SubcityID    *uuid.UUID `db:"subcity_id" json:"subcity_id"`
-	KebeleID     *uuid.UUID `db:"kebele_id" json:"kebele_id"`
-	RoleSlug     string     `db:"role_slug" json:"role_slug"`
-	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
-	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
+	ID         uuid.UUID  `db:"id" json:"id"`
+	FirstName  string     `db:"first_name" json:"first_name"`
+	SecondName string     `db:"second_name" json:"second_name"`
+	LastName   string     `db:"last_name" json:"last_name"`
+	Email      string     `db:"email" json:"email"`
+	Phone      string     `db:"phone" json:"phone"`
+	CityID     *uuid.UUID `db:"city_id" json:"city_id"`
+	SubcityID  *uuid.UUID `db:"subcity_id" json:"subcity_id"`
+	KebeleID   *uuid.UUID `db:"kebele_id" json:"kebele_id"`
+	RoleSlug   string     `db:"role_slug" json:"role_slug"`
+	CreatedAt  time.Time  `db:"created_at" json:"created_at"`
+	DeletedAt  *time.Time `db:"deleted_at" json:"deleted_at"`
 }
 
 type UserPermissionOverride struct {
