@@ -72,14 +72,13 @@ ON CONFLICT DO NOTHING;
 
 -- 7. sparse overrides (per-user permission toggles) --------------
 CREATE TABLE user_permission_override (
-    user_id         UUID        REFERENCES "user"(id)    ON DELETE CASCADE,
-    permission_name TEXT        REFERENCES permission(name) ON DELETE CASCADE,
-    is_granted      BOOLEAN     NOT NULL,      -- true = force-grant, false = force-revoke
-    granted_by      UUID        REFERENCES "user"(id) ON DELETE SET NULL,
+    user_id         UUID         NOT NULL REFERENCES "user"(id)       ON DELETE CASCADE,
+    permission_name TEXT         NOT NULL REFERENCES permission(name) ON DELETE CASCADE,
+    is_granted      BOOLEAN      NOT NULL,
+    granted_by      UUID         NOT NULL REFERENCES "user"(id)       ON DELETE SET NULL,
     granted_at      TIMESTAMP(3) NOT NULL DEFAULT now(),
     PRIMARY KEY (user_id, permission_name)
 );
-
 
 -- 8. useful indexes ---------------------------------------------
 CREATE INDEX idx_role_parent            ON role(parent_role_slug);

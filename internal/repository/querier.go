@@ -50,6 +50,7 @@ type Querier interface {
 	CreateKebele(ctx context.Context, arg CreateKebeleParams) (Kebele, error)
 	CreatePasswordResetToken(ctx context.Context, arg CreatePasswordResetTokenParams) (PasswordResetTokens, error)
 	CreatePayment(ctx context.Context, arg CreatePaymentParams) (Payment, error)
+	CreatePermission(ctx context.Context, arg CreatePermissionParams) error
 	CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) (uuid.UUID, error)
 	CreateResident(ctx context.Context, arg CreateResidentParams) (Resident, error)
 	CreateSubCity(ctx context.Context, arg CreateSubCityParams) (Subcity, error)
@@ -63,6 +64,7 @@ type Querier interface {
 	DeleteExpiredTokens(ctx context.Context) error
 	DeleteIDCard(ctx context.Context, id uuid.UUID) error
 	DeletePayment(ctx context.Context, id uuid.UUID) error
+	DeletePermission(ctx context.Context, name string) error
 	DeleteRefreshToken(ctx context.Context, token string) error
 	DeleteRefreshTokensByUser(ctx context.Context, userID uuid.UUID) error
 	DeleteResident(ctx context.Context, id uuid.UUID) error
