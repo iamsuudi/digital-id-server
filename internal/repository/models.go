@@ -553,9 +553,9 @@ type User struct {
 }
 
 type UserPermissionOverride struct {
-	UserID         uuid.UUID  `db:"user_id" json:"user_id"`
-	PermissionName string     `db:"permission_name" json:"permission_name"`
-	IsGranted      bool       `db:"is_granted" json:"is_granted"`
-	GrantedBy      *uuid.UUID `db:"granted_by" json:"granted_by"`
-	GrantedAt      time.Time  `db:"granted_at" json:"granted_at"`
+	UserID         uuid.UUID `db:"user_id" json:"user_id"`
+	PermissionName string    `db:"permission_name" json:"permission_name"`
+	IsGranted      bool      `db:"is_granted" json:"is_granted"`
+	GrantedBy      uuid.UUID `db:"granted_by" json:"granted_by"`
+	GrantedAt      time.Time `db:"granted_at" json:"granted_at"`
 }

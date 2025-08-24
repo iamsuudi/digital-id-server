@@ -20,6 +20,45 @@ func NewHandler(s *Service, c *cache.Cache) *Handler {
 	return &Handler{service: s, cache: c}
 }
 
+func (h *Handler) CreatePermission(c *gin.Context) {
+	var input struct {
+		Name        string `form:"name"   binding:"required"`
+		Label       string `form:"label"  binding:"required"`
+		Description string `form:"description"`
+	}
+	if err := c.Bind(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	fmt.Println(input)
+
+	err := h.service.CreatePermission(c, input.Name, input.Label, input.Description)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create permission"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "Permission created successfully"})
+}
+
+func (h *Handler) DeletePermission(c *gin.Context) {
+	name := c.Param("name")
+
+	err := h.service.DeletePermission(c, name)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Permission not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete permission"})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Permission deleted successfully"})
+}
+
 func (h *Handler) GetAllPermissions(c *gin.Context) {
 	permissions, err := h.service.GetAllPermissions(c)
 

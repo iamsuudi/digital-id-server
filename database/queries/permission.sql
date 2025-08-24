@@ -1,3 +1,11 @@
+-- name: CreatePermission :exec
+INSERT INTO permission (name, label, description)
+VALUES ($1, $2, $3)
+ON CONFLICT DO NOTHING;
+
+-- name: DeletePermission :exec
+DELETE FROM permission WHERE name = $1;
+
 -- name: ListPermissions :many
 SELECT name, label, description FROM permission ORDER BY name;
 

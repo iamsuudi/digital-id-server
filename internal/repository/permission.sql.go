@@ -12,6 +12,32 @@ import (
 	"github.com/google/uuid"
 )
 
+const createPermission = `-- name: CreatePermission :exec
+INSERT INTO permission (name, label, description)
+VALUES ($1, $2, $3)
+ON CONFLICT DO NOTHING
+`
+
+type CreatePermissionParams struct {
+	Name        string  `db:"name" json:"name"`
+	Label       string  `db:"label" json:"label"`
+	Description *string `db:"description" json:"description"`
+}
+
+func (q *Queries) CreatePermission(ctx context.Context, arg CreatePermissionParams) error {
+	_, err := q.db.Exec(ctx, createPermission, arg.Name, arg.Label, arg.Description)
+	return err
+}
+
+const deletePermission = `-- name: DeletePermission :exec
+DELETE FROM permission WHERE name = $1
+`
+
+func (q *Queries) DeletePermission(ctx context.Context, name string) error {
+	_, err := q.db.Exec(ctx, deletePermission, name)
+	return err
+}
+
 const getEffectivePermissionsForUser = `-- name: GetEffectivePermissionsForUser :many
 WITH RECURSIVE role_tree AS (
     -- start from the user’s role
@@ -213,10 +239,10 @@ ORDER BY permission_name
 `
 
 type ListPermissionOverridesForUserRow struct {
-	PermissionName string     `db:"permission_name" json:"permission_name"`
-	IsGranted      bool       `db:"is_granted" json:"is_granted"`
-	GrantedBy      *uuid.UUID `db:"granted_by" json:"granted_by"`
-	GrantedAt      time.Time  `db:"granted_at" json:"granted_at"`
+	PermissionName string    `db:"permission_name" json:"permission_name"`
+	IsGranted      bool      `db:"is_granted" json:"is_granted"`
+	GrantedBy      uuid.UUID `db:"granted_by" json:"granted_by"`
+	GrantedAt      time.Time `db:"granted_at" json:"granted_at"`
 }
 
 func (q *Queries) ListPermissionOverridesForUser(ctx context.Context, userID uuid.UUID) ([]ListPermissionOverridesForUserRow, error) {
@@ -306,10 +332,10 @@ DO UPDATE SET is_granted = EXCLUDED.is_granted, granted_by = EXCLUDED.granted_by
 `
 
 type SetUserPermissionOverrideParams struct {
-	UserID         uuid.UUID  `db:"user_id" json:"user_id"`
-	PermissionName string     `db:"permission_name" json:"permission_name"`
-	IsGranted      bool       `db:"is_granted" json:"is_granted"`
-	GrantedBy      *uuid.UUID `db:"granted_by" json:"granted_by"`
+	UserID         uuid.UUID `db:"user_id" json:"user_id"`
+	PermissionName string    `db:"permission_name" json:"permission_name"`
+	IsGranted      bool      `db:"is_granted" json:"is_granted"`
+	GrantedBy      uuid.UUID `db:"granted_by" json:"granted_by"`
 }
 
 func (q *Queries) SetUserPermissionOverride(ctx context.Context, arg SetUserPermissionOverrideParams) error {
