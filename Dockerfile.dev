@@ -5,12 +5,20 @@ WORKDIR /app
 # Install air for live reloading
 RUN go install github.com/air-verse/air@latest
 
+# Install sqlc
+RUN go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
+
+# Install migrate with PostgreSQL support
+RUN go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+
 # Install necessary tools
-RUN apk add --no-cache curl
+RUN apk add --no-cache curl make git
 
 COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
+
+EXPOSE 8080
 
 CMD ["air", "-c", ".air.toml"]
