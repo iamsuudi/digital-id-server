@@ -21,4 +21,10 @@ COPY . .
 
 EXPOSE 8080
 
+# Create the appuser
+RUN useradd -m appuser
+
+# Change user
+USER appuser
+
 CMD ["air", "-c", ".air.toml"]
