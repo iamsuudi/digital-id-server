@@ -27,8 +27,7 @@
 
 # Env and config
 .env
-.env.mk
-.env.local
+.env.*
 # .air.toml
 
 # OS files
