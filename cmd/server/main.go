@@ -1,6 +1,8 @@
 package main
 
 import (
+	"github.com/gin-gonic/gin"
+
 	"digital-id-server/database"
 	"digital-id-server/internal/analytics"
 	"digital-id-server/internal/audit"
@@ -13,19 +15,14 @@ import (
 	"digital-id-server/internal/resident"
 	"digital-id-server/internal/role"
 	"digital-id-server/internal/subcity"
-
-	"github.com/gin-gonic/gin"
-
 	"digital-id-server/internal/user"
 	"digital-id-server/shared/config"
 	"digital-id-server/shared/email"
 )
 
 func main() {
-	// Load configurations like environment variables
 	config.Load()
 
-	// Connect to database
 	db := database.Connect()
 	defer db.Close()
 
