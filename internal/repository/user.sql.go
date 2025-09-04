@@ -123,18 +123,19 @@ func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) er
 }
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO "user" (first_name, second_name, last_name, email, phone, role_slug)
-VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING id, first_name, second_name, last_name, email, phone, city_id, subcity_id, kebele_id, role_slug, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
+INSERT INTO "user" (first_name, second_name, last_name, email, phone, role_slug, picture)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+RETURNING id, first_name, second_name, last_name, email, phone, picture, city_id, subcity_id, kebele_id, role_slug, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
 `
 
 type CreateUserParams struct {
-	FirstName  string `db:"first_name" json:"first_name"`
-	SecondName string `db:"second_name" json:"second_name"`
-	LastName   string `db:"last_name" json:"last_name"`
-	Email      string `db:"email" json:"email"`
-	Phone      string `db:"phone" json:"phone"`
-	RoleSlug   string `db:"role_slug" json:"role_slug"`
+	FirstName  string  `db:"first_name" json:"first_name"`
+	SecondName string  `db:"second_name" json:"second_name"`
+	LastName   string  `db:"last_name" json:"last_name"`
+	Email      string  `db:"email" json:"email"`
+	Phone      string  `db:"phone" json:"phone"`
+	RoleSlug   string  `db:"role_slug" json:"role_slug"`
+	Picture    *string `db:"picture" json:"picture"`
 }
 
 type CreateUserRow struct {
@@ -144,6 +145,7 @@ type CreateUserRow struct {
 	LastName   string     `db:"last_name" json:"last_name"`
 	Email      string     `db:"email" json:"email"`
 	Phone      string     `db:"phone" json:"phone"`
+	Picture    *string    `db:"picture" json:"picture"`
 	CityID     *uuid.UUID `db:"city_id" json:"city_id"`
 	SubcityID  *uuid.UUID `db:"subcity_id" json:"subcity_id"`
 	KebeleID   *uuid.UUID `db:"kebele_id" json:"kebele_id"`
@@ -161,6 +163,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateU
 		arg.Email,
 		arg.Phone,
 		arg.RoleSlug,
+		arg.Picture,
 	)
 	var i CreateUserRow
 	err := row.Scan(
@@ -170,6 +173,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateU
 		&i.LastName,
 		&i.Email,
 		&i.Phone,
+		&i.Picture,
 		&i.CityID,
 		&i.SubcityID,
 		&i.KebeleID,
@@ -200,7 +204,7 @@ func (q *Queries) GetAccount(ctx context.Context, userID uuid.UUID) (Account, er
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT u.id, u.first_name, u.second_name, u.last_name, u.email, u.phone, u.city_id, u.subcity_id, u.kebele_id, u.role_slug, u.created_at, u.deleted_at, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS full_name,
+SELECT u.id, u.first_name, u.second_name, u.last_name, u.email, u.phone, u.picture, u.city_id, u.subcity_id, u.kebele_id, u.role_slug, u.created_at, u.deleted_at, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS full_name,
     c.name AS city_name, sc.name AS subcity_name, k.name AS kebele_name,
     r.name AS role_name, r.level_rank AS role_level_rank
 FROM "user" u
@@ -218,6 +222,7 @@ type GetUserByEmailRow struct {
 	LastName      string     `db:"last_name" json:"last_name"`
 	Email         string     `db:"email" json:"email"`
 	Phone         string     `db:"phone" json:"phone"`
+	Picture       *string    `db:"picture" json:"picture"`
 	CityID        *uuid.UUID `db:"city_id" json:"city_id"`
 	SubcityID     *uuid.UUID `db:"subcity_id" json:"subcity_id"`
 	KebeleID      *uuid.UUID `db:"kebele_id" json:"kebele_id"`
@@ -242,6 +247,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEm
 		&i.LastName,
 		&i.Email,
 		&i.Phone,
+		&i.Picture,
 		&i.CityID,
 		&i.SubcityID,
 		&i.KebeleID,
@@ -259,7 +265,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEm
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT u.id, u.first_name, u.second_name, u.last_name, u.email, u.phone, u.city_id, u.subcity_id, u.kebele_id, u.role_slug, u.created_at, u.deleted_at, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS full_name,
+SELECT u.id, u.first_name, u.second_name, u.last_name, u.email, u.phone, u.picture, u.city_id, u.subcity_id, u.kebele_id, u.role_slug, u.created_at, u.deleted_at, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS full_name,
     c.name AS city_name, sc.name AS subcity_name, k.name AS kebele_name,
     r.name AS role_name, r.level_rank AS role_level_rank
 FROM "user" u
@@ -277,6 +283,7 @@ type GetUserByIDRow struct {
 	LastName      string     `db:"last_name" json:"last_name"`
 	Email         string     `db:"email" json:"email"`
 	Phone         string     `db:"phone" json:"phone"`
+	Picture       *string    `db:"picture" json:"picture"`
 	CityID        *uuid.UUID `db:"city_id" json:"city_id"`
 	SubcityID     *uuid.UUID `db:"subcity_id" json:"subcity_id"`
 	KebeleID      *uuid.UUID `db:"kebele_id" json:"kebele_id"`
@@ -301,6 +308,7 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (GetUserByIDRow
 		&i.LastName,
 		&i.Email,
 		&i.Phone,
+		&i.Picture,
 		&i.CityID,
 		&i.SubcityID,
 		&i.KebeleID,
@@ -409,7 +417,7 @@ func (q *Queries) ListUsersByKebeleAndRole(ctx context.Context, arg ListUsersByK
 }
 
 const listUsersByRole = `-- name: ListUsersByRole :many
-SELECT id, first_name, second_name, last_name, email, phone, city_id, subcity_id, kebele_id, role_slug, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
+SELECT id, first_name, second_name, last_name, email, phone, picture, city_id, subcity_id, kebele_id, role_slug, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name
 FROM "user"
 WHERE role_slug = $1 AND deleted_at IS NULL
 ORDER BY created_at ASC
@@ -429,6 +437,7 @@ type ListUsersByRoleRow struct {
 	LastName   string     `db:"last_name" json:"last_name"`
 	Email      string     `db:"email" json:"email"`
 	Phone      string     `db:"phone" json:"phone"`
+	Picture    *string    `db:"picture" json:"picture"`
 	CityID     *uuid.UUID `db:"city_id" json:"city_id"`
 	SubcityID  *uuid.UUID `db:"subcity_id" json:"subcity_id"`
 	KebeleID   *uuid.UUID `db:"kebele_id" json:"kebele_id"`
@@ -454,6 +463,7 @@ func (q *Queries) ListUsersByRole(ctx context.Context, arg ListUsersByRoleParams
 			&i.LastName,
 			&i.Email,
 			&i.Phone,
+			&i.Picture,
 			&i.CityID,
 			&i.SubcityID,
 			&i.KebeleID,
@@ -473,7 +483,7 @@ func (q *Queries) ListUsersByRole(ctx context.Context, arg ListUsersByRoleParams
 }
 
 const listUsersUnderScope = `-- name: ListUsersUnderScope :many
-SELECT u.id, u.first_name, u.second_name, u.last_name, u.email, u.phone, u.city_id, u.subcity_id, u.kebele_id, u.role_slug, u.created_at, u.deleted_at, r.name AS role_name, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS full_name,
+SELECT u.id, u.first_name, u.second_name, u.last_name, u.email, u.phone, u.picture, u.city_id, u.subcity_id, u.kebele_id, u.role_slug, u.created_at, u.deleted_at, r.name AS role_name, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS full_name,
     c.name AS city_name, sc.name AS subcity_name, k.name AS kebele_name,
     r.name AS role_name, r.level_rank AS role_level_rank
 FROM "user" u
@@ -506,6 +516,7 @@ type ListUsersUnderScopeRow struct {
 	LastName      string     `db:"last_name" json:"last_name"`
 	Email         string     `db:"email" json:"email"`
 	Phone         string     `db:"phone" json:"phone"`
+	Picture       *string    `db:"picture" json:"picture"`
 	CityID        *uuid.UUID `db:"city_id" json:"city_id"`
 	SubcityID     *uuid.UUID `db:"subcity_id" json:"subcity_id"`
 	KebeleID      *uuid.UUID `db:"kebele_id" json:"kebele_id"`
@@ -544,6 +555,7 @@ func (q *Queries) ListUsersUnderScope(ctx context.Context, arg ListUsersUnderSco
 			&i.LastName,
 			&i.Email,
 			&i.Phone,
+			&i.Picture,
 			&i.CityID,
 			&i.SubcityID,
 			&i.KebeleID,
@@ -594,7 +606,7 @@ func (q *Queries) RevokeUserPlacement(ctx context.Context, arg RevokeUserPlaceme
 }
 
 const searchUsersByRole = `-- name: SearchUsersByRole :many
-SELECT id, first_name, second_name, last_name, email, phone, city_id, subcity_id, kebele_id, role_slug, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name,
+SELECT id, first_name, second_name, last_name, email, phone, picture, city_id, subcity_id, kebele_id, role_slug, created_at, deleted_at, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name,
     similarity(CONCAT_WS(' ', first_name, second_name, last_name), $1) AS sim
 FROM "user"
 WHERE role_slug = $2 AND deleted_at IS NULL AND
@@ -617,6 +629,7 @@ type SearchUsersByRoleRow struct {
 	LastName   string     `db:"last_name" json:"last_name"`
 	Email      string     `db:"email" json:"email"`
 	Phone      string     `db:"phone" json:"phone"`
+	Picture    *string    `db:"picture" json:"picture"`
 	CityID     *uuid.UUID `db:"city_id" json:"city_id"`
 	SubcityID  *uuid.UUID `db:"subcity_id" json:"subcity_id"`
 	KebeleID   *uuid.UUID `db:"kebele_id" json:"kebele_id"`
@@ -648,6 +661,7 @@ func (q *Queries) SearchUsersByRole(ctx context.Context, arg SearchUsersByRolePa
 			&i.LastName,
 			&i.Email,
 			&i.Phone,
+			&i.Picture,
 			&i.CityID,
 			&i.SubcityID,
 			&i.KebeleID,
@@ -668,7 +682,7 @@ func (q *Queries) SearchUsersByRole(ctx context.Context, arg SearchUsersByRolePa
 }
 
 const searchUsersUnderScope = `-- name: SearchUsersUnderScope :many
-SELECT u.id, first_name, second_name, last_name, email, phone, u.city_id, u.subcity_id, kebele_id, role_slug, u.created_at, u.deleted_at, slug, r.name, parent_role_slug, level_rank, c.id, c.name, c.lat, c.lon, c.created_at, c.deleted_at, sc.id, sc.name, sc.lat, sc.lon, sc.city_id, sc.created_at, sc.deleted_at, k.id, k.name, k.lat, k.lon, k.subcity_id, k.city_id, k.created_at, k.deleted_at, r.name, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS full_name,
+SELECT u.id, first_name, second_name, last_name, email, phone, picture, u.city_id, u.subcity_id, kebele_id, role_slug, u.created_at, u.deleted_at, slug, r.name, parent_role_slug, level_rank, c.id, c.name, c.lat, c.lon, c.created_at, c.deleted_at, sc.id, sc.name, sc.lat, sc.lon, sc.city_id, sc.created_at, sc.deleted_at, k.id, k.name, k.lat, k.lon, k.subcity_id, k.city_id, k.created_at, k.deleted_at, r.name, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS full_name,
     c.name AS city_name, sc.name AS subcity_name, k.name AS kebele_name,
     r.name AS role_name, r.level_rank AS role_level_rank,
     similarity(CONCAT_WS(' ', u.first_name, u.second_name, u.last_name), $1) AS sim
@@ -704,6 +718,7 @@ type SearchUsersUnderScopeRow struct {
 	LastName       string     `db:"last_name" json:"last_name"`
 	Email          string     `db:"email" json:"email"`
 	Phone          string     `db:"phone" json:"phone"`
+	Picture        *string    `db:"picture" json:"picture"`
 	CityID         *uuid.UUID `db:"city_id" json:"city_id"`
 	SubcityID      *uuid.UUID `db:"subcity_id" json:"subcity_id"`
 	KebeleID       *uuid.UUID `db:"kebele_id" json:"kebele_id"`
@@ -769,6 +784,7 @@ func (q *Queries) SearchUsersUnderScope(ctx context.Context, arg SearchUsersUnde
 			&i.LastName,
 			&i.Email,
 			&i.Phone,
+			&i.Picture,
 			&i.CityID,
 			&i.SubcityID,
 			&i.KebeleID,
@@ -832,9 +848,9 @@ func (q *Queries) SoftDeleteUser(ctx context.Context, id uuid.UUID) error {
 
 const updateUserInfo = `-- name: UpdateUserInfo :one
 UPDATE "user"
-SET first_name = $2, second_name = $3, last_name = $4, email = $5, phone = $6
+SET first_name = $2, second_name = $3, last_name = $4, email = $5, phone = $6, picture = $7
 WHERE id = $1
-RETURNING id, first_name, second_name, last_name, email, phone, city_id, subcity_id, kebele_id, role_slug, created_at, deleted_at
+RETURNING id, first_name, second_name, last_name, email, phone, picture, city_id, subcity_id, kebele_id, role_slug, created_at, deleted_at
 `
 
 type UpdateUserInfoParams struct {
@@ -844,6 +860,7 @@ type UpdateUserInfoParams struct {
 	LastName   string    `db:"last_name" json:"last_name"`
 	Email      string    `db:"email" json:"email"`
 	Phone      string    `db:"phone" json:"phone"`
+	Picture    *string   `db:"picture" json:"picture"`
 }
 
 func (q *Queries) UpdateUserInfo(ctx context.Context, arg UpdateUserInfoParams) (User, error) {
@@ -854,6 +871,7 @@ func (q *Queries) UpdateUserInfo(ctx context.Context, arg UpdateUserInfoParams) 
 		arg.LastName,
 		arg.Email,
 		arg.Phone,
+		arg.Picture,
 	)
 	var i User
 	err := row.Scan(
@@ -863,6 +881,7 @@ func (q *Queries) UpdateUserInfo(ctx context.Context, arg UpdateUserInfoParams) 
 		&i.LastName,
 		&i.Email,
 		&i.Phone,
+		&i.Picture,
 		&i.CityID,
 		&i.SubcityID,
 		&i.KebeleID,

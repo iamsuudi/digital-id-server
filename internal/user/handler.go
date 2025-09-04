@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"path/filepath"
 	"strings"
 
 	"digital-id-server/internal/cache"
@@ -43,12 +44,22 @@ func (h *Handler) CreateUser(c *gin.Context) {
 		return
 	}
 
+	var picture *string
+	if ref, err := c.FormFile("reference"); err == nil {
+		filename := utils.MakeFileName(ref.Filename)
+		if err := c.SaveUploadedFile(ref, filepath.Join("uploads", filename)); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to reference image"})
+			return
+		}
+		picture = &filename
+	}
+
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
 	if err != nil {
 		log.Fatalf("Failed to hash password: %v", err)
 	}
 
-	err = h.service.CreateUser(c.Request.Context(), id, input, string(hashedPassword))
+	err = h.service.CreateUser(c.Request.Context(), id, input, string(hashedPassword), picture)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
 		return
@@ -253,7 +264,17 @@ func (h *Handler) UpdateUserInfo(c *gin.Context) {
 		return
 	}
 
-	err = h.service.UpdateUserInfo(c, actorId, targetId, input.FirstName, input.SecondName, input.LastName, input.Email, input.Phone)
+	var picture *string
+	if ref, err := c.FormFile("reference"); err == nil {
+		filename := utils.MakeFileName(ref.Filename)
+		if err := c.SaveUploadedFile(ref, filepath.Join("uploads", filename)); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to reference image"})
+			return
+		}
+		picture = &filename
+	}
+
+	err = h.service.UpdateUserInfo(c, actorId, targetId, input.FirstName, input.SecondName, input.LastName, input.Email, input.Phone, picture)
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user info"})

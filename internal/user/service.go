@@ -19,7 +19,7 @@ func NewService(dbConn *pgxpool.Pool, dbQueries *repository.Queries) *Service {
 	return &Service{db: dbConn, q: dbQueries}
 }
 
-func (s *Service) CreateUser(ctx context.Context, actorID uuid.UUID, input types.UserRegisterInput, password string) error {
+func (s *Service) CreateUser(ctx context.Context, actorID uuid.UUID, input types.UserRegisterInput, password string, picture *string) error {
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
 		return err
@@ -36,6 +36,7 @@ func (s *Service) CreateUser(ctx context.Context, actorID uuid.UUID, input types
 		Email:      input.Email,
 		Phone:      input.Phone,
 		RoleSlug:   input.RoleSlug,
+		Picture:    picture,
 	})
 	if err != nil {
 		return err
@@ -218,7 +219,7 @@ func (s *Service) UpdateUserRole(ctx context.Context, actorId, targetId uuid.UUI
 	return tx.Commit(ctx)
 }
 
-func (s *Service) UpdateUserInfo(ctx context.Context, actorID, id uuid.UUID, first, second, last, email, phone string) error {
+func (s *Service) UpdateUserInfo(ctx context.Context, actorID, id uuid.UUID, first, second, last, email, phone string, picture *string) error {
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
 		return err
@@ -241,6 +242,7 @@ func (s *Service) UpdateUserInfo(ctx context.Context, actorID, id uuid.UUID, fir
 		LastName:   last,
 		Email:      email,
 		Phone:      phone,
+		Picture:    picture,
 	})
 	if err != nil {
 		return err

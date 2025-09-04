@@ -544,6 +544,7 @@ type User struct {
 	LastName   string     `db:"last_name" json:"last_name"`
 	Email      string     `db:"email" json:"email"`
 	Phone      string     `db:"phone" json:"phone"`
+	Picture    *string    `db:"picture" json:"picture"`
 	CityID     *uuid.UUID `db:"city_id" json:"city_id"`
 	SubcityID  *uuid.UUID `db:"subcity_id" json:"subcity_id"`
 	KebeleID   *uuid.UUID `db:"kebele_id" json:"kebele_id"`

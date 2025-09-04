@@ -7,13 +7,13 @@ SELECT * FROM account
 WHERE account.user_id = $1;
 
 -- name: CreateUser :one
-INSERT INTO "user" (first_name, second_name, last_name, email, phone, role_slug)
-VALUES ($1, $2, $3, $4, $5, $6)
+INSERT INTO "user" (first_name, second_name, last_name, email, phone, role_slug, picture)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
 RETURNING *, CONCAT_WS(' ', first_name, second_name, last_name) AS full_name;
 
 -- name: UpdateUserInfo :one
 UPDATE "user"
-SET first_name = $2, second_name = $3, last_name = $4, email = $5, phone = $6
+SET first_name = $2, second_name = $3, last_name = $4, email = $5, phone = $6, picture = $7
 WHERE id = $1
 RETURNING *;
 
