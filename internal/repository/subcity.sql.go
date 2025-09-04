@@ -224,7 +224,7 @@ func (q *Queries) ListSubCities(ctx context.Context, arg ListSubCitiesParams) ([
 }
 
 const searchSubCities = `-- name: SearchSubCities :many
-SELECT sb.id, sb.name, sb.lat, sb.lon, sb.city_id, sb.created_at, sb.deleted_at, c.id, c.name, c.lat, c.lon, c.created_at, c.deleted_at, u.id, first_name, second_name, last_name, email, phone, u.city_id, subcity_id, kebele_id, role_slug, u.created_at, u.deleted_at, c.name as city_name, u.id as manager_id, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS manager_name,
+SELECT sb.id, sb.name, sb.lat, sb.lon, sb.city_id, sb.created_at, sb.deleted_at, c.id, c.name, c.lat, c.lon, c.created_at, c.deleted_at, u.id, first_name, second_name, last_name, email, phone, picture, u.city_id, subcity_id, kebele_id, role_slug, u.created_at, u.deleted_at, c.name as city_name, u.id as manager_id, CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS manager_name,
     similarity(CONCAT_WS(' ', sb.name, c.name), $1) AS sim
 FROM subcity sb
 JOIN city c ON c.id = sb.city_id
@@ -261,6 +261,7 @@ type SearchSubCitiesRow struct {
 	LastName    *string    `db:"last_name" json:"last_name"`
 	Email       *string    `db:"email" json:"email"`
 	Phone       *string    `db:"phone" json:"phone"`
+	Picture     *string    `db:"picture" json:"picture"`
 	CityID_2    *uuid.UUID `db:"city_id_2" json:"city_id_2"`
 	SubcityID   *uuid.UUID `db:"subcity_id" json:"subcity_id"`
 	KebeleID    *uuid.UUID `db:"kebele_id" json:"kebele_id"`
@@ -302,6 +303,7 @@ func (q *Queries) SearchSubCities(ctx context.Context, arg SearchSubCitiesParams
 			&i.LastName,
 			&i.Email,
 			&i.Phone,
+			&i.Picture,
 			&i.CityID_2,
 			&i.SubcityID,
 			&i.KebeleID,

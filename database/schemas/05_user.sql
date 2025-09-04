@@ -14,6 +14,7 @@ CREATE TABLE "user" (
     last_name        TEXT NOT NULL,
     email            TEXT UNIQUE NOT NULL,
     phone            TEXT NOT NULL,
+    picture          TEXT,
     city_id          UUID REFERENCES city(id)    ON DELETE SET NULL,
     subcity_id       UUID REFERENCES subcity(id) ON DELETE SET NULL,
     kebele_id        UUID REFERENCES kebele(id)  ON DELETE SET NULL,

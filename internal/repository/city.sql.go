@@ -209,7 +209,7 @@ func (q *Queries) ListCities(ctx context.Context, arg ListCitiesParams) ([]ListC
 }
 
 const searchCities = `-- name: SearchCities :many
-SELECT c.id, name, lat, lon, c.created_at, c.deleted_at, u.id, first_name, second_name, last_name, email, phone, city_id, subcity_id, kebele_id, role_slug, u.created_at, u.deleted_at, u.id as admin_id, similarity(c.name, $1) AS sim,
+SELECT c.id, name, lat, lon, c.created_at, c.deleted_at, u.id, first_name, second_name, last_name, email, phone, picture, city_id, subcity_id, kebele_id, role_slug, u.created_at, u.deleted_at, u.id as admin_id, similarity(c.name, $1) AS sim,
     CONCAT_WS(' ', u.first_name, u.second_name, u.last_name) AS admin_name
 FROM city c
 LEFT JOIN "user" u ON u.city_id = c.id AND u.role_slug = 'admin'
@@ -237,6 +237,7 @@ type SearchCitiesRow struct {
 	LastName    *string    `db:"last_name" json:"last_name"`
 	Email       *string    `db:"email" json:"email"`
 	Phone       *string    `db:"phone" json:"phone"`
+	Picture     *string    `db:"picture" json:"picture"`
 	CityID      *uuid.UUID `db:"city_id" json:"city_id"`
 	SubcityID   *uuid.UUID `db:"subcity_id" json:"subcity_id"`
 	KebeleID    *uuid.UUID `db:"kebele_id" json:"kebele_id"`
@@ -270,6 +271,7 @@ func (q *Queries) SearchCities(ctx context.Context, arg SearchCitiesParams) ([]S
 			&i.LastName,
 			&i.Email,
 			&i.Phone,
+			&i.Picture,
 			&i.CityID,
 			&i.SubcityID,
 			&i.KebeleID,
