@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strings"
 	"time"
 
 	"digital-id-server/internal/repository"
@@ -15,45 +14,56 @@ import (
 
 // CreateUsers returns the proportional user list with plain passwords.
 func CreateUsers() []types.UserRegisterInput {
-	var users []types.UserRegisterInput
-	id := 0
-	next := func(role, city, sc, k string) types.UserRegisterInput {
-		id++
-		return types.UserRegisterInput{
-			FirstName:  fmt.Sprintf("%s-%s", city, role),
-			SecondName: sc,
-			LastName:   k,
-			Email:      strings.ToLower(fmt.Sprintf("%s%d@oict.com", role, id)),
-			Phone:      fmt.Sprintf("+251911%06d", id),
-			Password:   fmt.Sprintf("password%d", id), // simple, unique password
-			RoleSlug:   role,
-		}
-	}
-
-	// 1 superadmin
-	users = append(users, next("superadmin", "system", "", ""))
-
-	// 1 admin per city
-	for _, city := range Data {
-		users = append(users, next("admin", city.Name, "", ""))
-	}
-
-	// 1 manager per sub-city
-	for _, city := range Data {
-		for _, sc := range city.SubCities {
-			users = append(users, next("manager", city.Name, sc.Name, ""))
-		}
-	}
-
-	// 3 executives/encoders/cashiers per kebele
-	for _, city := range Data {
-		for _, sc := range city.SubCities {
-			for _, kb := range sc.Kebeles {
-				for _, role := range []string{"executive", "encoder", "cashier"} {
-					users = append(users, next(role, city.Name, sc.Name, kb.Name))
-				}
-			}
-		}
+	users := []types.UserRegisterInput{
+		types.UserRegisterInput{
+			FirstName:  "Abdulfetah",
+			SecondName: "Suudi",
+			LastName:   "Hassen",
+			Email:      "superadmin1@oict.com",
+			Phone:      "0991752985",
+			RoleSlug:   "superadmin",
+			Password:   "password1",
+		}, types.UserRegisterInput{
+			FirstName:  "Abdulfetah",
+			SecondName: "Jemal",
+			LastName:   "Adem",
+			Email:      "admin1@oict.com",
+			Phone:      "0961219838",
+			RoleSlug:   "admin",
+			Password:   "password2",
+		}, types.UserRegisterInput{
+			FirstName:  "Adnan",
+			SecondName: "Tahir",
+			LastName:   "Abda",
+			Email:      "manager1@oict.com",
+			Phone:      "989898989",
+			RoleSlug:   "manager",
+			Password:   "password3",
+		}, types.UserRegisterInput{
+			FirstName:  "Jemal",
+			SecondName: "Gebi",
+			LastName:   "",
+			Email:      "executive1@oict.com",
+			Phone:      "0900110011",
+			RoleSlug:   "executive",
+			Password:   "password4",
+		}, types.UserRegisterInput{
+			FirstName:  "Adem",
+			SecondName: "Kedir",
+			LastName:   "",
+			Email:      "cashier1@oict.com",
+			Phone:      "0900110011",
+			RoleSlug:   "cashier",
+			Password:   "password5",
+		}, types.UserRegisterInput{
+			FirstName:  "Lammessaa",
+			SecondName: "",
+			LastName:   "",
+			Email:      "encoder1@oict.com",
+			Phone:      "0911223344",
+			RoleSlug:   "encoder",
+			Password:   "password6",
+		},
 	}
 	return users
 }
